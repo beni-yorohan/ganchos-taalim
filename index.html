@@ -36,13 +36,13 @@ a,button,[role="button"],input,select,label,.btn,.btn-outline{
 }
 :root{
   --surface:#FFFFFF;
-  --text:#1A1A1A;
-  --text-2:#4A4A4A;
-  --text-3:#8A8A8A;
-  --accent:#2D2D2D;
-  --accent-h:#444;
-  --border:rgba(0,0,0,0.1);
-  --grid-on:#1A1A1A;
+  --text:#111111;
+  --text-2:#111111;
+  --text-3:#555555;
+  --accent:#111111;
+  --accent-h:#333;
+  --border:rgba(0,0,0,0.15);
+  --grid-on:#111111;
   --grid-off:#F5F5F0;
   --radius:6px;
   --col:800px;
@@ -70,76 +70,83 @@ section{padding:120px 0;position:relative;z-index:2;}
 #hero{min-height:90vh;display:flex;align-items:center;justify-content:flex-start;
   text-align:left;position:relative;overflow:hidden;}
 #hero .col{position:relative;z-index:2;}
-.hero-solitreo{font-family:var(--solitreo);font-size:clamp(38px,7vw,64px);
-  color:var(--text);margin-bottom:16px;direction:rtl;opacity:0.25;
-  letter-spacing:0.12em;}
 .hero-title{font-size:clamp(52px,9vw,100px);font-weight:700;letter-spacing:-0.03em;
-  line-height:1.05;margin-bottom:24px;}
-.hero-sub{font-size:clamp(20px,2.5vw,26px);color:var(--text-2);max-width:560px;
+  line-height:1.05;margin-bottom:24px;color:var(--text);}
+.hero-sub{font-size:clamp(20px,2.5vw,26px);color:var(--text);max-width:560px;
   line-height:1.55;}
 
 /* ─── NARRATIVE SECTIONS ───────────────────────────────────── */
 .section-label{font-size:13px;font-weight:600;text-transform:uppercase;
   letter-spacing:0.12em;color:var(--text-3);margin-bottom:14px;}
 .section-title{font-size:clamp(34px,5.5vw,56px);font-weight:600;
-  letter-spacing:-0.02em;line-height:1.15;margin-bottom:28px;}
-.section-body{color:var(--text-2);max-width:640px;font-size:20px;}
+  letter-spacing:-0.02em;line-height:1.15;margin-bottom:28px;color:var(--text);}
+.section-body{color:var(--text);max-width:640px;font-size:20px;}
 .section-body p{margin-bottom:20px;}
 
-/* ─── SOLITREO IMAGE GALLERY ─────────────────────────────── */
-.solitreo-gallery{margin:48px 0;display:flex;flex-direction:column;gap:40px;}
-.solitreo-gallery figure{margin:0;}
-.solitreo-gallery img{width:100%;max-width:560px;border-radius:6px;
+/* ─── SOLITREO IMAGE GALLERY (horizontal scroll) ────────────── */
+.solitreo-gallery{margin:48px 0;display:flex;flex-direction:row;gap:20px;
+  overflow-x:auto;overflow-y:hidden;padding-bottom:16px;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+.solitreo-gallery::-webkit-scrollbar{height:6px;}
+.solitreo-gallery::-webkit-scrollbar-track{background:transparent;}
+.solitreo-gallery::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px;}
+.solitreo-gallery figure{margin:0;flex:0 0 auto;scroll-snap-align:start;}
+.solitreo-gallery img{height:280px;width:auto;border-radius:6px;display:block;
   box-shadow:0 4px 24px rgba(0,0,0,0.12);transition:box-shadow 0.3s ease;}
-.solitreo-gallery img:hover{box-shadow:0 6px 32px rgba(0,0,0,0.18);}
-.solitreo-gallery figcaption{font-size:13px;color:var(--text-3);
-  margin-top:12px;max-width:560px;line-height:1.5;font-style:italic;}
+.solitreo-gallery img:hover{box-shadow:0 6px 32px rgba(0,0,0,0.2);}
+.solitreo-gallery figcaption{font-size:12px;color:var(--text-3);
+  margin-top:10px;max-width:260px;line-height:1.4;font-style:italic;}
 
 /* ─── FADE-IN ANIMATION ────────────────────────────────────── */
 .fade-in{opacity:0;transform:translateY(28px);transition:opacity 0.7s ease,transform 0.7s ease;}
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
-/* ─── TYPE SPECIMEN (flowing, no boxes) ──────────────────── */
-.specimen-section{margin-bottom:48px;}
-.specimen-label{font-size:13px;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.08em;color:var(--text-3);margin-bottom:16px;}
-.specimen-line{font-family:var(--solitreo);font-size:clamp(56px,10vw,96px);
-  letter-spacing:0.12em;line-height:1.5;word-spacing:0.2em;direction:rtl;}
-.specimen-line span{display:inline-block;position:relative;
-  transition:opacity 0.2s ease;}
-.specimen-line span:hover{opacity:0.4;}
-.specimen-line span::after{content:attr(data-tip);position:absolute;
-  bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  background:var(--text);color:#fff;font-family:var(--font);font-size:12px;
-  font-weight:500;padding:5px 12px;border-radius:4px;white-space:nowrap;
-  opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:20;
-  direction:ltr;letter-spacing:0;line-height:1.4;}
-.specimen-line span:hover::after{opacity:1;}
-.specimen-numbers{font-family:var(--solitreo);font-size:clamp(40px,7vw,72px);
-  letter-spacing:0.2em;line-height:1.5;}
-.specimen-numbers span{display:inline-block;position:relative;
-  transition:opacity 0.2s ease;}
-.specimen-numbers span:hover{opacity:0.4;}
-.specimen-numbers span::after{content:attr(data-tip);position:absolute;
-  bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);
-  background:var(--text);color:#fff;font-family:var(--font);font-size:12px;
-  font-weight:500;padding:5px 12px;border-radius:4px;white-space:nowrap;
-  opacity:0;pointer-events:none;transition:opacity 0.2s;z-index:20;
-  letter-spacing:0;line-height:1.4;}
-.specimen-numbers span:hover::after{opacity:1;}
+/* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
+.specimen-section{margin-bottom:40px;}
+.specimen-label{font-size:12px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px;padding-left:4px;}
+.specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));
+  gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.specimen-grid .cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  font-family:var(--solitreo);font-size:clamp(32px,5vw,48px);
+  border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+  position:relative;transition:background 0.15s ease;color:var(--text);}
+.specimen-grid .cell:hover{background:rgba(0,0,0,0.06);}
+.specimen-grid .cell::after{content:attr(data-tip);position:absolute;
+  bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:var(--text);color:#fff;font-family:var(--font);font-size:11px;
+  font-weight:500;padding:4px 10px;border-radius:4px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:20;
+  direction:ltr;letter-spacing:0;line-height:1.3;}
+.specimen-grid .cell:hover::after{opacity:1;}
+.specimen-numbers-grid{display:grid;grid-template-columns:repeat(10,1fr);
+  gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;
+  max-width:480px;}
+.specimen-numbers-grid .cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;
+  font-family:var(--solitreo);font-size:clamp(24px,4vw,36px);
+  border-right:1px solid var(--border);border-bottom:1px solid var(--border);
+  position:relative;transition:background 0.15s ease;color:var(--text);}
+.specimen-numbers-grid .cell:hover{background:rgba(0,0,0,0.06);}
+.specimen-numbers-grid .cell::after{content:attr(data-tip);position:absolute;
+  bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:var(--text);color:#fff;font-family:var(--font);font-size:11px;
+  font-weight:500;padding:4px 10px;border-radius:4px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:20;
+  letter-spacing:0;line-height:1.3;}
+.specimen-numbers-grid .cell:hover::after{opacity:1;}
 
 /* ─── GENERATOR SECTION (centered) ───────────────────────────── */
 #generator{padding:100px 0;display:flex;justify-content:center;}
-.generator-frame{background:var(--surface);border:1px solid rgba(0,0,0,0.1);
-  border-radius:10px;padding:48px 40px;max-width:860px;width:100%;
+.generator-frame{background:var(--surface);border:1px solid rgba(0,0,0,0.12);
+  border-radius:10px;padding:48px 40px;max-width:920px;width:100%;
   margin:0 24px;position:relative;z-index:2;
   box-shadow:0 4px 32px rgba(0,0,0,0.06);}
-.gen-header{text-align:left;margin-bottom:40px;}
-.gen-header h2{font-size:clamp(24px,3.5vw,34px);font-weight:600;letter-spacing:-0.02em;margin-bottom:8px;}
-.gen-header p{color:var(--text-3);font-size:16px;}
+.gen-header{text-align:left;margin-bottom:36px;}
+.gen-header h2{font-size:clamp(24px,3.5vw,34px);font-weight:600;letter-spacing:-0.02em;margin-bottom:6px;color:var(--text);}
+.gen-header p{color:var(--text-3);font-size:15px;}
 
 /* Name input */
-.name-input-wrap{text-align:left;margin-bottom:28px;}
+.name-input-wrap{text-align:left;margin-bottom:24px;}
 #nameInput{font-family:var(--mono);font-size:clamp(24px,4vw,40px);
   text-align:left;border:none;border-bottom:2px solid var(--text);
   background:transparent;padding:8px 0;width:100%;max-width:480px;
@@ -148,63 +155,82 @@ section{padding:120px 0;position:relative;z-index:2;}
 #nameInput:focus{border-bottom-color:var(--accent);}
 
 /* Solitreo display */
-.solitreo-display{text-align:left;margin:16px 0 32px;min-height:56px;}
+.solitreo-display{text-align:left;margin:12px 0 28px;min-height:48px;}
 #solitreoText{font-family:var(--solitreo);font-size:clamp(32px,5vw,56px);
   direction:rtl;unicode-bidi:bidi-override;color:var(--text);
   letter-spacing:0.05em;line-height:1.2;}
 
-/* Controls row */
+/* Controls */
 .gen-controls{display:flex;align-items:center;justify-content:flex-start;
-  gap:16px;flex-wrap:wrap;margin-bottom:28px;}
-.gen-controls label{font-size:13px;color:var(--text-3);font-weight:500;}
+  gap:14px;flex-wrap:wrap;margin-bottom:24px;}
+.gen-controls label{font-size:12px;color:var(--text-3);font-weight:500;
+  display:flex;align-items:center;gap:6px;}
 .gen-controls select,.gen-controls input[type="number"]{
-  font-family:var(--mono);font-size:13px;padding:6px 10px;
+  font-family:var(--mono);font-size:12px;padding:6px 8px;
   border:1px solid var(--border);border-radius:var(--radius);
-  background:#fafafa;color:var(--text);outline:none;width:64px;}
+  background:#fafafa;color:var(--text);outline:none;width:56px;}
 .gen-controls select{width:auto;}
+.gen-params{display:flex;align-items:center;justify-content:flex-start;
+  gap:14px;flex-wrap:wrap;margin-bottom:24px;
+  padding-top:16px;border-top:1px solid var(--border);}
+.gen-params label{font-size:12px;color:var(--text-3);font-weight:500;
+  display:flex;align-items:center;gap:6px;}
+.gen-params select{font-family:var(--mono);font-size:12px;padding:6px 8px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:#fafafa;color:var(--text);outline:none;width:auto;}
 .btn{padding:10px 20px;background:var(--accent);color:#fff;border:none;
-  font-size:13px;font-weight:500;font-family:var(--font);
+  border-radius:var(--radius);font-size:13px;font-weight:500;font-family:var(--font);
   letter-spacing:0.02em;transition:background 0.15s;}
 .btn:hover{background:var(--accent-h);}
 .btn-outline{padding:10px 20px;background:transparent;color:var(--text);
-  border:1px solid var(--border);font-size:13px;font-weight:500;
+  border:1px solid var(--border);border-radius:var(--radius);
+  font-size:13px;font-weight:500;
   font-family:var(--font);letter-spacing:0.02em;transition:all 0.15s;}
 .btn-outline:hover{border-color:var(--text);background:var(--text);color:#fff;}
 
 /* Canvas container */
-.canvas-wrap{display:flex;justify-content:center;margin:0 auto 28px;
+.canvas-wrap{display:flex;justify-content:center;margin:0 auto 24px;
   max-width:100%;overflow:auto;}
 #rugCanvas{box-shadow:0 2px 20px rgba(0,0,0,0.06);}
 
 /* Export row */
-.gen-export{display:flex;align-items:center;justify-content:flex-start;gap:12px;
-  flex-wrap:wrap;margin-top:20px;}
-.gen-stats{font-family:var(--mono);font-size:12px;color:var(--text-3);
-  text-align:left;margin-top:14px;}
+.gen-export{display:flex;align-items:center;justify-content:flex-start;gap:10px;
+  flex-wrap:wrap;margin-top:16px;}
+.gen-stats{font-family:var(--mono);font-size:11px;color:var(--text-3);
+  text-align:left;margin-top:12px;}
 
-/* ─── TAALIM SECTION ───────────────────────────────────────── */
-.taalim-section{margin-bottom:32px;}
+/* Taalim inside generator */
+.gen-taalim{margin-top:28px;border-top:1px solid var(--border);padding-top:20px;}
+.gen-taalim summary{font-size:13px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.08em;color:var(--text-3);cursor:pointer;padding:8px 0;
+  list-style:none;display:flex;align-items:center;gap:8px;}
+.gen-taalim summary::before{content:'+';font-size:16px;font-weight:400;
+  width:20px;text-align:center;transition:transform 0.2s;}
+.gen-taalim[open] summary::before{content:'\2212';}
+.gen-taalim .taalim-content{padding-top:16px;}
+.taalim-section{margin-bottom:24px;}
 .taalim-section h3{font-size:11px;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px;}
-.taalim-stats{display:flex;gap:32px;flex-wrap:wrap;}
-.taalim-stat .val{font-family:var(--mono);font-size:20px;font-weight:600;}
-.taalim-stat .lbl{font-size:12px;color:var(--text-3);margin-top:2px;}
+  letter-spacing:0.08em;color:var(--text-3);margin-bottom:10px;}
+.taalim-stats{display:flex;gap:28px;flex-wrap:wrap;}
+.taalim-stat .val{font-family:var(--mono);font-size:18px;font-weight:600;color:var(--text);}
+.taalim-stat .lbl{font-size:11px;color:var(--text-3);margin-top:2px;}
 .taalim-visual{font-family:var(--mono);font-size:6px;line-height:1;
-  white-space:pre;letter-spacing:0;overflow-x:auto;padding:16px;
+  white-space:pre;letter-spacing:0;overflow-x:auto;padding:14px;
   background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);}
 .taalim-rows{font-family:var(--mono);font-size:10px;line-height:1.8;
-  max-height:400px;overflow-y:auto;padding:16px;background:var(--surface);
+  max-height:300px;overflow-y:auto;padding:14px;background:var(--surface);
   border-radius:var(--radius);border:1px solid var(--border);}
 
 /* ─── COLOPHON ─────────────────────────────────────────────── */
-#colophon{padding:100px 24px 60px;color:var(--text-3);font-size:14px;}
+#colophon{padding:160px 24px 60px;color:var(--text-3);font-size:14px;
+  border-top:1px solid var(--border);margin-top:40px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
   gap:40px;max-width:860px;margin:0 auto;}
 .footer-col h4{font-size:11px;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.1em;color:var(--text-2);margin-bottom:12px;}
-.footer-col p{margin-bottom:6px;font-size:14px;line-height:1.6;}
-.footer-col a{color:var(--text-2);text-decoration:underline;text-underline-offset:3px;}
-.footer-col a:hover{color:var(--text);}
+  letter-spacing:0.1em;color:var(--text);margin-bottom:12px;}
+.footer-col p{margin-bottom:6px;font-size:14px;line-height:1.6;color:var(--text-3);}
+.footer-col a{color:var(--text);text-decoration:underline;text-underline-offset:3px;}
+.footer-col a:hover{color:var(--text-3);}
 
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
 @media(max-width:900px){
@@ -215,11 +241,13 @@ section{padding:120px 0;position:relative;z-index:2;}
   .col{margin-left:16px;margin-right:16px;}
   .generator-frame{margin-left:12px;margin-right:12px;padding:24px 16px;}
   .gen-controls{flex-direction:column;align-items:stretch;}
+  .gen-params{flex-direction:column;align-items:stretch;}
   .gen-export{flex-direction:column;}
-  .specimen-line{font-size:clamp(36px,14vw,56px);}
-  .specimen-numbers{font-size:clamp(28px,10vw,48px);}
+  .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));}
+  .specimen-numbers-grid{grid-template-columns:repeat(5,1fr);}
   .hero-title{font-size:clamp(40px,12vw,72px);}
   .footer-grid{grid-template-columns:1fr 1fr;gap:24px;}
+  .solitreo-gallery img{height:200px;}
 }
 @media(max-width:400px){
   .footer-grid{grid-template-columns:1fr;}
@@ -240,7 +268,6 @@ section{padding:120px 0;position:relative;z-index:2;}
 <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
 <section id="hero">
   <div class="col">
-    <div class="hero-solitreo">גאנגוס טאאלים</div>
     <h1 class="hero-title">Ganchos<br>Taalim</h1>
     <p class="hero-sub">Translating Sephardic names into generative woven patterns through the Solitreo script.</p>
   </div>
@@ -258,27 +285,27 @@ section{padding:120px 0;position:relative;z-index:2;}
     <div class="solitreo-gallery">
       <figure>
         <img src="el-tiempo-masthead.jpg" alt="Masthead of El Tiempo, the prominent Ladino newspaper printed in Rashi Hebrew script">
-        <figcaption>El Tiempo — a major Ladino newspaper published in Istanbul, its masthead set in Rashi script.</figcaption>
+        <figcaption>El Tiempo — Ladino newspaper, Istanbul. Rashi script masthead.</figcaption>
       </figure>
       <figure>
         <img src="poema-relijyoza-01.jpg" alt="Aged parchment manuscript page of a Poema Relijyoza, a religious poem handwritten in Solitreo cursive script">
-        <figcaption>Poema Relijyoza — a religious poem handwritten in Solitreo on aged parchment, showing the dense flowing cursive of everyday Ladino writing.</figcaption>
+        <figcaption>Poema Relijyoza — religious poem in Solitreo on parchment.</figcaption>
       </figure>
       <figure>
         <img src="komunikado-de-smirna.jpg" alt="Komunikado from the Gran Rabinato of Smirna, 1945, combining typed Ladino text with handwritten Solitreo script and an official stamp">
-        <figcaption>Komunikado de Smirna, 1945 — an official communiqué from the Gran Rabinato combining typed Ladino with handwritten Solitreo.</figcaption>
+        <figcaption>Komunikado de Smirna, 1945 — Gran Rabinato communique.</figcaption>
       </figure>
       <figure>
-        <img src="poema-relijyoza-02.jpg" alt="Open manuscript book showing four pages of handwritten Solitreo text, a religious poem in Ladino cursive">
-        <figcaption>Poema Relijyoza — four pages of an open Solitreo manuscript, showing the density and rhythm of the handwritten script.</figcaption>
+        <img src="poema-relijyoza-02.jpg" alt="Open manuscript book showing four pages of handwritten Solitreo text">
+        <figcaption>Poema Relijyoza — open manuscript, four pages of Solitreo.</figcaption>
       </figure>
       <figure>
-        <img src="izmir-marriage-solitreo.jpg" alt="Izmir community marriage records written in Solitreo script with detailed financial entries and columns of numbers">
-        <figcaption>Izmir marriage records — community ledger written in Solitreo, combining cursive text with financial entries.</figcaption>
+        <img src="izmir-marriage-solitreo.jpg" alt="Izmir community marriage records written in Solitreo script with financial entries">
+        <figcaption>Izmir marriage records — community ledger in Solitreo.</figcaption>
       </figure>
       <figure>
-        <img src="gnchs_01_.jpeg" alt="Handwritten Solitreo script on lined notebook paper in blue ink, showing the flowing connected letterforms of the Ladino cursive tradition">
-        <figcaption>Handwritten Solitreo on paper — the flowing connected forms that define Ladino cursive writing.</figcaption>
+        <img src="gnchs_01_.jpeg" alt="Handwritten Solitreo script on lined notebook paper in blue ink">
+        <figcaption>Handwritten Solitreo — modern cursive practice.</figcaption>
       </figure>
     </div>
   </div>
@@ -320,18 +347,13 @@ section{padding:120px 0;position:relative;z-index:2;}
     </div>
 
     <div class="specimen-section">
-      <div class="specimen-label">Hebrew Letters</div>
-      <div class="specimen-line" id="specimenLetters"></div>
-    </div>
-
-    <div class="specimen-section">
-      <div class="specimen-label">Dagesh &amp; Rafe Forms</div>
-      <div class="specimen-line" id="specimenDagesh"></div>
+      <div class="specimen-label">Hebrew Letters &amp; Dagesh / Rafe</div>
+      <div class="specimen-grid" id="specimenAll"></div>
     </div>
 
     <div class="specimen-section">
       <div class="specimen-label">Numbers</div>
-      <div class="specimen-numbers" id="specimenNumbers"></div>
+      <div class="specimen-numbers-grid" id="specimenNumbers"></div>
     </div>
   </div>
 </section>
@@ -341,7 +363,7 @@ section{padding:120px 0;position:relative;z-index:2;}
   <div class="generator-frame">
     <div class="gen-header">
       <h2>Generate Your Pattern</h2>
-      <p>Type a name in Latin letters. The algorithm does the rest.</p>
+      <p>Type a name in Latin letters. Adjust style and parameters below.</p>
     </div>
 
     <div class="name-input-wrap">
@@ -355,17 +377,54 @@ section{padding:120px 0;position:relative;z-index:2;}
     <div class="gen-controls">
       <label>Size
         <select id="rugPreset" autocomplete="off">
-          <option value="18,30" selected>Yastik — 18×30</option>
-          <option value="36,60">Seccade — 36×60</option>
-          <option value="48,72">Accent — 48×72</option>
-          <option value="30,96">Runner — 30×96</option>
-          <option value="60,90">Area — 60×90</option>
+          <option value="18,30" selected>Yastik 18x30</option>
+          <option value="36,60">Seccade 36x60</option>
+          <option value="48,72">Accent 48x72</option>
+          <option value="30,96">Runner 30x96</option>
+          <option value="60,90">Area 60x90</option>
           <option value="">Custom</option>
         </select>
       </label>
       <label>W <input type="number" id="rugW" value="18" min="8" max="256"></label>
       <label>H <input type="number" id="rugH" value="30" min="8" max="256"></label>
       <button class="btn" id="remixBtn">Remix</button>
+    </div>
+
+    <div class="gen-params">
+      <label>Style
+        <select id="patternStyle" autocomplete="off">
+          <option value="letterform" selected>Letterform</option>
+          <option value="geometric">Geometric</option>
+          <option value="kilim">Kilim</option>
+          <option value="medallion">Medallion</option>
+          <option value="striped">Striped</option>
+        </select>
+      </label>
+      <label>Symmetry
+        <select id="symmetryMode" autocomplete="off">
+          <option value="auto" selected>Auto</option>
+          <option value="none">None</option>
+          <option value="vertical">Vertical</option>
+          <option value="horizontal">Horizontal</option>
+          <option value="both">Both</option>
+        </select>
+      </label>
+      <label>Border
+        <select id="borderStyle" autocomplete="off">
+          <option value="auto" selected>Auto</option>
+          <option value="none">None</option>
+          <option value="simple">Simple</option>
+          <option value="double">Double</option>
+          <option value="stepped">Stepped</option>
+        </select>
+      </label>
+      <label>Complexity
+        <select id="complexityLevel" autocomplete="off">
+          <option value="simple">Simple</option>
+          <option value="medium" selected>Medium</option>
+          <option value="complex">Complex</option>
+        </select>
+      </label>
     </div>
 
     <div class="canvas-wrap">
@@ -379,17 +438,13 @@ section{padding:120px 0;position:relative;z-index:2;}
       <button class="btn-outline" onclick="doExportPNG()">Export PNG</button>
       <button class="btn-outline" onclick="doExportTXT()">Copy Taalim</button>
     </div>
-  </div>
-</section>
 
-<!-- ═══════════════════════════ TAALIM ════════════════════════ -->
-<section id="taalim">
-  <div class="col">
-    <div class="section-label">Weaving Instructions</div>
-    <h2 class="section-title">Taalim</h2>
-    <div id="taalimBody">
-      <p style="color:var(--text-3);">Enter a name above to generate weaving instructions.</p>
-    </div>
+    <details class="gen-taalim">
+      <summary>Weaving Instructions (Taalim)</summary>
+      <div class="taalim-content" id="taalimBody">
+        <p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -602,16 +657,23 @@ function getPatternCell(t,x,y){
     case'houndstooth':{const bx=Math.floor(x/4),by=Math.floor(y/4),ix=x%4,iy=y%4;const b=((ix+iy)%4<2)?1:0;return(bx+by)%2===0?b:1-b;}
     case'basket':return(Math.floor(x/2)+Math.floor(y/2))%2;
     case'waffle':{const cx=x%8,cy=y%8;if(cx===0||cy===0)return 1;if(cx===4||cy===4)return 0;return(cx+cy)%2;}
+    case'diamond':{const s=Math.max(1,Math.floor(Math.min(x,y)/2)+2);return(Math.abs((x%s)-Math.floor(s/2))+Math.abs((y%s)-Math.floor(s/2))<=Math.floor(s/2))?1:0;}
+    case'zigzag':{const p=8;const phase=y%p;const v=(x+phase)%(p*2);return v<p?1:0;}
+    case'cross':{const s=6;return(x%s===Math.floor(s/2)||y%s===Math.floor(s/2))?1:0;}
+    case'dots':{return(x%4===0&&y%4===0)?1:0;}
     default:return 0;
   }
 }
-const PATTERNS=['tabby','twill22','twill31','satin5','herringbone','houndstooth','basket','waffle'];
+const PATTERNS=['tabby','twill22','twill31','satin5','herringbone','houndstooth','basket','waffle','diamond','zigzag','cross','dots'];
 
 function getBorderVal(bp,x,y){
   switch(bp){
     case 0:return 1;case 1:return(y%2===0)?1:0;
     case 2:return(x%4<2)?1:0;case 3:return((x+y)%4<2)?1:0;
-    case 4:return((x%6<3)^(y%6<3))?1:0;default:return 1;
+    case 4:return((x%6<3)^(y%6<3))?1:0;
+    case 5:return(x%3===0)?1:0;
+    case 6:return((x+y)%2===0&&(x%4<2))?1:0;
+    default:return 1;
   }
 }
 
@@ -619,30 +681,94 @@ function getBorderVal(bp,x,y){
 function mapRange(v,inMin,inMax,outMin,outMax){
   return outMin+(v-inMin)/(inMax-inMin)*(outMax-outMin);
 }
-function computeComposition(features,rugW,rugH,rng){
+
+function getSymmetryFromUI(features){
+  const sel=document.getElementById('symmetryMode').value;
+  if(sel==='none') return 0;
+  if(sel==='vertical') return 1;
+  if(sel==='horizontal') return 2;
+  if(sel==='both') return 3;
+  // auto
   const n=features.length;
-  const avgDensity=features.reduce((s,f)=>s+f.density,0)/n;
-  const borderWidth=Math.round(mapRange(Math.min(Math.max(avgDensity,0.05),0.4),0.05,0.4,2,Math.min(6,Math.floor(rugW*0.08))));
   const avgSymV=features.reduce((s,f)=>s+f.vertSymmetry,0)/n;
   const avgSymH=features.reduce((s,f)=>s+f.horizSymmetry,0)/n;
-  let symmetryMode=0;
-  if(avgSymV>0.6&&avgSymH>0.6)symmetryMode=3;
-  else if(avgSymV>0.55)symmetryMode=1;
-  else if(avgSymH>0.55)symmetryMode=2;
-  if(symmetryMode===0&&rng()>0.3)symmetryMode=rng()>0.5?1:3;
-  const hasCentralMotif=(n%2===1);
-  const zoneCount=Math.min(n,Math.max(3,Math.ceil(n/2)));
-  return{borderWidth,symmetryMode,hasCentralMotif,zoneCount};
+  if(avgSymV>0.6&&avgSymH>0.6)return 3;
+  if(avgSymV>0.55)return 1;
+  if(avgSymH>0.55)return 2;
+  return 3;
 }
-function generateBorder(g,w,h,bw,firstF,lastF,rng){
-  const patIdx=Math.floor(firstF.strokeDir*5)%5;
-  for(let layer=0;layer<bw;layer++){
-    for(let x=0;x<w;x++){const v=getBorderVal(patIdx,x,layer);g[layer][x]=v;g[h-1-layer][x]=v;}
-    for(let y=0;y<h;y++){const v=getBorderVal(patIdx,y,layer);g[y][layer]=v;g[y][w-1-layer]=v;}
+
+function getBorderWidth(features,rugW,rng){
+  const sel=document.getElementById('borderStyle').value;
+  if(sel==='none') return 0;
+  const n=features.length;
+  const avgDensity=features.reduce((s,f)=>s+f.density,0)/n;
+  if(sel==='simple') return Math.max(1,Math.min(3,Math.floor(rugW*0.04)));
+  if(sel==='double') return Math.max(3,Math.min(6,Math.floor(rugW*0.08)));
+  if(sel==='stepped') return Math.max(4,Math.min(8,Math.floor(rugW*0.1)));
+  // auto
+  return Math.round(mapRange(Math.min(Math.max(avgDensity,0.05),0.4),0.05,0.4,2,Math.min(6,Math.floor(rugW*0.08))));
+}
+
+function computeComposition(features,rugW,rugH,rng){
+  const n=features.length;
+  const borderWidth=getBorderWidth(features,rugW,rng);
+  const symmetryMode=getSymmetryFromUI(features);
+  const style=document.getElementById('patternStyle').value;
+  const complexity=document.getElementById('complexityLevel').value;
+  const hasCentralMotif=style==='medallion'||(style==='letterform'&&n%2===1)||(style==='geometric'&&rng()>0.4);
+  const zoneCount=complexity==='simple'?Math.max(2,Math.ceil(n/3)):
+                  complexity==='complex'?Math.max(4,n):
+                  Math.min(n,Math.max(3,Math.ceil(n/2)));
+  return{borderWidth,symmetryMode,hasCentralMotif,zoneCount,style,complexity};
+}
+
+function generateBorder(g,w,h,bw,firstF,lastF,rng,style){
+  const bsel=document.getElementById('borderStyle').value;
+  if(bw<=0)return;
+  const patIdx=Math.floor(firstF.strokeDir*7)%7;
+  if(bsel==='stepped'||style==='geometric'){
+    // Stepped border: alternating fill/empty layers
+    for(let layer=0;layer<bw;layer++){
+      const isFilled=layer%2===0;
+      const bp=isFilled?patIdx:0;
+      for(let x=0;x<w;x++){const v=isFilled?getBorderVal(bp,x,layer):((x+layer)%3===0?1:0);g[layer][x]=v;g[h-1-layer][x]=v;}
+      for(let y=0;y<h;y++){const v=isFilled?getBorderVal(bp,y,layer):((y+layer)%3===0?1:0);g[y][layer]=v;g[y][w-1-layer]=v;}
+    }
+  }else if(bsel==='double'){
+    // Double border: outer solid, gap, inner pattern
+    for(let x=0;x<w;x++){g[0][x]=1;g[h-1][x]=1;if(bw>2){g[bw-1][x]=getBorderVal(patIdx,x,0);g[h-bw][x]=getBorderVal(patIdx,x,0);}}
+    for(let y=0;y<h;y++){g[y][0]=1;g[y][w-1]=1;if(bw>2){g[y][bw-1]=getBorderVal(patIdx,y,0);g[y][w-bw]=getBorderVal(patIdx,y,0);}}
+  }else{
+    for(let layer=0;layer<bw;layer++){
+      for(let x=0;x<w;x++){const v=getBorderVal(patIdx,x,layer);g[layer][x]=v;g[h-1-layer][x]=v;}
+      for(let y=0;y<h;y++){const v=getBorderVal(patIdx,y,layer);g[y][layer]=v;g[y][w-1-layer]=v;}
+    }
+  }
+  // Corner accents for complex designs
+  const complexity=document.getElementById('complexityLevel').value;
+  if(complexity!=='simple'&&bw>=3){
+    for(let dy=0;dy<bw;dy++)for(let dx=0;dx<bw;dx++){
+      const v=(dx+dy)%2;
+      g[dy][dx]=v;g[dy][w-1-dx]=v;
+      g[h-1-dy][dx]=v;g[h-1-dy][w-1-dx]=v;
+    }
   }
 }
-function fillZone(g,x0,y0,w,h,feature,rng){
-  const patIdx=Math.min(PATTERNS.length-1,Math.floor(feature.density*PATTERNS.length*1.5)%PATTERNS.length);
+
+function fillZone(g,x0,y0,w,h,feature,rng,style,complexity){
+  let patIdx;
+  if(style==='kilim'){
+    patIdx=PATTERNS.indexOf('tabby');
+    if(rng()>0.5)patIdx=PATTERNS.indexOf('zigzag');
+  }else if(style==='geometric'){
+    const geoPatterns=['diamond','cross','houndstooth','zigzag'];
+    patIdx=PATTERNS.indexOf(geoPatterns[Math.floor(rng()*geoPatterns.length)]);
+  }else if(style==='striped'){
+    patIdx=rng()>0.5?PATTERNS.indexOf('twill22'):PATTERNS.indexOf('twill31');
+  }else{
+    patIdx=Math.min(PATTERNS.length-1,Math.floor(feature.density*PATTERNS.length*1.5)%PATTERNS.length);
+  }
   const basePattern=PATTERNS[patIdx];
   const scaleX=Math.max(1,Math.round(feature.aspectRatio*2));
   const scaleY=Math.max(1,Math.round((1/Math.max(0.1,feature.aspectRatio))*2));
@@ -653,52 +779,144 @@ function fillZone(g,x0,y0,w,h,feature,rng){
       g[gy][gx]=getPatternCell(basePattern,Math.floor((x+phaseX)/scaleX),Math.floor((y+phaseY)/scaleY));
     }
   }
-  if(feature.strokeDir>0.6){
-    const spacing=Math.max(3,Math.round(h/(feature.components+1)));
-    for(let y=spacing;y<h;y+=spacing)for(let x=0;x<w;x++){const gy=y0+y,gx=x0+x;if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;}
-  }else if(feature.strokeDir<0.4){
-    const spacing=Math.max(3,Math.round(w/(feature.components+1)));
-    for(let x=spacing;x<w;x+=spacing)for(let y=0;y<h;y++){const gy=y0+y,gx=x0+x;if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;}
+  // Accent lines
+  if(complexity!=='simple'){
+    if(feature.strokeDir>0.6){
+      const spacing=Math.max(3,Math.round(h/(feature.components+1)));
+      for(let y=spacing;y<h;y+=spacing)for(let x=0;x<w;x++){const gy=y0+y,gx=x0+x;if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;}
+    }else if(feature.strokeDir<0.4){
+      const spacing=Math.max(3,Math.round(w/(feature.components+1)));
+      for(let x=spacing;x<w;x+=spacing)for(let y=0;y<h;y++){const gy=y0+y,gx=x0+x;if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;}
+    }
   }
-  const motifCount=Math.floor(rng()*feature.components*2);
+  // Scattered motifs
+  const motifCount=complexity==='complex'?Math.floor(rng()*feature.components*4)+2:
+                   complexity==='simple'?0:Math.floor(rng()*feature.components*2);
   for(let m=0;m<motifCount;m++){
-    const mx=x0+Math.floor(rng()*w),my=y0+Math.floor(rng()*h),ms=Math.floor(rng()*3)+1;
+    const mx=x0+Math.floor(rng()*w),my=y0+Math.floor(rng()*h);
+    const ms=complexity==='complex'?Math.floor(rng()*4)+1:Math.floor(rng()*3)+1;
+    const motifType=rng();
     for(let dy=-ms;dy<=ms;dy++)for(let dx=-ms;dx<=ms;dx++){
-      if(Math.abs(dx)+Math.abs(dy)<=ms){const gx=mx+dx,gy=my+dy;if(gy>=0&&gy<g.length&&gx>=0&&gx<g[0].length)g[gy][gx]=1-g[gy][gx];}
+      let inside;
+      if(motifType>0.66) inside=(dx*dx+dy*dy)<=ms*ms; // circle
+      else if(motifType>0.33) inside=Math.abs(dx)+Math.abs(dy)<=ms; // diamond
+      else inside=Math.abs(dx)<=ms&&Math.abs(dy)<=ms; // square
+      if(inside){const gx=mx+dx,gy=my+dy;if(gy>=0&&gy<g.length&&gx>=0&&gx<g[0].length)g[gy][gx]=1-g[gy][gx];}
     }
   }
 }
-function generateMedallion(g,x0,y0,w,h,feature,rng){
+
+function generateMedallion(g,x0,y0,w,h,feature,rng,style,complexity){
   const cx=x0+Math.floor(w/2),cy=y0+Math.floor(h/2);
-  const maxR=Math.floor(Math.min(w,h)*0.25);
-  const r=Math.max(3,Math.round(maxR*(0.5+feature.density)));
+  const maxR=Math.floor(Math.min(w,h)*0.3);
+  const r=Math.max(3,Math.round(maxR*(0.4+feature.density*0.8)));
   const avgSym=(feature.vertSymmetry+feature.horizSymmetry)/2;
+  // Outer ring
+  if(complexity!=='simple'){
+    const outerR=r+Math.max(1,Math.floor(r*0.3));
+    for(let dy=-outerR;dy<=outerR;dy++)for(let dx=-outerR;dx<=outerR;dx++){
+      const gx=cx+dx,gy=cy+dy;
+      if(gx<x0||gx>=x0+w||gy<y0||gy>=y0+h)continue;
+      const dist=dx*dx+dy*dy;
+      if(dist<=outerR*outerR&&dist>r*r) g[gy][gx]=(dx+dy)%2===0?1:0;
+    }
+  }
+  // Inner medallion
   for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
     const gx=cx+dx,gy=cy+dy;
     if(gx<x0||gx>=x0+w||gy<y0||gy>=y0+h)continue;
     let inside=false;
-    if(avgSym>0.65)inside=(dx*dx+dy*dy)<=r*r;
-    else if(avgSym>0.5)inside=(Math.abs(dx)+Math.abs(dy))<=r*1.2&&Math.abs(dx)<=r&&Math.abs(dy)<=r;
+    if(style==='geometric'||avgSym>0.65) inside=(dx*dx+dy*dy)<=r*r;
+    else if(style==='medallion') inside=Math.abs(dx)+Math.abs(dy)<=r*1.1;
+    else if(avgSym>0.5) inside=(Math.abs(dx)+Math.abs(dy))<=r*1.2&&Math.abs(dx)<=r&&Math.abs(dy)<=r;
     else inside=(Math.abs(dx)+Math.abs(dy))<=r;
-    if(inside){const contrastPat=PATTERNS[(Math.floor(feature.strokeDir*8))%PATTERNS.length];g[gy][gx]=getPatternCell(contrastPat,dx+r,dy+r);}
+    if(inside){
+      const contrastPat=PATTERNS[(Math.floor(feature.strokeDir*PATTERNS.length))%PATTERNS.length];
+      g[gy][gx]=getPatternCell(contrastPat,dx+r,dy+r);
+    }
+  }
+  // Center dot for complex
+  if(complexity==='complex'){
+    const dotR=Math.max(1,Math.floor(r*0.2));
+    for(let dy=-dotR;dy<=dotR;dy++)for(let dx=-dotR;dx<=dotR;dx++){
+      if(dx*dx+dy*dy<=dotR*dotR){
+        const gx=cx+dx,gy=cy+dy;
+        if(gy>=0&&gy<g.length&&gx>=0&&gx<g[0].length) g[gy][gx]=1;
+      }
+    }
   }
 }
+
 function applySymmetry(g,x0,y0,w,h,mode){
   if(mode===1||mode===3){for(let y=0;y<h;y++)for(let x=0;x<Math.floor(w/2);x++)g[y0+y][x0+w-1-x]=g[y0+y][x0+x];}
   if(mode===2||mode===3){for(let y=0;y<Math.floor(h/2);y++)for(let x=0;x<w;x++)g[y0+h-1-y][x0+x]=g[y0+y][x0+x];}
 }
+
+function generateKilimBands(g,x0,y0,w,h,features,rng){
+  const bandCount=Math.max(3,Math.min(features.length*2,12));
+  const bandH=Math.floor(h/bandCount);
+  for(let b=0;b<bandCount;b++){
+    const feat=features[b%features.length];
+    const by=y0+b*bandH;
+    const bh=(b===bandCount-1)?h-b*bandH:bandH;
+    const pat=b%2===0?'tabby':'zigzag';
+    const scale=Math.max(1,Math.round(feat.density*4));
+    for(let y=0;y<bh;y++)for(let x=0;x<w;x++){
+      const gx=x0+x,gy=by+y;
+      if(gy<g.length&&gx<g[0].length){
+        g[gy][gx]=getPatternCell(pat,Math.floor(x/scale),Math.floor(y/scale));
+      }
+    }
+    // Divider line
+    if(b<bandCount-1){
+      const divY=by+bh-1;
+      if(divY<g.length)for(let x=0;x<w;x++){const gx=x0+x;if(gx<g[0].length)g[divY][gx]=1;}
+    }
+  }
+}
+
+function generateStriped(g,x0,y0,w,h,features,rng){
+  const stripeCount=Math.max(4,features.length*2);
+  const stripeW=Math.floor(w/stripeCount);
+  for(let s=0;s<stripeCount;s++){
+    const feat=features[s%features.length];
+    const sx=x0+s*stripeW;
+    const sw=(s===stripeCount-1)?w-s*stripeW:stripeW;
+    const patIdx=Math.floor(feat.density*PATTERNS.length)%PATTERNS.length;
+    const pat=PATTERNS[patIdx];
+    for(let y=0;y<h;y++)for(let x=0;x<sw;x++){
+      const gx=sx+x,gy=y0+y;
+      if(gy<g.length&&gx<g[0].length) g[gy][gx]=getPatternCell(pat,x,y);
+    }
+  }
+}
+
 function generateField(g,w,h,bw,features,comp,rng){
   const ix=bw,iy=bw,iw=w-bw*2,ih=h-bw*2;
   if(iw<=0||ih<=0)return;
+
+  if(comp.style==='kilim'){
+    generateKilimBands(g,ix,iy,iw,ih,features,rng);
+    applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
+    return;
+  }
+  if(comp.style==='striped'){
+    generateStriped(g,ix,iy,iw,ih,features,rng);
+    applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
+    return;
+  }
+
   let workW=iw,workH=ih;
   if(comp.symmetryMode===1||comp.symmetryMode===3)workW=Math.ceil(iw/2);
   if(comp.symmetryMode===2||comp.symmetryMode===3)workH=Math.ceil(ih/2);
   const zoneH=Math.floor(workH/comp.zoneCount);
   for(let z=0;z<comp.zoneCount;z++){
     const feat=features[z%features.length],zy=z*zoneH,zh=(z===comp.zoneCount-1)?workH-zy:zoneH;
-    fillZone(g,ix,iy+zy,workW,zh,feat,rng);
+    fillZone(g,ix,iy+zy,workW,zh,feat,rng,comp.style,comp.complexity);
   }
-  if(comp.hasCentralMotif){generateMedallion(g,ix,iy,iw,ih,features[Math.floor(features.length/2)],rng);}
+  if(comp.hasCentralMotif){
+    generateMedallion(g,ix,iy,iw,ih,features[Math.floor(features.length/2)],rng,comp.style,comp.complexity);
+  }
   applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
 }
 
@@ -708,7 +926,7 @@ function generatePattern(){
   if(!name){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3)">Enter a name above to generate weaving instructions.</p>';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>';
     return;
   }
   const seed=remixCounter>0?name+'_'+remixCounter:name;
@@ -717,7 +935,7 @@ function generatePattern(){
   if(solitreoChars.length===0){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='No transliterable characters found.';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3)">Enter a name with Latin letters to generate weaving instructions.</p>';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';
     return;
   }
   const features=solitreoChars.map(ch=>{const bmp=rasterizeFromFont(ch,28);return bmp?extractFeatures(bmp):defaultFeatures();});
@@ -725,12 +943,14 @@ function generatePattern(){
   H=parseInt(document.getElementById('rugH').value)||30;
   grid=[];for(let y=0;y<H;y++)grid[y]=new Array(W).fill(0);
   const comp=computeComposition(features,W,H,rng);
-  generateBorder(grid,W,H,comp.borderWidth,features[0],features[features.length-1],rng);
+  const style=document.getElementById('patternStyle').value;
+  generateBorder(grid,W,H,comp.borderWidth,features[0],features[features.length-1],rng,style);
   generateField(grid,W,H,comp.borderWidth,features,comp,rng);
   if(rugSketch)rugSketch.refresh();
   let filled=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
   const density=((filled/(W*H))*100).toFixed(1);
-  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% density \u00b7 seed: '+seed;
+  const pStyle=document.getElementById('patternStyle').value;
+  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 '+pStyle+' \u00b7 seed: '+seed;
   generateTaalim();
 }
 
@@ -766,7 +986,7 @@ function generateTaalim(){
 function downloadFile(n,c,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
 function doExportWIF(){
   if(!grid.length)return;const name=document.getElementById('nameInput').value.trim()||'pattern';
-  let wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\nDevelopers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=8.0\n\n';
+  let wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\nDevelopers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=9.0\n\n';
   wif+='[CONTENTS]\nCOLOR PALETTE=true\nCOLOR TABLE=true\nWEAVING=true\nWARP=true\nWEFT=true\nTHREADING=true\nTIEUP=true\nLIFTPLAN=true\n\n';
   wif+='[COLOR PALETTE]\nRange=0,255\nEntries=2\n\n[COLOR TABLE]\n1=0,0,0\n2=255,255,255\n\n';
   wif+='[WEAVING]\nShafts='+W+'\nTreadles='+H+'\nRising Shed=true\n\n';
@@ -779,7 +999,7 @@ function doExportWIF(){
 function doExportPNG(){
   if(!grid.length)return;const name=document.getElementById('nameInput').value.trim()||'pattern';
   const sc=4,ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;const ectx=ec.getContext('2d');
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ectx.fillStyle=grid[y][x]?'#1A1A1A':'#F5F5F0';ectx.fillRect(x*sc,y*sc,sc,sc);}
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';ectx.fillRect(x*sc,y*sc,sc,sc);}
   const a=document.createElement('a');a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';a.href=ec.toDataURL('image/png');a.click();
 }
 function doExportTXT(){
@@ -799,7 +1019,7 @@ function createRugSketch(containerEl){
       const maxW=containerEl.clientWidth||600,maxH=Math.min(window.innerHeight*0.65,700);
       cellSize=Math.max(2,Math.floor(Math.min(maxW/W,maxH/H)));
       p.resizeCanvas(W*cellSize,H*cellSize);p.background(245,245,240);p.noStroke();
-      for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(grid[y][x]){p.fill(26,26,26);p.rect(x*cellSize,y*cellSize,cellSize,cellSize);}}
+      for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(grid[y][x]){p.fill(17,17,17);p.rect(x*cellSize,y*cellSize,cellSize,cellSize);}}
       if(cellSize>5){p.stroke(0,0,0,12);p.strokeWeight(0.5);for(let x=0;x<=W;x++)p.line(x*cellSize,0,x*cellSize,H*cellSize);for(let y=0;y<=H;y++)p.line(0,y*cellSize,W*cellSize,y*cellSize);}
     };
     p.refresh=function(){p.redraw();};
@@ -807,37 +1027,37 @@ function createRugSketch(containerEl){
 }
 
 // ─── TYPE SPECIMEN DATA ─────────────────────────────────────────
-const LETTERS=[
+const ALL_GLYPHS=[
+  // Hebrew Letters
   {ch:'\u05D0',tip:'Alef \u2014 a'},{ch:'\u05D1',tip:'Bet \u2014 b'},{ch:'\u05D2',tip:'Gimel \u2014 g'},
   {ch:'\u05D3',tip:'Dalet \u2014 d'},{ch:'\u05D4',tip:'He \u2014 h'},{ch:'\u05D5',tip:'Vav \u2014 v/u/o'},
   {ch:'\u05D6',tip:'Zayin \u2014 z'},{ch:'\u05D7',tip:'Chet \u2014 ch'},{ch:'\u05D8',tip:'Tet \u2014 t'},
-  {ch:'\u05D9',tip:'Yod \u2014 y/i/e'},{ch:'\u05DB',tip:'Kaf \u2014 k'},{ch:'\u05DA',tip:'Final Kaf \u2014 k'},
-  {ch:'\u05DC',tip:'Lamed \u2014 l'},{ch:'\u05DE',tip:'Mem \u2014 m'},{ch:'\u05DD',tip:'Final Mem \u2014 m'},
-  {ch:'\u05E0',tip:'Nun \u2014 n'},{ch:'\u05DF',tip:'Final Nun \u2014 n'},{ch:'\u05E1',tip:'Samekh \u2014 s'},
-  {ch:'\u05E2',tip:'Ayin'},{ch:'\u05E4',tip:'Pe \u2014 p/f'},{ch:'\u05E3',tip:'Final Pe \u2014 p/f'},
-  {ch:'\u05E6',tip:'Tsadi \u2014 ts'},{ch:'\u05E5',tip:'Final Tsadi \u2014 ts'},
+  {ch:'\u05D9',tip:'Yod \u2014 y/i/e'},{ch:'\u05DB',tip:'Kaf \u2014 k'},{ch:'\u05DA',tip:'Final Kaf'},
+  {ch:'\u05DC',tip:'Lamed \u2014 l'},{ch:'\u05DE',tip:'Mem \u2014 m'},{ch:'\u05DD',tip:'Final Mem'},
+  {ch:'\u05E0',tip:'Nun \u2014 n'},{ch:'\u05DF',tip:'Final Nun'},{ch:'\u05E1',tip:'Samekh \u2014 s'},
+  {ch:'\u05E2',tip:'Ayin'},{ch:'\u05E4',tip:'Pe \u2014 p/f'},{ch:'\u05E3',tip:'Final Pe'},
+  {ch:'\u05E6',tip:'Tsadi \u2014 ts'},{ch:'\u05E5',tip:'Final Tsadi'},
   {ch:'\u05E7',tip:'Qof \u2014 q'},{ch:'\u05E8',tip:'Resh \u2014 r'},
-  {ch:'\u05E9',tip:'Shin \u2014 sh'},{ch:'\u05EA',tip:'Tav \u2014 t'}
-];
-const DAGESH_RAFE=[
-  {ch:'\uFB31',tip:'Bet Dagesh \u2014 b'},{ch:'\uFB32',tip:'Gimel Dagesh \u2014 g'},
-  {ch:'\uFB33',tip:'Dalet Dagesh \u2014 d'},{ch:'\uFB34',tip:'He Mapiq \u2014 h'},
-  {ch:'\uFB35',tip:'Vav Dagesh \u2014 u'},{ch:'\uFB36',tip:'Zayin Dagesh \u2014 z'},
-  {ch:'\uFB38',tip:'Tet Dagesh \u2014 t'},{ch:'\uFB39',tip:'Yod Dagesh \u2014 y'},
-  {ch:'\uFB3A',tip:'Final Kaf Dagesh'},{ch:'\uFB3B',tip:'Kaf Dagesh \u2014 k'},
-  {ch:'\uFB3C',tip:'Lamed Dagesh \u2014 l'},{ch:'\uFB3E',tip:'Mem Dagesh \u2014 m'},
-  {ch:'\uFB40',tip:'Nun Dagesh \u2014 n'},{ch:'\uFB41',tip:'Samekh Dagesh \u2014 s'},
-  {ch:'\uFB43',tip:'Final Pe Dagesh'},{ch:'\uFB44',tip:'Pe Dagesh \u2014 p'},
-  {ch:'\uFB46',tip:'Tsadi Dagesh \u2014 ts'},{ch:'\uFB47',tip:'Qof Dagesh \u2014 q'},
-  {ch:'\uFB48',tip:'Resh Dagesh \u2014 r'},{ch:'\uFB49',tip:'Shin Dagesh \u2014 sh'},
-  {ch:'\uFB4A',tip:'Tav Dagesh \u2014 t'},
-  {ch:'\uFB2A',tip:'Shin with Shin-Dot \u2014 sh'},{ch:'\uFB2B',tip:'Shin with Sin-Dot \u2014 s'},
+  {ch:'\u05E9',tip:'Shin \u2014 sh'},{ch:'\u05EA',tip:'Tav \u2014 t'},
+  // Dagesh & Rafe Forms
+  {ch:'\uFB31',tip:'Bet Dagesh'},{ch:'\uFB32',tip:'Gimel Dagesh'},
+  {ch:'\uFB33',tip:'Dalet Dagesh'},{ch:'\uFB34',tip:'He Mapiq'},
+  {ch:'\uFB35',tip:'Vav Dagesh'},{ch:'\uFB36',tip:'Zayin Dagesh'},
+  {ch:'\uFB38',tip:'Tet Dagesh'},{ch:'\uFB39',tip:'Yod Dagesh'},
+  {ch:'\uFB3A',tip:'Final Kaf Dagesh'},{ch:'\uFB3B',tip:'Kaf Dagesh'},
+  {ch:'\uFB3C',tip:'Lamed Dagesh'},{ch:'\uFB3E',tip:'Mem Dagesh'},
+  {ch:'\uFB40',tip:'Nun Dagesh'},{ch:'\uFB41',tip:'Samekh Dagesh'},
+  {ch:'\uFB43',tip:'Final Pe Dagesh'},{ch:'\uFB44',tip:'Pe Dagesh'},
+  {ch:'\uFB46',tip:'Tsadi Dagesh'},{ch:'\uFB47',tip:'Qof Dagesh'},
+  {ch:'\uFB48',tip:'Resh Dagesh'},{ch:'\uFB49',tip:'Shin Dagesh'},
+  {ch:'\uFB4A',tip:'Tav Dagesh'},
+  {ch:'\uFB2A',tip:'Shin + Shin-Dot'},{ch:'\uFB2B',tip:'Shin + Sin-Dot'},
   {ch:'\uFB2C',tip:'Shin Dagesh Shin-Dot'},{ch:'\uFB2D',tip:'Shin Dagesh Sin-Dot'},
   {ch:'\uFB4C',tip:'Bet Rafe \u2014 v'},{ch:'\uFB4D',tip:'Kaf Rafe \u2014 kh'},
   {ch:'\uFB4E',tip:'Pe Rafe \u2014 f'},
-  {ch:'\uFB1D',tip:'Yod Hiriq \u2014 yi'},
-  {ch:'\uFB2E',tip:'Alef Patah \u2014 a'},{ch:'\uFB2F',tip:'Alef Qamats \u2014 o'},
-  {ch:'\uFB30',tip:'Alef Mapiq'},{ch:'\uFB4B',tip:'Vav Holam \u2014 o'}
+  {ch:'\uFB1D',tip:'Yod Hiriq'},{ch:'\uFB2E',tip:'Alef Patah'},
+  {ch:'\uFB2F',tip:'Alef Qamats'},{ch:'\uFB30',tip:'Alef Mapiq'},
+  {ch:'\uFB4B',tip:'Vav Holam'}
 ];
 const NUMBERS=[
   {ch:'0',tip:'Zero'},{ch:'1',tip:'One'},{ch:'2',tip:'Two'},{ch:'3',tip:'Three'},
@@ -846,18 +1066,18 @@ const NUMBERS=[
 ];
 
 function buildSpecimen(){
-  function populate(containerId,data){
+  function populateGrid(containerId,data){
     const el=document.getElementById(containerId);if(!el)return;
     data.forEach(item=>{
-      const span=document.createElement('span');
-      span.textContent=item.ch;
-      span.setAttribute('data-tip',item.tip);
-      el.appendChild(span);
+      const div=document.createElement('div');
+      div.className='cell';
+      div.textContent=item.ch;
+      div.setAttribute('data-tip',item.tip);
+      el.appendChild(div);
     });
   }
-  populate('specimenLetters',LETTERS);
-  populate('specimenDagesh',DAGESH_RAFE);
-  populate('specimenNumbers',NUMBERS);
+  populateGrid('specimenAll',ALL_GLYPHS);
+  populateGrid('specimenNumbers',NUMBERS);
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
@@ -874,6 +1094,11 @@ document.getElementById('rugPreset').addEventListener('change',function(){
 });
 document.getElementById('rugW').addEventListener('change',()=>{document.getElementById('rugPreset').value='';generatePattern();});
 document.getElementById('rugH').addEventListener('change',()=>{document.getElementById('rugPreset').value='';generatePattern();});
+// Pattern params trigger regenerate
+document.getElementById('patternStyle').addEventListener('change',()=>generatePattern());
+document.getElementById('symmetryMode').addEventListener('change',()=>generatePattern());
+document.getElementById('borderStyle').addEventListener('change',()=>generatePattern());
+document.getElementById('complexityLevel').addEventListener('change',()=>generatePattern());
 
 // ─── SCROLL ANIMATIONS ─────────────────────────────────────────
 const observer=new IntersectionObserver((entries)=>{
