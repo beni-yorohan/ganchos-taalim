@@ -8,43 +8,40 @@
 <meta property="og:title" content="Ganchos Taalim — Generative Rug Design">
 <meta property="og:description" content="Translate Sephardic names into unique generative woven patterns through the Solitreo script.">
 <meta property="og:type" content="website">
-<meta name="theme-color" content="#e8f0ff">
+<meta name="theme-color" content="#A7C7FF">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧶</text></svg>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <style>
 /* ─── FONTS ─────────────────────────────────────────────────── */
 @font-face { font-family:'GanchosSans'; src:url('GanchosSansv8-Regular.ttf'); }
 
-/* ─── ANIMATED GRADIENT ────────────────────────────────────── */
-@property --grad-angle {
-  syntax:'<angle>'; initial-value:0deg; inherits:false;
-}
+/* ─── ANIMATED GRADIENT (linear vertical, bold palette) ────── */
 @property --c1 {
-  syntax:'<color>'; initial-value:#e8f0ff; inherits:false;
+  syntax:'<color>'; initial-value:#A7C7FF; inherits:false;
 }
 @property --c2 {
-  syntax:'<color>'; initial-value:#ffe4ec; inherits:false;
+  syntax:'<color>'; initial-value:#FFB3C6; inherits:false;
 }
 @property --c3 {
-  syntax:'<color>'; initial-value:#e4fff0; inherits:false;
+  syntax:'<color>'; initial-value:#A8F0D2; inherits:false;
 }
 @property --c4 {
-  syntax:'<color>'; initial-value:#fff4d6; inherits:false;
+  syntax:'<color>'; initial-value:#FFE08A; inherits:false;
 }
 @keyframes grad-shift {
-  0%   { --grad-angle:0deg;   --c1:#e8f0ff; --c2:#ffe4ec; --c3:#e4fff0; --c4:#fff4d6; }
-  25%  { --grad-angle:90deg;  --c1:#ffe4ec; --c2:#e4fff0; --c3:#fff4d6; --c4:#e8f0ff; }
-  50%  { --grad-angle:180deg; --c1:#e4fff0; --c2:#fff4d6; --c3:#e8f0ff; --c4:#ffe4ec; }
-  75%  { --grad-angle:270deg; --c1:#fff4d6; --c2:#e8f0ff; --c3:#ffe4ec; --c4:#e4fff0; }
-  100% { --grad-angle:360deg; --c1:#e8f0ff; --c2:#ffe4ec; --c3:#e4fff0; --c4:#fff4d6; }
+  0%   { --c1:#A7C7FF; --c2:#FFB3C6; --c3:#A8F0D2; --c4:#FFE08A; }
+  25%  { --c1:#FFB3C6; --c2:#A8F0D2; --c3:#FFE08A; --c4:#A7C7FF; }
+  50%  { --c1:#A8F0D2; --c2:#FFE08A; --c3:#A7C7FF; --c4:#FFB3C6; }
+  75%  { --c1:#FFE08A; --c2:#A7C7FF; --c3:#FFB3C6; --c4:#A8F0D2; }
+  100% { --c1:#A7C7FF; --c2:#FFB3C6; --c3:#A8F0D2; --c4:#FFE08A; }
 }
 
 /* ─── RESET & TOKENS ────────────────────────────────────────── */
 *{margin:0;padding:0;box-sizing:border-box;
-  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='32' viewBox='0 0 24 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23722F37'/%3E%3Cstop offset='100%25' stop-color='%234A1A20'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M12 0C12 0 4 10 4 18C4 24 7.5 28 12 28C16.5 28 20 24 20 18C20 10 12 0 12 0Z' fill='url(%23g)'/%3E%3Cellipse cx='9' cy='13' rx='2.5' ry='3.5' fill='%23fff' opacity='.18'/%3E%3C/svg%3E") 12 2, auto;
+  cursor:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADGUlEQVR4nO1XPW8TQRB9e3vnj4sT4wQoAoqADlGmgwLJQIWADihJQQV/gJaWngJRUaVAKVBEESkF/AMqfgAFAaQQJ87X3e4MentnYyE+gu1EQuKdxuPZfbP7dna9OgP/MSKezF7QUfKjYRNvTrTuP5yeC5PTMz4yATfSY9dm4tqzNIpDTM+Y7UcioGGTlXpkERsTYnrGbD90AXenTqxOxhWkcYKZaopWpR48Y7az/9AE3Jk6ealhK+3UJqhHCapRjCSywTNmO/vJO+iY8d8ImIiTx8erDZyspWhEFUAkCKjYGNPVFG5f4QGIwWMAV8ZagYXpU5cbcdI+PdnEmWMzmG1MoWYtkigKZ6DKSliLuo2R2rhN/lgFpDa5N5nU0KqmONc8jma1jom4EiqQmAgVa1GLYtQsLWzHvbEJWJg+dV5Vb2XOYTvfx4fNr+hm+9h1Dk4EuSg8TRWiChUF+cwbyxlQ1Zui2nLi8bm7BZ871KMYIh7WALk4OEMREkyUpi3mAXg/UgVuT52oi0qbg3oVbGa7+LjdQSfbRa4euXhk6uFU4NQHDq0QIW3mjyRARNsiejGUOJjAiYbSF+UX5N6Xca8KBZd5zB9NgMpFr9LwXF05KU87t4OrDxUQCvBle7ENga/SYP7QAq6nzTkYzPdiNRqsm+9ja8A2s73g2d7j9GEwH8YZRoCBOWtg5owx+NXTZ/7sKfLmOM5QApZ3Nt54lZVwqKCF8Wc28JS16T/s73HLA7nCcYYSQDjVJa+6Vpzs74MPvoVwpYwHRRaT6xrz8RtE+AOWdzbeOpWXvGT6F42GuyH4gIG4mLww5jF/JAGEU3nuVLYGt+J3FSCPfObhD4hwACzvdN7lKk+Ly6asxA9noJiYqw4rB/nMG4sAIlN5lKmsc3DfP4wljClKj2Jy8sjHARDhgHi909FM/YO8KG8hopRAKb3J2U8e+WMVQLza3ljcE7cabr7yV0HwM6xcPNhPHg7rnXCpu351L1zB3wUQjNnO/kN/K17c+mK2Jedeh5ieMduP7I/Ji84n0/V5+E7PGP/iX7P/+AZq4nErC0nlRgAAAABJRU5ErkJggg==") 16 2, auto;
 }
 a,button,[role="button"],input,select,label,.btn,.btn-outline,.specimen-cell{
-  cursor:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='32' viewBox='0 0 24 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23722F37'/%3E%3Cstop offset='100%25' stop-color='%234A1A20'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M12 0C12 0 4 10 4 18C4 24 7.5 28 12 28C16.5 28 20 24 20 18C20 10 12 0 12 0Z' fill='url(%23g)'/%3E%3Cellipse cx='9' cy='13' rx='2.5' ry='3.5' fill='%23fff' opacity='.18'/%3E%3C/svg%3E") 12 2, pointer;
+  cursor:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAADGUlEQVR4nO1XPW8TQRB9e3vnj4sT4wQoAoqADlGmgwLJQIWADihJQQV/gJaWngJRUaVAKVBEESkF/AMqfgAFAaQQJ87X3e4MentnYyE+gu1EQuKdxuPZfbP7dna9OgP/MSKezF7QUfKjYRNvTrTuP5yeC5PTMz4yATfSY9dm4tqzNIpDTM+Y7UcioGGTlXpkERsTYnrGbD90AXenTqxOxhWkcYKZaopWpR48Y7az/9AE3Jk6ealhK+3UJqhHCapRjCSywTNmO/vJO+iY8d8ImIiTx8erDZyspWhEFUAkCKjYGNPVFG5f4QGIwWMAV8ZagYXpU5cbcdI+PdnEmWMzmG1MoWYtkigKZ6DKSliLuo2R2rhN/lgFpDa5N5nU0KqmONc8jma1jom4EiqQmAgVa1GLYtQsLWzHvbEJWJg+dV5Vb2XOYTvfx4fNr+hm+9h1Dk4EuSg8TRWiChUF+cwbyxlQ1Zui2nLi8bm7BZ871KMYIh7WALk4OEMREkyUpi3mAXg/UgVuT52oi0qbg3oVbGa7+LjdQSfbRa4euXhk6uFU4NQHDq0QIW3mjyRARNsiejGUOJjAiYbSF+UX5N6Xca8KBZd5zB9NgMpFr9LwXF05KU87t4OrDxUQCvBle7ENga/SYP7QAq6nzTkYzPdiNRqsm+9ja8A2s73g2d7j9GEwH8YZRoCBOWtg5owx+NXTZ/7sKfLmOM5QApZ3Nt54lZVwqKCF8Wc28JS16T/s73HLA7nCcYYSQDjVJa+6Vpzs74MPvoVwpYwHRRaT6xrz8RtE+AOWdzbeOpWXvGT6F42GuyH4gIG4mLww5jF/JAGEU3nuVLYGt+J3FSCPfObhD4hwACzvdN7lKk+Ly6asxA9noJiYqw4rB/nMG4sAIlN5lKmsc3DfP4wljClKj2Jy8sjHARDhgHi909FM/YO8KG8hopRAKb3J2U8e+WMVQLza3ljcE7cabr7yV0HwM6xcPNhPHg7rnXCpu351L1zB3wUQjNnO/kN/K17c+mK2Jedeh5ieMduP7I/Ji84n0/V5+E7PGP/iX7P/+AZq4nErC0nlRgAAAABJRU5ErkJggg==") 16 2, pointer;
 }
 :root{
   --surface:#FFFFFF;
@@ -57,7 +54,7 @@ a,button,[role="button"],input,select,label,.btn,.btn-outline,.specimen-cell{
   --grid-on:#1A1A1A;
   --grid-off:#F5F5F0;
   --radius:6px;
-  --col:720px;
+  --col:800px;
   --font:Inter,-apple-system,system-ui,sans-serif;
   --mono:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
   --solitreo:'GanchosSans',serif;
@@ -65,15 +62,14 @@ a,button,[role="button"],input,select,label,.btn,.btn-outline,.specimen-cell{
 html{scroll-behavior:smooth;}
 body{
   font-family:var(--font);color:var(--text);
-  background:conic-gradient(from var(--grad-angle),var(--c1),var(--c2),var(--c3),var(--c4),var(--c1));
+  background:linear-gradient(to bottom,var(--c1),var(--c2),var(--c3),var(--c4));
+  background-attachment:fixed;
   animation:grad-shift 30s ease infinite;
-  font-size:18px;line-height:1.7;-webkit-font-smoothing:antialiased;
+  font-size:20px;line-height:1.75;-webkit-font-smoothing:antialiased;
   min-height:100vh;
 }
 
 /* ─── LAYERS ───────────────────────────────────────────────── */
-#fallingCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;}
-#fallingCanvas canvas{display:block;}
 .noise-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;}
 
 /* ─── LAYOUT ───────────────────────────────────────────────── */
@@ -84,40 +80,43 @@ section{padding:120px 0;position:relative;z-index:2;}
 #hero{min-height:90vh;display:flex;align-items:center;justify-content:flex-start;
   text-align:left;position:relative;overflow:hidden;}
 #hero .col{position:relative;z-index:2;}
-.hero-solitreo{font-family:var(--solitreo);font-size:clamp(32px,6vw,56px);
+.hero-solitreo{font-family:var(--solitreo);font-size:clamp(38px,7vw,64px);
   color:var(--text);margin-bottom:16px;direction:rtl;opacity:0.25;
   letter-spacing:0.12em;}
-.hero-title{font-size:clamp(42px,7vw,80px);font-weight:700;letter-spacing:-0.03em;
-  line-height:1.05;margin-bottom:20px;}
-.hero-sub{font-size:clamp(17px,2.5vw,22px);color:var(--text-2);max-width:520px;
+.hero-title{font-size:clamp(52px,9vw,100px);font-weight:700;letter-spacing:-0.03em;
+  line-height:1.05;margin-bottom:24px;}
+.hero-sub{font-size:clamp(20px,2.5vw,26px);color:var(--text-2);max-width:560px;
   line-height:1.55;margin-bottom:40px;}
-.hero-cta{display:inline-block;padding:16px 36px;background:var(--accent);color:#fff;
-  text-decoration:none;font-size:16px;font-weight:500;letter-spacing:0.02em;
-  transition:background 0.2s;}
-.hero-cta:hover{background:var(--accent-h);}
 
 /* ─── NARRATIVE SECTIONS ───────────────────────────────────── */
-.section-label{font-size:11px;font-weight:600;text-transform:uppercase;
-  letter-spacing:0.12em;color:var(--text-3);margin-bottom:12px;}
-.section-title{font-size:clamp(28px,4.5vw,44px);font-weight:600;
-  letter-spacing:-0.02em;line-height:1.15;margin-bottom:24px;}
-.section-body{color:var(--text-2);max-width:580px;font-size:18px;}
-.section-body p{margin-bottom:18px;}
-.section-glyph-row{display:flex;gap:16px;margin:32px 0;flex-wrap:wrap;}
-.section-glyph{font-family:var(--solitreo);font-size:48px;color:var(--text);
-  width:64px;height:64px;display:flex;align-items:center;justify-content:center;
-  background:rgba(255,255,255,0.35);backdrop-filter:blur(4px);border-radius:var(--radius);}
+.section-label{font-size:13px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.12em;color:var(--text-3);margin-bottom:14px;}
+.section-title{font-size:clamp(34px,5.5vw,56px);font-weight:600;
+  letter-spacing:-0.02em;line-height:1.15;margin-bottom:28px;}
+.section-body{color:var(--text-2);max-width:640px;font-size:20px;}
+.section-body p{margin-bottom:20px;}
+
+/* ─── SOLITREO IMAGE ──────────────────────────────────────── */
+.solitreo-image-wrap{margin:36px 0;}
+.solitreo-image{max-width:100%;border-radius:8px;
+  box-shadow:0 4px 24px rgba(0,0,0,0.12);}
+.solitreo-image-wrap figcaption{font-size:14px;color:var(--text-3);
+  margin-top:12px;font-style:italic;}
 
 /* ─── FADE-IN ANIMATION ────────────────────────────────────── */
 .fade-in{opacity:0;transform:translateY(28px);transition:opacity 0.7s ease,transform 0.7s ease;}
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN ────────────────────────────────────────── */
-.specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
-  gap:12px;margin-top:36px;}
+.specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
+  gap:14px;margin-top:36px;}
+.specimen-category{grid-column:1/-1;font-size:14px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.08em;color:var(--text-3);
+  padding:24px 0 8px;border-bottom:1px solid rgba(0,0,0,0.08);margin-top:12px;}
+.specimen-category:first-child{margin-top:0;padding-top:0;}
 .specimen-cell{position:relative;display:flex;align-items:center;justify-content:center;
-  font-family:var(--solitreo);font-size:48px;aspect-ratio:1;border-radius:var(--radius);
-  background:rgba(255,255,255,0.25);backdrop-filter:blur(6px);
+  font-family:var(--solitreo);font-size:64px;aspect-ratio:1;border-radius:var(--radius);
+  background:rgba(255,255,255,0.3);backdrop-filter:blur(6px);
   transition:transform 0.3s ease,box-shadow 0.3s ease;
   animation:spec-breathe 4s ease-in-out infinite;animation-delay:var(--delay);}
 .specimen-cell:hover{transform:scale(1.12);box-shadow:0 8px 28px rgba(0,0,0,0.1);z-index:10;}
@@ -130,15 +129,15 @@ section{padding:120px 0;position:relative;z-index:2;}
   transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--text);}
 .specimen-cell:hover .specimen-tooltip{opacity:1;}
 
-/* ─── GENERATOR SECTION ────────────────────────────────────── */
-#generator{padding:100px 0;}
+/* ─── GENERATOR SECTION (centered) ───────────────────────────── */
+#generator{padding:100px 0;display:flex;justify-content:center;}
 .generator-frame{background:var(--surface);border:1px solid rgba(0,0,0,0.1);
-  border-radius:10px;padding:48px 40px;max-width:860px;
-  margin-left:max(24px,10vw);margin-right:24px;position:relative;z-index:2;
+  border-radius:10px;padding:48px 40px;max-width:860px;width:100%;
+  margin:0 24px;position:relative;z-index:2;
   box-shadow:0 4px 32px rgba(0,0,0,0.06);}
 .gen-header{text-align:left;margin-bottom:40px;}
-.gen-header h2{font-size:clamp(22px,3vw,30px);font-weight:600;letter-spacing:-0.02em;margin-bottom:8px;}
-.gen-header p{color:var(--text-3);font-size:15px;}
+.gen-header h2{font-size:clamp(24px,3.5vw,34px);font-weight:600;letter-spacing:-0.02em;margin-bottom:8px;}
+.gen-header p{color:var(--text-3);font-size:16px;}
 
 /* Name input */
 .name-input-wrap{text-align:left;margin-bottom:28px;}
@@ -199,14 +198,18 @@ section{padding:120px 0;position:relative;z-index:2;}
   border-radius:var(--radius);border:1px solid var(--border);}
 
 /* ─── COLOPHON ─────────────────────────────────────────────── */
-#colophon{text-align:left;padding:80px 0;color:var(--text-3);font-size:14px;}
+#colophon{text-align:center;padding:100px 24px;color:var(--text-3);font-size:15px;}
 #colophon a{color:var(--text-2);text-decoration:underline;text-underline-offset:3px;}
-#colophon p{margin-bottom:8px;}
+#colophon p{margin-bottom:10px;}
+.colophon-credits{margin-top:24px;font-size:13px;line-height:1.8;}
+.colophon-credits strong{color:var(--text-2);}
+.colophon-ig{display:inline-block;margin-top:20px;font-size:15px;font-weight:500;
+  color:var(--text-2);text-decoration:none;letter-spacing:0.01em;}
+.colophon-ig:hover{color:var(--text);}
 
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
 @media(max-width:900px){
   .col{margin-left:max(16px,6vw);}
-  .generator-frame{max-width:100%;margin-left:max(16px,6vw);}
 }
 @media(max-width:600px){
   section{padding:70px 0;}
@@ -214,8 +217,9 @@ section{padding:120px 0;position:relative;z-index:2;}
   .generator-frame{margin-left:12px;margin-right:12px;padding:24px 16px;}
   .gen-controls{flex-direction:column;align-items:stretch;}
   .gen-export{flex-direction:column;}
-  .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(60px,1fr));gap:8px;}
-  .specimen-cell{font-size:36px;}
+  .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:8px;}
+  .specimen-cell{font-size:42px;}
+  .hero-title{font-size:clamp(40px,12vw,72px);}
 }
 </style>
 </head>
@@ -230,16 +234,12 @@ section{padding:120px 0;position:relative;z-index:2;}
   <rect width="100%" height="100%" filter="url(#noiseFilter)" opacity="0.04"/>
 </svg>
 
-<!-- ═══════════════ FALLING CANVAS ══════════════ -->
-<div id="fallingCanvas"></div>
-
 <!-- ═══════════════════════════ HERO ═══════════════════════════ -->
 <section id="hero">
   <div class="col">
     <div class="hero-solitreo">גאנגוס טאאלים</div>
     <h1 class="hero-title">Ganchos<br>Taalim</h1>
     <p class="hero-sub">Translating Sephardic names into generative woven patterns through the Solitreo script.</p>
-    <a href="#generator" class="hero-cta">Enter a Name</a>
   </div>
 </section>
 
@@ -250,17 +250,12 @@ section{padding:120px 0;position:relative;z-index:2;}
     <h2 class="section-title">What is Solitreo?</h2>
     <div class="section-body">
       <p>Solitreo is the cursive script historically used by Sephardic Jews to write Ladino (Judeo-Spanish). Unlike the block Hebrew script used for sacred texts, Solitreo was the everyday handwriting of Ladino speakers across the Ottoman Empire, North Africa, and beyond.</p>
-      <p>Ganchos Sans is a digital typeface that revives these letterforms, translating the fluid curves of Solitreo into a contemporary typographic system.</p>
+      <p>Ganchos Sans is a digital typeface designed by Benny Yorohan that revives these letterforms, translating the fluid curves of Solitreo into a contemporary typographic system. This tool, also designed by Benny, translates names into generative woven patterns inspired by Sephardic textile traditions.</p>
     </div>
-    <div class="section-glyph-row">
-      <div class="section-glyph">&#x05D0;</div>
-      <div class="section-glyph">&#x05D1;</div>
-      <div class="section-glyph">&#x05D2;</div>
-      <div class="section-glyph">&#x05D3;</div>
-      <div class="section-glyph">&#x05D4;</div>
-      <div class="section-glyph">&#x05D5;</div>
-      <div class="section-glyph">&#x05D6;</div>
-    </div>
+    <figure class="solitreo-image-wrap">
+      <img src="gnchs_01_.jpeg" alt="A page of handwritten Solitreo script showing the flowing cursive Hebrew letters used by Sephardic Jews to write Ladino" class="solitreo-image">
+      <figcaption>Handwritten Solitreo script — the everyday cursive of Ladino-speaking Sephardic communities.</figcaption>
+    </figure>
   </div>
 </section>
 
@@ -294,9 +289,9 @@ section{padding:120px 0;position:relative;z-index:2;}
 <section id="specimen" class="fade-in">
   <div class="col">
     <div class="section-label">Typeface</div>
-    <h2 class="section-title">Ganchos Sans Alphabet</h2>
+    <h2 class="section-title">Ganchos Sans — Full Character Set</h2>
     <div class="section-body">
-      <p>The complete Solitreo alphabet, revived as a digital typeface. Hover over any letter to learn its name and sound.</p>
+      <p>The complete Ganchos Sans typeface: Hebrew letters, final forms, vowel points, cantillation marks, presentation forms, numbers, currency, and symbols. Hover over any glyph to learn more.</p>
     </div>
     <div class="specimen-grid" id="specimenGrid"></div>
   </div>
@@ -361,11 +356,16 @@ section{padding:120px 0;position:relative;z-index:2;}
 
 <!-- ═══════════════════════════ COLOPHON ══════════════════════ -->
 <section id="colophon">
-  <div class="col">
-    <p><strong>Ganchos Taalim</strong> — MassArt Degree Project 2026</p>
-    <p>Typeface: Ganchos Sans v8 &nbsp;·&nbsp; Weaving: <a href="https://adacad.org" target="_blank">AdaCAD 5</a></p>
-    <p>Transliteration based on <a href="https://ladinotype.com" target="_blank">LadinoType</a> &amp; Aki Yerushalayim standards</p>
+  <p><strong>Ganchos Taalim</strong> — MassArt Degree Project 2026</p>
+  <p>Designed and developed by Benny Yorohan</p>
+  <p>Typeface: Ganchos Sans v8</p>
+  <div class="colophon-credits">
+    <p><strong>Research Acknowledgments</strong></p>
+    <p>Prof. Bryan Kirschen, Binghamton University &nbsp;·&nbsp; David Bunis &nbsp;·&nbsp; Nathan Gross</p>
+    <p>Documenting Judeo-Spanish Project</p>
+    <p>Weaving: <a href="https://adacad.org" target="_blank">AdaCAD 5</a> &nbsp;·&nbsp; Transliteration: <a href="https://ladinotype.com" target="_blank">LadinoType</a> &amp; Aki Yerushalayim standards</p>
   </div>
+  <a href="https://instagram.com/beniyorohan_" target="_blank" class="colophon-ig">@beniyorohan_</a>
 </section>
 
 <!-- ═══════════════════════════ JAVASCRIPT ════════════════════ -->
@@ -763,7 +763,7 @@ function generatePattern(){
   for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
   const density=((filled/(W*H))*100).toFixed(1);
   document.getElementById('patternStats').textContent=
-    W+'×'+H+' · '+filled+' filled · '+density+'% density · seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% density \u00b7 seed: '+seed;
 
   generateTaalim();
 }
@@ -778,7 +778,7 @@ function generateTaalim(){
 
   let html='<div class="taalim-section"><h3>Pattern Statistics</h3>';
   html+='<div class="taalim-stats">';
-  html+='<div class="taalim-stat"><div class="val">'+W+'×'+H+'</div><div class="lbl">Grid Size</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+W+'\u00d7'+H+'</div><div class="lbl">Grid Size</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+filled+'</div><div class="lbl">Filled Cells</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+density+'%</div><div class="lbl">Density</div></div>';
   html+='</div></div>';
@@ -786,7 +786,7 @@ function generateTaalim(){
   html+='<div class="taalim-section"><h3>Visual Pattern</h3>';
   html+='<div class="taalim-visual">';
   for(let y=0;y<H;y++){
-    let row='';for(let x=0;x<W;x++)row+=grid[y][x]?'█':'·';
+    let row='';for(let x=0;x<W;x++)row+=grid[y][x]?'\u2588':'\u00b7';
     html+=row+'\n';
   }
   html+='</div></div>';
@@ -800,8 +800,8 @@ function generateTaalim(){
     let repeatCount=1;
     while(y+repeatCount<H&&rowStrings[y+repeatCount]===rowStrings[y])repeatCount++;
     const row=grid[y];let rle=[];let cx=W-1;
-    while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'■':'□')+run);cx-=run;}
-    const prefix=repeatCount>1?'Rows '+(y+1)+'–'+(y+repeatCount):'Row '+(y+1);
+    while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'\u25a0':'\u25a1')+run);cx-=run;}
+    const prefix=repeatCount>1?'Rows '+(y+1)+'\u2013'+(y+repeatCount):'Row '+(y+1);
     html+='<div style="margin-bottom:2px;"><span style="color:var(--text-3);min-width:70px;display:inline-block;">'+prefix+'</span> '+rle.join(' ')+'</div>';
     y+=repeatCount;
   }
@@ -816,7 +816,7 @@ function doExportWIF(){
   if(!grid.length)return;
   const name=document.getElementById('nameInput').value.trim()||'pattern';
   let wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\n';
-  wif+='Developers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=6.0\n\n';
+  wif+='Developers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=7.0\n\n';
   wif+='[CONTENTS]\nCOLOR PALETTE=true\nCOLOR TABLE=true\nWEAVING=true\n';
   wif+='WARP=true\nWEFT=true\nTHREADING=true\nTIEUP=true\nLIFTPLAN=true\n\n';
   wif+='[COLOR PALETTE]\nRange=0,255\nEntries=2\n\n[COLOR TABLE]\n1=0,0,0\n2=255,255,255\n\n';
@@ -843,18 +843,18 @@ function doExportPNG(){
 
 function doExportTXT(){
   if(!grid.length)return;
-  let txt='TAALIM — Ganchos Taalim Generative Pattern\n';
+  let txt='TAALIM \u2014 Ganchos Taalim Generative Pattern\n';
   txt+='Name: '+document.getElementById('nameInput').value.trim()+'\n';
-  txt+='Grid: '+W+'×'+H+'\n\n';
+  txt+='Grid: '+W+'\u00d7'+H+'\n\n';
   for(let y=0;y<H;y++){
     const row=grid[y];let rle=[];let cx=W-1;
-    while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'■':'□')+run);cx-=run;}
+    while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'\u25a0':'\u25a1')+run);cx-=run;}
     txt+='Row '+(y+1)+': '+rle.join(' ')+'\n';
   }
   navigator.clipboard.writeText(txt).then(()=>{
     const btn=document.querySelector('.gen-export .btn-outline:last-child');
     if(btn){const orig=btn.textContent;btn.textContent='Copied!';setTimeout(()=>btn.textContent=orig,1500);}
-  }).catch(()=>alert('Copy failed — please use Ctrl+C manually.'));
+  }).catch(()=>alert('Copy failed \u2014 please use Ctrl+C manually.'));
 }
 
 // ─── p5.js RUG SKETCH (instance mode) ───────────────────────────
@@ -909,146 +909,238 @@ function createRugSketch(containerEl){
   });
 }
 
-// ─── FALLING GANCHOS BACKGROUND ─────────────────────────────────
-const FALLING_CHARS=[
-  '\u05D0','\u05D1','\u05D2','\u05D3','\u05D4','\u05D5',
-  '\u05D6','\u05D7','\u05D8','\u05D9','\u05DB','\u05DC',
-  '\u05DE','\u05E0','\u05E1','\u05E4','\u05E6','\u05E7',
-  '\u05E8','\u05E9'
-];
-const MAX_PARTICLES=200;
-const GRAVITY=0.15;
-
-function createFallingSketch(containerEl){
-  return new p5(function(p){
-    let particles=[];
-    let settled=[];
-    let lastSpawn=0;
-    let nextDelay=1000;
-
-    p.setup=function(){
-      const c=p.createCanvas(p.windowWidth,p.windowHeight);
-      c.parent(containerEl);
-      p.textAlign(p.CENTER,p.CENTER);
-    };
-
-    p.windowResized=function(){
-      p.resizeCanvas(p.windowWidth,p.windowHeight);
-      settled.forEach(s=>{
-        if(s.x>p.width)s.x=p.width-s.sz;
-        if(s.y>p.height)s.y=p.height-s.sz/2;
-      });
-    };
-
-    p.draw=function(){
-      p.clear();
-      const now=p.millis();
-
-      // Spawn
-      if(now-lastSpawn>nextDelay&&(particles.length+settled.length)<MAX_PARTICLES){
-        particles.push({
-          ch:FALLING_CHARS[Math.floor(p.random(FALLING_CHARS.length))],
-          x:p.random(40,p.width-40),
-          y:-60,
-          vy:p.random(0.5,1.5),
-          sz:p.random(20,48),
-          rot:p.random(p.TWO_PI),
-          rs:p.random(-0.02,0.02),
-          a:p.random(30,70)
-        });
-        lastSpawn=now;
-        nextDelay=p.random(800,2000);
-      }
-
-      // Update falling
-      for(let i=particles.length-1;i>=0;i--){
-        const pt=particles[i];
-        pt.vy+=GRAVITY;
-        pt.y+=pt.vy;
-        pt.rot+=pt.rs;
-
-        const groundY=p.height-pt.sz/2;
-        let settleY=groundY;
-
-        for(const s of settled){
-          if(Math.abs(pt.x-s.x)<(pt.sz+s.sz)*0.4){
-            const top=s.y-s.sz/2-pt.sz/2;
-            if(top<settleY)settleY=top;
-          }
-        }
-
-        if(pt.y>=settleY){
-          pt.y=settleY;
-          pt.vy=0;
-          pt.rot=pt.rot%(p.TWO_PI);
-          settled.push(pt);
-          particles.splice(i,1);
-        }
-
-        drawGlyph(pt);
-      }
-
-      // Draw settled
-      for(const s of settled)drawGlyph(s);
-    };
-
-    function drawGlyph(pt){
-      p.push();
-      p.translate(pt.x,pt.y);
-      p.rotate(pt.rot);
-      p.noStroke();
-      p.fill(26,26,26,pt.a);
-      p.textSize(pt.sz);
-      p.textFont('GanchosSans');
-      p.text(pt.ch,0,0);
-      p.pop();
-    }
-  });
-}
-
-// ─── TYPE SPECIMEN ──────────────────────────────────────────────
-const SOLITREO_ALPHABET=[
-  {ch:'\u05D0',name:'Alef',sound:'a'},
-  {ch:'\u05D1',name:'Bet',sound:'b'},
-  {ch:'\u05D2',name:'Gimel',sound:'g'},
-  {ch:'\u05D3',name:'Dalet',sound:'d'},
-  {ch:'\u05D4',name:'He',sound:'h'},
-  {ch:'\u05D5',name:'Vav',sound:'v / u / o'},
-  {ch:'\u05D6',name:'Zayin',sound:'z'},
-  {ch:'\u05D7',name:'Chet',sound:'ch'},
-  {ch:'\u05D8',name:'Tet',sound:'t'},
-  {ch:'\u05D9',name:'Yod',sound:'y / i / e'},
-  {ch:'\u05DB',name:'Kaf',sound:'k'},
-  {ch:'\u05DC',name:'Lamed',sound:'l'},
-  {ch:'\u05DE',name:'Mem',sound:'m'},
-  {ch:'\u05E0',name:'Nun',sound:'n'},
-  {ch:'\u05E1',name:'Samekh',sound:'s'},
-  {ch:'\u05E2',name:'Ayin',sound:'\u2014'},
-  {ch:'\u05E4',name:'Pe',sound:'p / f'},
-  {ch:'\u05E6',name:'Tsadi',sound:'ts'},
-  {ch:'\u05E7',name:'Qof',sound:'q'},
-  {ch:'\u05E8',name:'Resh',sound:'r'},
-  {ch:'\u05E9',name:'Shin',sound:'sh'},
-  {ch:'\u05DA',name:'Final Kaf',sound:'k'},
-  {ch:'\u05DD',name:'Final Mem',sound:'m'},
-  {ch:'\u05DF',name:'Final Nun',sound:'n'},
-  {ch:'\u05E3',name:'Final Pe',sound:'p / f'},
-  {ch:'\u05E5',name:'Final Tsadi',sound:'ts'},
+// ─── GANCHOS SANS FULL CHARACTER SET ────────────────────────────
+const GANCHOS_GLYPHS=[
+  {category:'Hebrew Letters',glyphs:[
+    {ch:'\u05D0',name:'Alef',sound:'a'},
+    {ch:'\u05D1',name:'Bet',sound:'b'},
+    {ch:'\u05D2',name:'Gimel',sound:'g'},
+    {ch:'\u05D3',name:'Dalet',sound:'d'},
+    {ch:'\u05D4',name:'He',sound:'h'},
+    {ch:'\u05D5',name:'Vav',sound:'v / u / o'},
+    {ch:'\u05D6',name:'Zayin',sound:'z'},
+    {ch:'\u05D7',name:'Chet',sound:'ch'},
+    {ch:'\u05D8',name:'Tet',sound:'t'},
+    {ch:'\u05D9',name:'Yod',sound:'y / i / e'},
+    {ch:'\u05DB',name:'Kaf',sound:'k'},
+    {ch:'\u05DC',name:'Lamed',sound:'l'},
+    {ch:'\u05DE',name:'Mem',sound:'m'},
+    {ch:'\u05E0',name:'Nun',sound:'n'},
+    {ch:'\u05E1',name:'Samekh',sound:'s'},
+    {ch:'\u05E2',name:'Ayin',sound:'\u2014'},
+    {ch:'\u05E4',name:'Pe',sound:'p / f'},
+    {ch:'\u05E6',name:'Tsadi',sound:'ts'},
+    {ch:'\u05E7',name:'Qof',sound:'q'},
+    {ch:'\u05E8',name:'Resh',sound:'r'},
+    {ch:'\u05E9',name:'Shin',sound:'sh'},
+    {ch:'\u05EA',name:'Tav',sound:'t'}
+  ]},
+  {category:'Final Forms',glyphs:[
+    {ch:'\u05DA',name:'Final Kaf',sound:'k'},
+    {ch:'\u05DD',name:'Final Mem',sound:'m'},
+    {ch:'\u05DF',name:'Final Nun',sound:'n'},
+    {ch:'\u05E3',name:'Final Pe',sound:'p / f'},
+    {ch:'\u05E5',name:'Final Tsadi',sound:'ts'}
+  ]},
+  {category:'Vowel Points (Nikkud)',glyphs:[
+    {ch:'\u05D0\u05B0',name:'Shva',sound:'\u0259 (schwa)'},
+    {ch:'\u05D0\u05B1',name:'Hataf Segol',sound:'e'},
+    {ch:'\u05D0\u05B2',name:'Hataf Patah',sound:'a'},
+    {ch:'\u05D0\u05B3',name:'Hataf Qamats',sound:'o'},
+    {ch:'\u05D0\u05B4',name:'Hiriq',sound:'i'},
+    {ch:'\u05D0\u05B5',name:'Tsere',sound:'ei'},
+    {ch:'\u05D0\u05B6',name:'Segol',sound:'e'},
+    {ch:'\u05D0\u05B7',name:'Patah',sound:'a'},
+    {ch:'\u05D0\u05B8',name:'Qamats',sound:'a / o'},
+    {ch:'\u05D0\u05B9',name:'Holam',sound:'o'},
+    {ch:'\u05D0\u05BB',name:'Qubuts',sound:'u'},
+    {ch:'\u05D0\u05BC',name:'Dagesh',sound:'(gemination)'},
+    {ch:'\u05D0\u05BD',name:'Meteg',sound:'(stress)'},
+    {ch:'\u05D0\u05BF',name:'Rafe',sound:'(spirant)'}
+  ]},
+  {category:'Shin / Sin Dots',glyphs:[
+    {ch:'\u05E9\u05C1',name:'Shin with Shin Dot',sound:'sh'},
+    {ch:'\u05E9\u05C2',name:'Shin with Sin Dot',sound:'s'}
+  ]},
+  {category:'Cantillation Marks',glyphs:[
+    {ch:'\u05D0\u0591',name:'Etnahta',sound:'(accent)'},
+    {ch:'\u05D0\u0592',name:'Segol (accent)',sound:'(accent)'},
+    {ch:'\u05D0\u0593',name:'Shalshelet',sound:'(accent)'},
+    {ch:'\u05D0\u0594',name:'Zaqef Qatan',sound:'(accent)'},
+    {ch:'\u05D0\u0595',name:'Zaqef Gadol',sound:'(accent)'},
+    {ch:'\u05D0\u0596',name:'Tipeha',sound:'(accent)'},
+    {ch:'\u05D0\u0597',name:'Revia',sound:'(accent)'},
+    {ch:'\u05D0\u0598',name:'Zarqa',sound:'(accent)'},
+    {ch:'\u05D0\u0599',name:'Pashta',sound:'(accent)'},
+    {ch:'\u05D0\u059A',name:'Yetiv',sound:'(accent)'},
+    {ch:'\u05D0\u059B',name:'Tevir',sound:'(accent)'},
+    {ch:'\u05D0\u059C',name:'Geresh (accent)',sound:'(accent)'},
+    {ch:'\u05D0\u059D',name:'Geresh Muqdam',sound:'(accent)'},
+    {ch:'\u05D0\u059E',name:'Gershayim (accent)',sound:'(accent)'},
+    {ch:'\u05D0\u059F',name:'Qarney Para',sound:'(accent)'},
+    {ch:'\u05D0\u05A0',name:'Telisha Gedola',sound:'(accent)'},
+    {ch:'\u05D0\u05A1',name:'Pazer',sound:'(accent)'},
+    {ch:'\u05D0\u05A3',name:'Munah',sound:'(accent)'},
+    {ch:'\u05D0\u05A4',name:'Mahapakh',sound:'(accent)'},
+    {ch:'\u05D0\u05A5',name:'Merkha',sound:'(accent)'},
+    {ch:'\u05D0\u05A6',name:'Merkha Kefula',sound:'(accent)'},
+    {ch:'\u05D0\u05A7',name:'Darga',sound:'(accent)'},
+    {ch:'\u05D0\u05A8',name:'Qadma',sound:'(accent)'},
+    {ch:'\u05D0\u05A9',name:'Telisha Qetana',sound:'(accent)'},
+    {ch:'\u05D0\u05AA',name:'Yerah Ben Yomo',sound:'(accent)'},
+    {ch:'\u05D0\u05AB',name:'Ole',sound:'(accent)'},
+    {ch:'\u05D0\u05AC',name:'Iluy',sound:'(accent)'},
+    {ch:'\u05D0\u05AD',name:'Dehi',sound:'(accent)'},
+    {ch:'\u05D0\u05AE',name:'Zinor',sound:'(accent)'},
+    {ch:'\u05D0\u05AF',name:'Masora Circle',sound:'(mark)'}
+  ]},
+  {category:'Presentation Forms (Dagesh)',glyphs:[
+    {ch:'\uFB31',name:'Bet Dagesh',sound:'b'},
+    {ch:'\uFB32',name:'Gimel Dagesh',sound:'g'},
+    {ch:'\uFB33',name:'Dalet Dagesh',sound:'d'},
+    {ch:'\uFB34',name:'He Mapiq',sound:'h'},
+    {ch:'\uFB35',name:'Vav Dagesh',sound:'u'},
+    {ch:'\uFB36',name:'Zayin Dagesh',sound:'z'},
+    {ch:'\uFB38',name:'Tet Dagesh',sound:'t'},
+    {ch:'\uFB39',name:'Yod Dagesh',sound:'y'},
+    {ch:'\uFB3A',name:'Final Kaf Dagesh',sound:'k'},
+    {ch:'\uFB3B',name:'Kaf Dagesh',sound:'k'},
+    {ch:'\uFB3C',name:'Lamed Dagesh',sound:'l'},
+    {ch:'\uFB3E',name:'Mem Dagesh',sound:'m'},
+    {ch:'\uFB40',name:'Nun Dagesh',sound:'n'},
+    {ch:'\uFB41',name:'Samekh Dagesh',sound:'s'},
+    {ch:'\uFB43',name:'Final Pe Dagesh',sound:'f'},
+    {ch:'\uFB44',name:'Pe Dagesh',sound:'p'},
+    {ch:'\uFB46',name:'Tsadi Dagesh',sound:'ts'},
+    {ch:'\uFB47',name:'Qof Dagesh',sound:'q'},
+    {ch:'\uFB48',name:'Resh Dagesh',sound:'r'},
+    {ch:'\uFB49',name:'Shin Dagesh',sound:'sh'},
+    {ch:'\uFB4A',name:'Tav Dagesh',sound:'t'}
+  ]},
+  {category:'Presentation Forms (Rafe & Variants)',glyphs:[
+    {ch:'\uFB1D',name:'Yod Hiriq',sound:'yi'},
+    {ch:'\uFB2A',name:'Shin Shin-Dot',sound:'sh'},
+    {ch:'\uFB2B',name:'Shin Sin-Dot',sound:'s'},
+    {ch:'\uFB2C',name:'Shin Dagesh Shin-Dot',sound:'sh'},
+    {ch:'\uFB2D',name:'Shin Dagesh Sin-Dot',sound:'s'},
+    {ch:'\uFB2E',name:'Alef Patah',sound:'a'},
+    {ch:'\uFB2F',name:'Alef Qamats',sound:'o'},
+    {ch:'\uFB30',name:'Alef Mapiq',sound:'a'},
+    {ch:'\uFB4B',name:'Vav Holam',sound:'o'},
+    {ch:'\uFB4C',name:'Bet Rafe',sound:'v'},
+    {ch:'\uFB4D',name:'Kaf Rafe',sound:'kh'},
+    {ch:'\uFB4E',name:'Pe Rafe',sound:'f'}
+  ]},
+  {category:'Punctuation & Marks',glyphs:[
+    {ch:'\u05F3',name:'Geresh',sound:'(punct.)'},
+    {ch:'\u05F4',name:'Gershayim',sound:'(punct.)'},
+    {ch:'\u05BE',name:'Maqaf',sound:'(hyphen)'},
+    {ch:'\u05C0',name:'Paseq',sound:'(divider)'},
+    {ch:'\u05C3',name:'Sof Pasuq',sound:'(period)'},
+    {ch:'\u05C6',name:'Nun Hafukha',sound:'(mark)'},
+    {ch:'\u2013',name:'En Dash',sound:''},
+    {ch:'\u2014',name:'Em Dash',sound:''},
+    {ch:'\u2018',name:'Left Single Quote',sound:''},
+    {ch:'\u2019',name:'Right Single Quote',sound:''},
+    {ch:'\u201C',name:'Left Double Quote',sound:''},
+    {ch:'\u201D',name:'Right Double Quote',sound:''},
+    {ch:'\u2026',name:'Ellipsis',sound:''},
+    {ch:'\u00B7',name:'Middle Dot',sound:''}
+  ]},
+  {category:'Numbers',glyphs:[
+    {ch:'0',name:'Zero',sound:''},
+    {ch:'1',name:'One',sound:''},
+    {ch:'2',name:'Two',sound:''},
+    {ch:'3',name:'Three',sound:''},
+    {ch:'4',name:'Four',sound:''},
+    {ch:'5',name:'Five',sound:''},
+    {ch:'6',name:'Six',sound:''},
+    {ch:'7',name:'Seven',sound:''},
+    {ch:'8',name:'Eight',sound:''},
+    {ch:'9',name:'Nine',sound:''}
+  ]},
+  {category:'Superscript Numbers',glyphs:[
+    {ch:'\u2070',name:'Superscript 0',sound:''},
+    {ch:'\u00B9',name:'Superscript 1',sound:''},
+    {ch:'\u00B2',name:'Superscript 2',sound:''},
+    {ch:'\u00B3',name:'Superscript 3',sound:''},
+    {ch:'\u2074',name:'Superscript 4',sound:''},
+    {ch:'\u2075',name:'Superscript 5',sound:''},
+    {ch:'\u2076',name:'Superscript 6',sound:''},
+    {ch:'\u2077',name:'Superscript 7',sound:''},
+    {ch:'\u2078',name:'Superscript 8',sound:''},
+    {ch:'\u2079',name:'Superscript 9',sound:''}
+  ]},
+  {category:'Subscript Numbers',glyphs:[
+    {ch:'\u2080',name:'Subscript 0',sound:''},
+    {ch:'\u2081',name:'Subscript 1',sound:''},
+    {ch:'\u2082',name:'Subscript 2',sound:''},
+    {ch:'\u2083',name:'Subscript 3',sound:''},
+    {ch:'\u2084',name:'Subscript 4',sound:''},
+    {ch:'\u2085',name:'Subscript 5',sound:''},
+    {ch:'\u2086',name:'Subscript 6',sound:''},
+    {ch:'\u2087',name:'Subscript 7',sound:''},
+    {ch:'\u2088',name:'Subscript 8',sound:''},
+    {ch:'\u2089',name:'Subscript 9',sound:''}
+  ]},
+  {category:'Currency',glyphs:[
+    {ch:'\u20AA',name:'New Sheqel',sound:''},
+    {ch:'\u20AC',name:'Euro',sound:''},
+    {ch:'\u00A3',name:'Pound',sound:''},
+    {ch:'\u00A5',name:'Yen',sound:''},
+    {ch:'$',name:'Dollar',sound:''},
+    {ch:'\u00A2',name:'Cent',sound:''},
+    {ch:'\u20B9',name:'Rupee',sound:''},
+    {ch:'\u20A9',name:'Won',sound:''},
+    {ch:'\u20BF',name:'Bitcoin',sound:''},
+    {ch:'\u20B1',name:'Peso',sound:''}
+  ]},
+  {category:'Math & Arrows',glyphs:[
+    {ch:'+',name:'Plus',sound:''},
+    {ch:'\u2212',name:'Minus',sound:''},
+    {ch:'\u00D7',name:'Multiply',sound:''},
+    {ch:'\u00F7',name:'Divide',sound:''},
+    {ch:'=',name:'Equals',sound:''},
+    {ch:'\u2260',name:'Not Equal',sound:''},
+    {ch:'\u2248',name:'Approximately',sound:''},
+    {ch:'\u00B1',name:'Plus-Minus',sound:''},
+    {ch:'<',name:'Less Than',sound:''},
+    {ch:'>',name:'Greater Than',sound:''},
+    {ch:'\u2264',name:'Less or Equal',sound:''},
+    {ch:'\u2265',name:'Greater or Equal',sound:''},
+    {ch:'\u221E',name:'Infinity',sound:''},
+    {ch:'\u221A',name:'Square Root',sound:''},
+    {ch:'\u00B0',name:'Degree',sound:''},
+    {ch:'\u03C0',name:'Pi',sound:''},
+    {ch:'\u2030',name:'Per Mille',sound:''},
+    {ch:'\u2190',name:'Left Arrow',sound:''},
+    {ch:'\u2191',name:'Up Arrow',sound:''},
+    {ch:'\u2192',name:'Right Arrow',sound:''},
+    {ch:'\u2193',name:'Down Arrow',sound:''}
+  ]}
 ];
 
 function buildSpecimenGrid(){
   const container=document.getElementById('specimenGrid');
   if(!container)return;
-  SOLITREO_ALPHABET.forEach((item,i)=>{
-    const cell=document.createElement('div');
-    cell.className='specimen-cell';
-    cell.style.setProperty('--delay',(i*0.15)+'s');
-    cell.textContent=item.ch;
-    const tip=document.createElement('div');
-    tip.className='specimen-tooltip';
-    tip.textContent=item.name+' \u2014 '+item.sound;
-    cell.appendChild(tip);
-    container.appendChild(cell);
+  let cellIndex=0;
+  GANCHOS_GLYPHS.forEach(cat=>{
+    const header=document.createElement('div');
+    header.className='specimen-category';
+    header.textContent=cat.category;
+    container.appendChild(header);
+    cat.glyphs.forEach(item=>{
+      const cell=document.createElement('div');
+      cell.className='specimen-cell';
+      cell.style.setProperty('--delay',(cellIndex*0.08)+'s');
+      cell.textContent=item.ch;
+      const tip=document.createElement('div');
+      tip.className='specimen-tooltip';
+      tip.textContent=item.sound?item.name+' \u2014 '+item.sound:item.name;
+      cell.appendChild(tip);
+      container.appendChild(cell);
+      cellIndex++;
+    });
   });
 }
 
@@ -1097,14 +1189,12 @@ document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
 
 // ─── INIT ───────────────────────────────────────────────────────
 loadFont().then(()=>{
-  if(!fontLoaded)console.warn('GanchosSans font could not be loaded — patterns will use default features.');
+  if(!fontLoaded)console.warn('GanchosSans font could not be loaded \u2014 patterns will use default features.');
   rugSketch=createRugSketch(document.getElementById('rugCanvas'));
-  createFallingSketch(document.getElementById('fallingCanvas'));
   buildSpecimenGrid();
 }).catch(()=>{
   console.warn('Font loading failed, creating canvases with defaults.');
   rugSketch=createRugSketch(document.getElementById('rugCanvas'));
-  createFallingSketch(document.getElementById('fallingCanvas'));
   buildSpecimenGrid();
 });
 </script>
