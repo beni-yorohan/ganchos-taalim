@@ -64,10 +64,10 @@ body{
 
 /* ─── LAYOUT ───────────────────────────────────────────────── */
 .col{max-width:var(--col);margin-left:max(24px,12vw);margin-right:24px;padding:0;}
-section{padding:120px 0;position:relative;z-index:2;}
+section{padding:80px 0;position:relative;z-index:2;}
 
 /* ─── HERO ─────────────────────────────────────────────────── */
-#hero{min-height:90vh;display:flex;align-items:center;justify-content:flex-start;
+#hero{min-height:72vh;display:flex;align-items:center;justify-content:flex-start;
   text-align:left;position:relative;overflow:hidden;}
 #hero .col{position:relative;z-index:2;}
 .hero-title{font-size:clamp(52px,9vw,100px);font-weight:700;letter-spacing:-0.03em;
@@ -83,19 +83,21 @@ section{padding:120px 0;position:relative;z-index:2;}
 .section-body{color:var(--text);max-width:640px;font-size:20px;}
 .section-body p{margin-bottom:20px;}
 
-/* ─── SOLITREO IMAGE GALLERY (horizontal scroll) ────────────── */
-.solitreo-gallery{margin:48px 0;display:flex;flex-direction:row;gap:20px;
-  overflow-x:auto;overflow-y:hidden;padding-bottom:16px;
-  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
-.solitreo-gallery::-webkit-scrollbar{height:6px;}
+/* ─── SOLITREO IMAGE GALLERY (horizontal scroll, full-bleed) ── */
+.solitreo-gallery{padding:0 0 12px max(24px,12vw);display:flex;
+  flex-direction:row;gap:14px;overflow-x:auto;overflow-y:hidden;
+  scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;scrollbar-color:rgba(0,0,0,0.15) transparent;}
+.solitreo-gallery::after{content:'';flex:0 0 max(24px,6vw);}
+.solitreo-gallery::-webkit-scrollbar{height:4px;}
 .solitreo-gallery::-webkit-scrollbar-track{background:transparent;}
-.solitreo-gallery::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px;}
+.solitreo-gallery::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.12);border-radius:2px;}
 .solitreo-gallery figure{margin:0;flex:0 0 auto;scroll-snap-align:start;}
-.solitreo-gallery img{height:280px;width:auto;border-radius:6px;display:block;
-  box-shadow:0 4px 24px rgba(0,0,0,0.12);transition:box-shadow 0.3s ease;}
-.solitreo-gallery img:hover{box-shadow:0 6px 32px rgba(0,0,0,0.2);}
-.solitreo-gallery figcaption{font-size:12px;color:var(--text-3);
-  margin-top:10px;max-width:260px;line-height:1.4;font-style:italic;}
+.solitreo-gallery img{height:240px;width:auto;border-radius:4px;display:block;
+  box-shadow:0 2px 16px rgba(0,0,0,0.1);transition:box-shadow 0.3s ease;}
+.solitreo-gallery img:hover{box-shadow:0 4px 24px rgba(0,0,0,0.18);}
+.solitreo-gallery figcaption{font-size:11px;color:var(--text-3);
+  margin-top:8px;max-width:220px;line-height:1.4;font-style:italic;}
 
 /* ─── FADE-IN ANIMATION ────────────────────────────────────── */
 .fade-in{opacity:0;transform:translateY(28px);transition:opacity 0.7s ease,transform 0.7s ease;}
@@ -136,7 +138,7 @@ section{padding:120px 0;position:relative;z-index:2;}
 .specimen-numbers-grid .cell:hover::after{opacity:1;}
 
 /* ─── GENERATOR SECTION (centered) ───────────────────────────── */
-#generator{padding:100px 0;display:flex;justify-content:center;}
+#generator{padding:80px 0;display:flex;justify-content:center;}
 .generator-frame{background:var(--surface);border:1px solid rgba(0,0,0,0.12);
   border-radius:10px;padding:48px 40px;max-width:920px;width:100%;
   margin:0 24px;position:relative;z-index:2;
@@ -222,8 +224,8 @@ section{padding:120px 0;position:relative;z-index:2;}
   border-radius:var(--radius);border:1px solid var(--border);}
 
 /* ─── COLOPHON ─────────────────────────────────────────────── */
-#colophon{padding:160px 24px 60px;color:var(--text-3);font-size:14px;
-  border-top:1px solid var(--border);margin-top:40px;}
+#colophon{padding:80px 24px 48px;color:var(--text-3);font-size:13px;
+  border-top:1px solid var(--border);margin-top:20px;}
 .footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
   gap:40px;max-width:860px;margin:0 auto;}
 .footer-col h4{font-size:11px;font-weight:600;text-transform:uppercase;
@@ -235,9 +237,10 @@ section{padding:120px 0;position:relative;z-index:2;}
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
 @media(max-width:900px){
   .col{margin-left:max(16px,6vw);}
+  .solitreo-gallery{padding-left:max(16px,6vw);}
 }
 @media(max-width:600px){
-  section{padding:70px 0;}
+  section{padding:50px 0;}
   .col{margin-left:16px;margin-right:16px;}
   .generator-frame{margin-left:12px;margin-right:12px;padding:24px 16px;}
   .gen-controls{flex-direction:column;align-items:stretch;}
@@ -246,8 +249,10 @@ section{padding:120px 0;position:relative;z-index:2;}
   .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));}
   .specimen-numbers-grid{grid-template-columns:repeat(5,1fr);}
   .hero-title{font-size:clamp(40px,12vw,72px);}
-  .footer-grid{grid-template-columns:1fr 1fr;gap:24px;}
-  .solitreo-gallery img{height:200px;}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:20px;}
+  .solitreo-gallery{padding-left:16px;padding-right:0;}
+  .solitreo-gallery::after{flex:0 0 16px;}
+  .solitreo-gallery img{height:180px;}
 }
 @media(max-width:400px){
   .footer-grid{grid-template-columns:1fr;}
@@ -282,7 +287,8 @@ section{padding:120px 0;position:relative;z-index:2;}
       <p>Solitreo is the cursive script historically used by Sephardic Jews to write Ladino (Judeo-Spanish). Unlike the block Hebrew script used for sacred texts, Solitreo was the everyday handwriting of Ladino speakers across the Ottoman Empire, North Africa, and beyond.</p>
       <p>Ganchos Sans is a digital typeface designed by Benny Yorohan that revives these letterforms, translating the fluid curves of Solitreo into a contemporary typographic system. This tool translates names into generative woven patterns inspired by Sephardic textile traditions.</p>
     </div>
-    <div class="solitreo-gallery">
+  </div>
+  <div class="solitreo-gallery">
       <figure>
         <img src="el-tiempo-masthead.jpg" alt="Masthead of El Tiempo, the prominent Ladino newspaper printed in Rashi Hebrew script">
         <figcaption>El Tiempo — Ladino newspaper, Istanbul. Rashi script masthead.</figcaption>
@@ -315,7 +321,6 @@ section{padding:120px 0;position:relative;z-index:2;}
         <img src="solitreo-map.jpg" alt="Geographic map showing the distribution of Solitreo script usage across the Sephardic diaspora">
         <figcaption>Solitreo Map — geographic distribution of the script across the Sephardic diaspora.</figcaption>
       </figure>
-    </div>
   </div>
 </section>
 
@@ -406,6 +411,7 @@ section{padding:120px 0;position:relative;z-index:2;}
           <option value="kilim">Kilim</option>
           <option value="medallion">Medallion</option>
           <option value="striped">Striped</option>
+          <option value="script">Script</option>
         </select>
       </label>
       <label>Symmetry
@@ -463,26 +469,24 @@ section{padding:120px 0;position:relative;z-index:2;}
       <h4>Project</h4>
       <p><strong>Ganchos Taalim</strong></p>
       <p>MassArt Degree Project, 2026</p>
-      <p>Designed &amp; developed by<br>Benny Yorohan</p>
+      <p>Designed &amp; developed by Benny Yorohan</p>
     </div>
     <div class="footer-col">
       <h4>Typeface</h4>
       <p>Ganchos Sans v8</p>
-      <p>Based on historical Solitreo<br>letterforms of the Sephardic diaspora</p>
+      <p>Based on historical Solitreo letterforms</p>
     </div>
     <div class="footer-col">
       <h4>Acknowledgments</h4>
-      <p>Prof. Bryan Kirschen,<br>Binghamton University</p>
-      <p>David Bunis</p>
-      <p>Nathan Gross</p>
+      <p>Prof. Bryan Kirschen, Binghamton University</p>
+      <p>David Bunis &middot; Nathan Gross</p>
       <p>Documenting Judeo-Spanish</p>
     </div>
     <div class="footer-col">
-      <h4>Tools &amp; Standards</h4>
-      <p><a href="https://adacad.org" target="_blank">AdaCAD 5</a></p>
-      <p><a href="https://ladinotype.com" target="_blank">LadinoType</a></p>
-      <p>Aki Yerushalayim standards</p>
-      <p style="margin-top:16px;"><a href="https://instagram.com/beniyorohan_" target="_blank">@beniyorohan_</a></p>
+      <h4>Links</h4>
+      <p><a href="https://beniyorohan-design.com" target="_blank">beniyorohan-design.com</a></p>
+      <p><a href="https://instagram.com/beniyorohan.design" target="_blank">@beniyorohan.design</a></p>
+      <p><a href="https://adacad.org" target="_blank">AdaCAD 5</a> &middot; <a href="https://ladinotype.com" target="_blank">LadinoType</a></p>
     </div>
   </div>
 </footer>
@@ -495,6 +499,8 @@ let grid=[];
 let fontLoaded=false;
 let remixCounter=0;
 let rugSketch=null;
+let scriptMode=false;
+let scriptPlacements=[];
 
 // ─── FONT LOADING ───────────────────────────────────────────────
 async function loadFont(){
@@ -928,20 +934,101 @@ function generateField(g,w,h,bw,features,comp,rng){
   applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
 }
 
+// ─── SCRIPT MODE (pure letterforms, no grid) ────────────────────
+function generateScriptMode(name){
+  scriptPlacements=[];
+  const seed=remixCounter>0?name+'_'+remixCounter:name;
+  const rng=createPRNG(seed);
+  const chars=transliterateToChars(name);
+  if(!chars.length){scriptMode=false;grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='No transliterable characters found.';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
+  W=parseInt(document.getElementById('rugW').value)||18;
+  H=parseInt(document.getElementById('rugH').value)||30;
+  grid=[];
+  document.getElementById('solitreoText').textContent=transliterate(name);
+  const complexity=document.getElementById('complexityLevel').value;
+  const symSel=document.getElementById('symmetryMode').value;
+  const borderSel=document.getElementById('borderStyle').value;
+  // Canvas dimensions from rug ratio
+  const ratio=H/W;const cW=480;const cH=Math.round(cW*ratio);
+  const cellSz=complexity==='simple'?56:complexity==='complex'?28:40;
+  const cols=Math.max(2,Math.floor(cW/cellSz));
+  const rows=Math.max(2,Math.floor(cH/cellSz));
+  const actualCW=cols*cellSz;const actualCH=rows*cellSz;
+  // Symmetry
+  let symV=false,symH=false;
+  if(symSel==='vertical'){symV=true;}
+  else if(symSel==='horizontal'){symH=true;}
+  else if(symSel==='both'){symV=true;symH=true;}
+  else if(symSel==='auto'){symV=true;symH=rng()>0.4;}
+  // Border cells
+  let bCells=0;
+  if(borderSel==='simple'||borderSel==='auto')bCells=1;
+  else if(borderSel==='double'||borderSel==='stepped')bCells=2;
+  // Source quadrant
+  const srcCols=symV?Math.ceil(cols/2):cols;
+  const srcRows=symH?Math.ceil(rows/2):rows;
+  const useBrick=complexity!=='simple'&&rng()>0.4;
+  const useRotation=complexity==='complex';
+  const src=[];
+  for(let r=0;r<srcRows;r++){
+    for(let c=0;c<srcCols;c++){
+      const isBorder=r<bCells||c<bCells;
+      const idx=(r*srcCols+c)%chars.length;
+      const ch=chars[idx];
+      const brickOff=(useBrick&&r%2===1)?cellSz*0.5:0;
+      const x=c*cellSz+cellSz/2+brickOff;
+      const y=r*cellSz+cellSz/2;
+      const sz=isBorder?cellSz*0.36:cellSz*(0.58+rng()*0.2);
+      const rot=useRotation?(rng()-0.5)*0.25:0;
+      const alpha=isBorder?100:185+Math.floor(rng()*70);
+      src.push({ch:ch,x:x,y:y,size:sz,rotation:rot,alpha:alpha});
+    }
+  }
+  // Build full placements with symmetry
+  const full=[];
+  for(var i=0;i<src.length;i++){
+    var p=src[i];full.push(p);
+    if(symV){var mx=actualCW-p.x;if(Math.abs(mx-p.x)>4)
+      full.push({ch:p.ch,x:mx,y:p.y,size:p.size,rotation:-p.rotation,alpha:p.alpha,flip:true});}
+  }
+  if(symH){var top=full.slice();for(var j=0;j<top.length;j++){
+    var q=top[j];var my=actualCH-q.y;if(Math.abs(my-q.y)>4)
+      full.push({ch:q.ch,x:q.x,y:my,size:q.size,rotation:-q.rotation,alpha:q.alpha,flip:q.flip});}}
+  scriptPlacements=full;
+  scriptPlacements._cW=actualCW;scriptPlacements._cH=actualCH;
+  if(rugSketch)rugSketch.refresh();
+  document.getElementById('patternStats').textContent=
+    actualCW+'\u00d7'+actualCH+'px \u00b7 '+full.length+' glyphs \u00b7 script \u00b7 seed: '+seed;
+  // Taalim info for script mode
+  var body=document.getElementById('taalimBody');
+  var html='<div class="taalim-section"><h3>Script Pattern</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">Undistorted Solitreo letterforms in a ';
+  html+=(symV&&symH)?'four-way symmetric':symV?'vertically mirrored':symH?'horizontally mirrored':'free';
+  html+=' composition.</p>';
+  html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p>';
+  html+='<p style="font-size:14px;color:var(--text-3);">'+full.length+' glyphs \u00b7 '+cols+'\u00d7'+rows+' layout';
+  if(useBrick)html+=' \u00b7 brick offset';
+  html+='</p></div>';body.innerHTML=html;
+}
+
 // ─── MAIN GENERATE ──────────────────────────────────────────────
 function generatePattern(){
   const name=document.getElementById('nameInput').value.trim();
   if(!name){
-    grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    scriptMode=false;grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='';
     document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>';
     return;
   }
+  if(document.getElementById('patternStyle').value==='script'){generateScriptMode(name);return;}
+  scriptMode=false;
   const seed=remixCounter>0?name+'_'+remixCounter:name;
   const rng=createPRNG(seed);
   const solitreoChars=transliterateToChars(name);
   if(solitreoChars.length===0){
-    grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    scriptMode=false;grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='No transliterable characters found.';
     document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';
     return;
@@ -993,6 +1080,7 @@ function generateTaalim(){
 // ─── EXPORTS ────────────────────────────────────────────────────
 function downloadFile(n,c,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
 function doExportWIF(){
+  if(scriptMode){alert('WIF export is not available in Script mode. Use PNG export instead.');return;}
   if(!grid.length)return;const name=document.getElementById('nameInput').value.trim()||'pattern';
   let wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\nDevelopers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=9.0\n\n';
   wif+='[CONTENTS]\nCOLOR PALETTE=true\nCOLOR TABLE=true\nWEAVING=true\nWARP=true\nWEFT=true\nTHREADING=true\nTIEUP=true\nLIFTPLAN=true\n\n';
@@ -1005,12 +1093,14 @@ function doExportWIF(){
   downloadFile('ganchos-'+name.replace(/\s+/g,'-')+'.wif',wif,'text/plain');
 }
 function doExportPNG(){
+  if(scriptMode){var c=document.querySelector('#rugCanvas canvas');if(!c)return;var n=document.getElementById('nameInput').value.trim()||'pattern';var a=document.createElement('a');a.download='ganchos-'+n.replace(/\s+/g,'-')+'.png';a.href=c.toDataURL('image/png');a.click();return;}
   if(!grid.length)return;const name=document.getElementById('nameInput').value.trim()||'pattern';
   const sc=4,ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;const ectx=ec.getContext('2d');
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';ectx.fillRect(x*sc,y*sc,sc,sc);}
   const a=document.createElement('a');a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';a.href=ec.toDataURL('image/png');a.click();
 }
 function doExportTXT(){
+  if(scriptMode){var n=document.getElementById('nameInput').value.trim()||'pattern';var t='GANCHOS TAALIM \u2014 Script Pattern\nName: '+n+'\nGlyphs: '+scriptPlacements.length+'\n\nThis pattern uses undistorted Solitreo letterforms.\nNo grid instructions available for Script mode.\n';navigator.clipboard.writeText(t).then(function(){var b=document.querySelector('.gen-export .btn-outline:last-child');if(b){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1500);}}).catch(function(){alert('Copy failed.');});return;}
   if(!grid.length)return;
   let txt='TAALIM \u2014 Ganchos Taalim Generative Pattern\nName: '+document.getElementById('nameInput').value.trim()+'\nGrid: '+W+'\u00d7'+H+'\n\n';
   for(let y=0;y<H;y++){const row=grid[y];let rle=[];let cx=W-1;while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'\u25a0':'\u25a1')+run);cx-=run;}txt+='Row '+(y+1)+': '+rle.join(' ')+'\n';}
@@ -1023,6 +1113,16 @@ function createRugSketch(containerEl){
     let cellSize=8;
     p.setup=function(){const c=p.createCanvas(100,100);c.parent(containerEl);p.noLoop();p.pixelDensity(1);};
     p.draw=function(){
+      if(scriptMode&&scriptPlacements.length>0){
+        var cw=scriptPlacements._cW||480,_ch=scriptPlacements._cH||600;
+        p.resizeCanvas(cw,_ch);p.background(245,245,240);
+        p.textFont('GanchosSans');p.textAlign(p.CENTER,p.CENTER);p.noStroke();
+        for(var i=0;i<scriptPlacements.length;i++){var pl=scriptPlacements[i];
+          p.push();p.translate(pl.x,pl.y);
+          if(pl.rotation)p.rotate(pl.rotation);if(pl.flip)p.scale(-1,1);
+          p.fill(17,17,17,pl.alpha||255);p.textSize(pl.size);
+          p.text(pl.ch,0,0);p.pop();}
+        return;}
       if(!grid||!grid.length){p.resizeCanvas(400,300);p.background(250,250,245);p.fill(180);p.noStroke();p.textFont('Inter, sans-serif');p.textSize(16);p.textAlign(p.CENTER,p.CENTER);p.text('Enter a name to generate a pattern',200,150);return;}
       const maxW=containerEl.clientWidth||600,maxH=Math.min(window.innerHeight*0.65,700);
       cellSize=Math.max(2,Math.floor(Math.min(maxW/W,maxH/H)));
