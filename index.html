@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ganchos Taalim — Generative Rug Design</title>
+<meta name="description" content="Translate Sephardic names into unique generative woven patterns through the Solitreo script. A MassArt degree project connecting Ladino calligraphy to textile design.">
+<meta property="og:title" content="Ganchos Taalim — Generative Rug Design">
+<meta property="og:description" content="Translate Sephardic names into unique generative woven patterns through the Solitreo script.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#FAFAF8">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧶</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+/* ─── FONTS ─────────────────────────────────────────────────── */
+@font-face { font-family:'GanchosSans'; src:url('GanchosSansv8-Regular.ttf'); }
+
+/* ─── RESET & TOKENS ────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#FAFAF8;
+  --surface:#FFFFFF;
+  --text:#1A1A1A;
+  --text-2:#4A4A4A;
+  --text-3:#8A8A8A;
+  --accent:#2D2D2D;
+  --accent-h:#444;
+  --border:rgba(0,0,0,0.08);
+  --grid-on:#1A1A1A;
+  --grid-off:#F5F5F0;
+  --radius:6px;
+  --col:720px;
+  --font:Inter,-apple-system,system-ui,sans-serif;
+  --mono:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
+  --solitreo:'GanchosSans',serif;
+}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);color:var(--text);background:var(--bg);
+  font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;}
+
+/* ─── LAYOUT ────────────────────────────────────────────────── */
+.col{max-width:var(--col);margin:0 auto;padding:0 24px;}
+section{padding:100px 0;}
+section+section{border-top:1px solid var(--border);}
+
+/* ─── HERO ──────────────────────────────────────────────────── */
+#hero{min-height:90vh;display:flex;align-items:center;justify-content:center;
+  text-align:center;border-top:none;position:relative;overflow:hidden;}
+#hero .col{position:relative;z-index:1;}
+.hero-title{font-size:clamp(36px,6vw,64px);font-weight:700;letter-spacing:-0.03em;
+  line-height:1.1;margin-bottom:16px;}
+.hero-sub{font-size:clamp(16px,2.5vw,22px);color:var(--text-2);max-width:520px;
+  margin:0 auto 40px;line-height:1.5;}
+.hero-cta{display:inline-block;padding:14px 32px;background:var(--accent);color:#fff;
+  text-decoration:none;font-size:15px;font-weight:500;letter-spacing:0.02em;
+  transition:background 0.2s;}
+.hero-cta:hover{background:var(--accent-h);}
+.hero-solitreo{font-family:var(--solitreo);font-size:clamp(28px,5vw,48px);
+  color:var(--text-3);margin-bottom:24px;direction:rtl;opacity:0.4;
+  letter-spacing:0.1em;}
+
+/* ─── NARRATIVE SECTIONS ────────────────────────────────────── */
+.section-label{font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.1em;color:var(--text-3);margin-bottom:12px;}
+.section-title{font-size:clamp(24px,4vw,36px);font-weight:600;
+  letter-spacing:-0.02em;line-height:1.2;margin-bottom:20px;}
+.section-body{color:var(--text-2);max-width:580px;}
+.section-body p{margin-bottom:16px;}
+.section-glyph-row{display:flex;gap:16px;margin:32px 0;flex-wrap:wrap;}
+.section-glyph{font-family:var(--solitreo);font-size:48px;color:var(--text);
+  width:64px;height:64px;display:flex;align-items:center;justify-content:center;
+  background:var(--grid-off);border-radius:var(--radius);}
+
+/* ─── FADE-IN ANIMATION ─────────────────────────────────────── */
+.fade-in{opacity:0;transform:translateY(24px);transition:opacity 0.6s ease,transform 0.6s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
+
+/* ─── GENERATOR SECTION ─────────────────────────────────────── */
+#generator{background:var(--surface);border-top:1px solid var(--border);
+  border-bottom:1px solid var(--border);padding:80px 0;}
+.gen-header{text-align:center;margin-bottom:48px;}
+.gen-header h2{font-size:clamp(20px,3vw,28px);font-weight:600;letter-spacing:-0.02em;margin-bottom:8px;}
+.gen-header p{color:var(--text-3);font-size:15px;}
+
+/* Name input */
+.name-input-wrap{text-align:center;margin-bottom:32px;}
+#nameInput{font-family:var(--mono);font-size:clamp(24px,4vw,40px);
+  text-align:center;border:none;border-bottom:2px solid var(--text);
+  background:transparent;padding:8px 16px;width:100%;max-width:480px;
+  outline:none;letter-spacing:0.05em;color:var(--text);}
+#nameInput::placeholder{color:var(--text-3);}
+#nameInput:focus{border-bottom-color:var(--accent);}
+
+/* Solitreo display */
+.solitreo-display{text-align:center;margin:20px 0 36px;min-height:56px;}
+#solitreoText{font-family:var(--solitreo);font-size:clamp(32px,5vw,56px);
+  direction:rtl;unicode-bidi:bidi-override;color:var(--text);
+  letter-spacing:0.05em;line-height:1.2;}
+
+/* Controls row */
+.gen-controls{display:flex;align-items:center;justify-content:center;
+  gap:16px;flex-wrap:wrap;margin-bottom:32px;}
+.gen-controls label{font-size:13px;color:var(--text-3);font-weight:500;}
+.gen-controls select,.gen-controls input[type="number"]{
+  font-family:var(--mono);font-size:13px;padding:6px 10px;
+  border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--bg);color:var(--text);outline:none;width:64px;}
+.gen-controls select{width:auto;}
+.btn{padding:10px 20px;background:var(--accent);color:#fff;border:none;
+  font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);
+  letter-spacing:0.02em;transition:background 0.15s;}
+.btn:hover{background:var(--accent-h);}
+.btn-outline{padding:10px 20px;background:transparent;color:var(--text);
+  border:1px solid var(--border);font-size:13px;font-weight:500;cursor:pointer;
+  font-family:var(--font);letter-spacing:0.02em;transition:all 0.15s;}
+.btn-outline:hover{border-color:var(--text);background:var(--text);color:#fff;}
+
+/* Canvas container */
+.canvas-wrap{display:flex;justify-content:center;margin:0 auto 32px;
+  max-width:100%;overflow:auto;}
+#rugCanvas{box-shadow:0 2px 20px rgba(0,0,0,0.06);}
+
+/* Export row */
+.gen-export{display:flex;align-items:center;justify-content:center;gap:12px;
+  flex-wrap:wrap;margin-top:24px;}
+.gen-stats{font-family:var(--mono);font-size:12px;color:var(--text-3);
+  text-align:center;margin-top:16px;}
+
+/* ─── TAALIM SECTION ────────────────────────────────────────── */
+#taalim{background:var(--bg);}
+.taalim-section{margin-bottom:32px;}
+.taalim-section h3{font-size:11px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px;}
+.taalim-stats{display:flex;gap:32px;flex-wrap:wrap;}
+.taalim-stat .val{font-family:var(--mono);font-size:20px;font-weight:600;}
+.taalim-stat .lbl{font-size:12px;color:var(--text-3);margin-top:2px;}
+.taalim-visual{font-family:var(--mono);font-size:6px;line-height:1;
+  white-space:pre;letter-spacing:0;overflow-x:auto;padding:16px;
+  background:var(--surface);border-radius:var(--radius);border:1px solid var(--border);}
+.taalim-rows{font-family:var(--mono);font-size:10px;line-height:1.8;
+  max-height:400px;overflow-y:auto;padding:16px;background:var(--surface);
+  border-radius:var(--radius);border:1px solid var(--border);}
+
+/* ─── COLOPHON ──────────────────────────────────────────────── */
+#colophon{text-align:center;padding:60px 0;color:var(--text-3);font-size:14px;}
+#colophon a{color:var(--text-2);text-decoration:underline;
+  text-underline-offset:3px;}
+#colophon p{margin-bottom:8px;}
+
+/* ─── RESPONSIVE ────────────────────────────────────────────── */
+@media(max-width:600px){
+  section{padding:60px 0;}
+  .gen-controls{flex-direction:column;align-items:stretch;}
+  .gen-export{flex-direction:column;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ HERO ═══════════════════════════ -->
+<section id="hero">
+  <div class="col">
+    <div class="hero-solitreo">גאנגוס טאאלים</div>
+    <h1 class="hero-title">Ganchos Taalim</h1>
+    <p class="hero-sub">Translating Sephardic names into generative woven patterns through the Solitreo script.</p>
+    <a href="#generator" class="hero-cta">Enter a Name</a>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ CONTEXT ═══════════════════════ -->
+<section id="context" class="fade-in">
+  <div class="col">
+    <div class="section-label">Background</div>
+    <h2 class="section-title">What is Solitreo?</h2>
+    <div class="section-body">
+      <p>Solitreo is the cursive script historically used by Sephardic Jews to write Ladino (Judeo-Spanish). Unlike the block Hebrew script used for sacred texts, Solitreo was the everyday handwriting of Ladino speakers across the Ottoman Empire, North Africa, and beyond.</p>
+      <p>Ganchos Sans is a digital typeface that revives these letterforms, translating the fluid curves of Solitreo into a contemporary typographic system.</p>
+    </div>
+    <div class="section-glyph-row">
+      <div class="section-glyph">&#x05D0;</div>
+      <div class="section-glyph">&#x05D1;</div>
+      <div class="section-glyph">&#x05D2;</div>
+      <div class="section-glyph">&#x05D3;</div>
+      <div class="section-glyph">&#x05D4;</div>
+      <div class="section-glyph">&#x05D5;</div>
+      <div class="section-glyph">&#x05D6;</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ TRADITION ═════════════════════ -->
+<section id="tradition" class="fade-in">
+  <div class="col">
+    <div class="section-label">Heritage</div>
+    <h2 class="section-title">Letters Become Textiles</h2>
+    <div class="section-body">
+      <p>Throughout the Sephardic diaspora, textile arts — particularly rug weaving — were central to domestic life. This tool connects two traditions: the written Ladino script and the woven patterns of Sephardic textiles.</p>
+      <p>Each name entered is first transliterated from the Latin alphabet into Solitreo characters. The shapes of those characters are then deconstructed — their density, symmetry, and stroke directions — to generate a unique binary weaving pattern compatible with AdaCAD and traditional loom techniques.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ PROCESS ═══════════════════════ -->
+<section id="process" class="fade-in">
+  <div class="col">
+    <div class="section-label">Method</div>
+    <h2 class="section-title">How It Works</h2>
+    <div class="section-body">
+      <p><strong>1. Transliterate</strong> — Your name is converted from Latin script to Solitreo using Ladino phonetic rules based on the Aki Yerushalayim standard.</p>
+      <p><strong>2. Analyze</strong> — Each Solitreo letter is rasterized and its visual properties are extracted: fill density, center of mass, symmetry, stroke direction, and structural complexity.</p>
+      <p><strong>3. Generate</strong> — These properties become parameters for a generative algorithm that composes a rug pattern: borders, field zones, medallions, and symmetry — all derived from the unique geometry of your name's letters.</p>
+      <p><strong>4. Weave</strong> — Export the pattern as a WIF file for AdaCAD or as a PNG image. Every name produces a one-of-a-kind design.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ GENERATOR ═════════════════════ -->
+<section id="generator">
+  <div class="col">
+    <div class="gen-header">
+      <h2>Generate Your Pattern</h2>
+      <p>Type a name in Latin letters. The algorithm does the rest.</p>
+    </div>
+
+    <div class="name-input-wrap">
+      <input type="text" id="nameInput" placeholder="Enter a name" autocomplete="off" spellcheck="false">
+    </div>
+
+    <div class="solitreo-display">
+      <div id="solitreoText" aria-label="Solitreo transliteration" role="status" aria-live="polite"></div>
+    </div>
+
+    <div class="gen-controls">
+      <label>Size
+        <select id="rugPreset" autocomplete="off">
+          <option value="18,30" selected>Yastik — 18×30</option>
+          <option value="36,60">Seccade — 36×60</option>
+          <option value="48,72">Accent — 48×72</option>
+          <option value="30,96">Runner — 30×96</option>
+          <option value="60,90">Area — 60×90</option>
+          <option value="">Custom</option>
+        </select>
+      </label>
+      <label>W <input type="number" id="rugW" value="18" min="8" max="256"></label>
+      <label>H <input type="number" id="rugH" value="30" min="8" max="256"></label>
+      <button class="btn" id="remixBtn">Remix</button>
+    </div>
+
+    <div class="canvas-wrap">
+      <div id="rugCanvas"></div>
+    </div>
+
+    <div class="gen-stats" id="patternStats"></div>
+
+    <div class="gen-export">
+      <button class="btn-outline" onclick="doExportWIF()">Export WIF</button>
+      <button class="btn-outline" onclick="doExportPNG()">Export PNG</button>
+      <button class="btn-outline" onclick="doExportTXT()">Copy Taalim</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ TAALIM ════════════════════════ -->
+<section id="taalim">
+  <div class="col">
+    <div class="section-label">Weaving Instructions</div>
+    <h2 class="section-title">Taalim</h2>
+    <div id="taalimBody">
+      <p style="color:var(--text-3);">Enter a name above to generate weaving instructions.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ COLOPHON ══════════════════════ -->
+<section id="colophon">
+  <div class="col">
+    <p><strong>Ganchos Taalim</strong> — MassArt Degree Project 2026</p>
+    <p>Typeface: Ganchos Sans v8 &nbsp;·&nbsp; Weaving: <a href="https://adacad.org" target="_blank">AdaCAD 5</a></p>
+    <p>Transliteration based on <a href="https://ladinotype.com" target="_blank">LadinoType</a> &amp; Aki Yerushalayim standards</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ JAVASCRIPT ════════════════════ -->
+<script>
+// ─── STATE ──────────────────────────────────────────────────────
+let W=18, H=30;
+let grid=[];
+let fontLoaded=false;
+let remixCounter=0;
+let rugSketch=null;
+
+// ─── FONT LOADING ───────────────────────────────────────────────
+async function loadFont(){
+  const paths=['GanchosSansv8-Regular.ttf','./GanchosSansv8-Regular.ttf'];
+  for(const path of paths){
+    try{
+      const face=new FontFace('GanchosSans','url('+path+')');
+      await face.load();document.fonts.add(face);fontLoaded=true;
+      return;
+    }catch(e){}
+  }
+}
+
+// ─── GLYPH RASTERIZATION (4x supersampled) ─────────────────────
+const SS=4;
+const SS_THRESHOLD=0.35;
+
+function supersampleDown(px,hires,size){
+  const r=[];const cellArea=SS*SS;
+  for(let y=0;y<size;y++){
+    r[y]=[];
+    for(let x=0;x<size;x++){
+      let sum=0;
+      for(let sy=0;sy<SS;sy++)for(let sx=0;sx<SS;sx++){
+        sum+=px[((y*SS+sy)*hires+(x*SS+sx))*4+3];
+      }
+      r[y][x]=(sum/cellArea/255)>SS_THRESHOLD?1:0;
+    }
+  }
+  return r;
+}
+
+function rasterizeFromFont(charStr,size){
+  if(!fontLoaded)return null;
+  const hires=size*SS;
+  const tc=document.createElement('canvas');tc.width=hires;tc.height=hires;
+  const tctx=tc.getContext('2d');
+  const fs=Math.round(hires*0.78);
+  tctx.font=fs+'px GanchosSans';tctx.textAlign='center';tctx.textBaseline='middle';
+  tctx.fillStyle='#000';tctx.fillText(charStr,hires/2,hires/2);
+  return supersampleDown(tctx.getImageData(0,0,hires,hires).data,hires,size);
+}
+
+// ─── TRANSLITERATION ENGINE ─────────────────────────────────────
+const DIGRAPHS={
+  'sh':'\u05E9','ch':'\u05D7','kh':'\u05D7',
+  'ts':'\u05E6','tz':'\u05E6','dj':'\u05D2\u05F3'
+};
+const SINGLES={
+  'a':'\u05D0','b':'\u05D1','g':'\u05D2','d':'\u05D3',
+  'h':'\u05D4','v':'\u05D5','u':'\u05D5','o':'\u05D5',
+  'z':'\u05D6','t':'\u05D8','y':'\u05D9','i':'\u05D9',
+  'e':'\u05D9','k':'\u05DB','l':'\u05DC','m':'\u05DE',
+  'n':'\u05E0','s':'\u05E1','p':'\u05E4','f':'\u05E4',
+  'q':'\u05E7','r':'\u05E8','w':'\u05D5',
+  'j':'\u05D6\u05F3','c':'\u05E1'
+};
+const SPECIAL={'x':'\u05DB\u05E1'};
+const FINALS={
+  '\u05DB':'\u05DA','\u05DE':'\u05DD','\u05E0':'\u05DF',
+  '\u05E4':'\u05E3','\u05E6':'\u05E5'
+};
+
+function transliterateToChars(input){
+  const words=input.toLowerCase().replace(/[^a-z\s]/g,'').split(/\s+/).filter(Boolean);
+  const allChars=[];
+  words.forEach(word=>{
+    const chars=[];
+    let i=0;
+    while(i<word.length){
+      const di=word.slice(i,i+2);
+      if(DIGRAPHS[di]){chars.push(DIGRAPHS[di]);i+=2;}
+      else if(SPECIAL[word[i]]){chars.push(SPECIAL[word[i]]);i++;}
+      else if(SINGLES[word[i]]){chars.push(SINGLES[word[i]]);i++;}
+      else{i++;}
+    }
+    // Apply final forms
+    if(chars.length>0){
+      const last=chars[chars.length-1];
+      const lastChar=last.charAt(last.length-1);
+      if(FINALS[lastChar])chars[chars.length-1]=last.slice(0,-1)+FINALS[lastChar];
+    }
+    allChars.push(...chars);
+  });
+  return allChars;
+}
+
+function transliterate(input){
+  return transliterateToChars(input).join('');
+}
+
+// ─── FEATURE EXTRACTION ────────────────────────────────────────
+function extractFeatures(binaryGrid){
+  const h=binaryGrid.length,w=binaryGrid[0].length;
+  let filled=0,sumX=0,sumY=0;
+  let minX=w,maxX=0,minY=h,maxY=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    if(binaryGrid[y][x]){
+      filled++;sumX+=x;sumY+=y;
+      if(x<minX)minX=x;if(x>maxX)maxX=x;
+      if(y<minY)minY=y;if(y>maxY)maxY=y;
+    }
+  }
+  const density=filled/(w*h);
+  const comX=filled>0?(sumX/filled)/w:0.5;
+  const comY=filled>0?(sumY/filled)/h:0.5;
+  const bbW=maxX-minX+1||1,bbH=maxY-minY+1||1;
+  const aspectRatio=bbW/bbH;
+
+  let symV=0,symVT=0;
+  for(let y=0;y<h;y++)for(let x=0;x<Math.floor(w/2);x++){
+    symVT++;if(binaryGrid[y][x]===binaryGrid[y][w-1-x])symV++;
+  }
+  const vertSymmetry=symVT>0?symV/symVT:0;
+
+  let symH=0,symHT=0;
+  for(let y=0;y<Math.floor(h/2);y++)for(let x=0;x<w;x++){
+    symHT++;if(binaryGrid[y][x]===binaryGrid[h-1-y][x])symH++;
+  }
+  const horizSymmetry=symHT>0?symH/symHT:0;
+
+  // Connected components
+  const visited=Array.from({length:h},()=>new Array(w).fill(false));
+  let components=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    if(binaryGrid[y][x]&&!visited[y][x]){
+      components++;
+      const q=[[x,y]];visited[y][x]=true;
+      while(q.length){
+        const[cx,cy]=q.shift();
+        for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){
+          const nx=cx+dx,ny=cy+dy;
+          if(nx>=0&&nx<w&&ny>=0&&ny<h&&binaryGrid[ny][nx]&&!visited[ny][nx]){
+            visited[ny][nx]=true;q.push([nx,ny]);
+          }
+        }
+      }
+    }
+  }
+
+  let hTrans=0,vTrans=0;
+  for(let y=0;y<h;y++)for(let x=0;x<w-1;x++)if(binaryGrid[y][x]!==binaryGrid[y][x+1])hTrans++;
+  for(let y=0;y<h-1;y++)for(let x=0;x<w;x++)if(binaryGrid[y][x]!==binaryGrid[y+1][x])vTrans++;
+  const strokeDir=(hTrans+vTrans)>0?hTrans/(hTrans+vTrans):0.5;
+
+  return{density,comX,comY,aspectRatio,vertSymmetry,horizSymmetry,components,strokeDir};
+}
+
+function defaultFeatures(){
+  return{density:0.15,comX:0.5,comY:0.5,aspectRatio:1,vertSymmetry:0.5,
+    horizSymmetry:0.5,components:1,strokeDir:0.5};
+}
+
+// ─── SEEDED PRNG (mulberry32) ───────────────────────────────────
+function createPRNG(seed){
+  let h=0;
+  for(let i=0;i<seed.length;i++)h=Math.imul(31,h)+seed.charCodeAt(i)|0;
+  let t=h>>>0;
+  return function(){
+    t+=0x6D2B79F5;let z=t;
+    z=Math.imul(z^(z>>>15),z|1);
+    z^=z+Math.imul(z^(z>>>7),z|61);
+    return((z^(z>>>14))>>>0)/4294967296;
+  };
+}
+
+// ─── PATTERN CELLS (reused from v4) ────────────────────────────
+function getPatternCell(t,x,y){
+  switch(t){
+    case'tabby':return(x+y)%2;
+    case'twill22':return((x+y)%4<2)?1:0;
+    case'twill31':return((x+y)%4<3)?1:0;
+    case'satin5':return((x*2+y)%5===0)?1:0;
+    case'herringbone':{const p=(y%8)<4?(x+y)%4:(x-y+400)%4;return p<2?1:0;}
+    case'houndstooth':{const bx=Math.floor(x/4),by=Math.floor(y/4),ix=x%4,iy=y%4;const b=((ix+iy)%4<2)?1:0;return(bx+by)%2===0?b:1-b;}
+    case'basket':return(Math.floor(x/2)+Math.floor(y/2))%2;
+    case'waffle':{const cx=x%8,cy=y%8;if(cx===0||cy===0)return 1;if(cx===4||cy===4)return 0;return(cx+cy)%2;}
+    default:return 0;
+  }
+}
+const PATTERNS=['tabby','twill22','twill31','satin5','herringbone','houndstooth','basket','waffle'];
+
+function getBorderVal(bp,x,y){
+  switch(bp){
+    case 0:return 1; // solid
+    case 1:return(y%2===0)?1:0; // double
+    case 2:return(x%4<2)?1:0; // dash
+    case 3:return((x+y)%4<2)?1:0; // zigzag
+    case 4:return((x%6<3)^(y%6<3))?1:0; // diamond
+    default:return 1;
+  }
+}
+
+// ─── GENERATIVE ALGORITHM ───────────────────────────────────────
+function mapRange(v,inMin,inMax,outMin,outMax){
+  return outMin+(v-inMin)/(inMax-inMin)*(outMax-outMin);
+}
+
+function computeComposition(features,rugW,rugH,rng){
+  const n=features.length;
+  const avgDensity=features.reduce((s,f)=>s+f.density,0)/n;
+  const borderWidth=Math.round(mapRange(
+    Math.min(Math.max(avgDensity,0.05),0.4),0.05,0.4,2,Math.min(6,Math.floor(rugW*0.08))
+  ));
+
+  const avgSymV=features.reduce((s,f)=>s+f.vertSymmetry,0)/n;
+  const avgSymH=features.reduce((s,f)=>s+f.horizSymmetry,0)/n;
+  let symmetryMode=0;
+  if(avgSymV>0.6&&avgSymH>0.6)symmetryMode=3;
+  else if(avgSymV>0.55)symmetryMode=1;
+  else if(avgSymH>0.55)symmetryMode=2;
+  // Use rng to sometimes force symmetry for visual appeal
+  if(symmetryMode===0&&rng()>0.3)symmetryMode=rng()>0.5?1:3;
+
+  const hasCentralMotif=(n%2===1);
+  const zoneCount=Math.min(n,Math.max(3,Math.ceil(n/2)));
+
+  return{borderWidth,symmetryMode,hasCentralMotif,zoneCount};
+}
+
+function generateBorder(g,w,h,bw,firstF,lastF,rng){
+  const patIdx=Math.floor(firstF.strokeDir*5)%5;
+  for(let layer=0;layer<bw;layer++){
+    for(let x=0;x<w;x++){
+      const v=getBorderVal(patIdx,x,layer);
+      g[layer][x]=v;g[h-1-layer][x]=v;
+    }
+    for(let y=0;y<h;y++){
+      const v=getBorderVal(patIdx,y,layer);
+      g[y][layer]=v;g[y][w-1-layer]=v;
+    }
+  }
+}
+
+function fillZone(g,x0,y0,w,h,feature,rng){
+  const patIdx=Math.min(PATTERNS.length-1,Math.floor(feature.density*PATTERNS.length*1.5)%PATTERNS.length);
+  const basePattern=PATTERNS[patIdx];
+  const scaleX=Math.max(1,Math.round(feature.aspectRatio*2));
+  const scaleY=Math.max(1,Math.round((1/Math.max(0.1,feature.aspectRatio))*2));
+  const phaseX=Math.round(feature.comX*7);
+  const phaseY=Math.round(feature.comY*7);
+
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const gx=x0+x,gy=y0+y;
+      if(gx>=0&&gx<g[0].length&&gy>=0&&gy<g.length){
+        const sx=Math.floor((x+phaseX)/scaleX);
+        const sy=Math.floor((y+phaseY)/scaleY);
+        g[gy][gx]=getPatternCell(basePattern,sx,sy);
+      }
+    }
+  }
+
+  // Accent lines based on strokeDir
+  if(feature.strokeDir>0.6){
+    const spacing=Math.max(3,Math.round(h/(feature.components+1)));
+    for(let y=spacing;y<h;y+=spacing)
+      for(let x=0;x<w;x++){
+        const gy=y0+y,gx=x0+x;
+        if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;
+      }
+  }else if(feature.strokeDir<0.4){
+    const spacing=Math.max(3,Math.round(w/(feature.components+1)));
+    for(let x=spacing;x<w;x+=spacing)
+      for(let y=0;y<h;y++){
+        const gy=y0+y,gx=x0+x;
+        if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;
+      }
+  }
+
+  // Random accent motifs
+  const motifCount=Math.floor(rng()*feature.components*2);
+  for(let m=0;m<motifCount;m++){
+    const mx=x0+Math.floor(rng()*w);
+    const my=y0+Math.floor(rng()*h);
+    const ms=Math.floor(rng()*3)+1;
+    for(let dy=-ms;dy<=ms;dy++)for(let dx=-ms;dx<=ms;dx++){
+      if(Math.abs(dx)+Math.abs(dy)<=ms){
+        const gx=mx+dx,gy=my+dy;
+        if(gy>=0&&gy<g.length&&gx>=0&&gx<g[0].length)
+          g[gy][gx]=1-g[gy][gx]; // invert
+      }
+    }
+  }
+}
+
+function generateMedallion(g,x0,y0,w,h,feature,rng){
+  const cx=x0+Math.floor(w/2);
+  const cy=y0+Math.floor(h/2);
+  const maxR=Math.floor(Math.min(w,h)*0.25);
+  const r=Math.max(3,Math.round(maxR*(0.5+feature.density)));
+  const avgSym=(feature.vertSymmetry+feature.horizSymmetry)/2;
+
+  for(let dy=-r;dy<=r;dy++){
+    for(let dx=-r;dx<=r;dx++){
+      const gx=cx+dx,gy=cy+dy;
+      if(gx<x0||gx>=x0+w||gy<y0||gy>=y0+h)continue;
+      let inside=false;
+      if(avgSym>0.65)inside=(dx*dx+dy*dy)<=r*r;
+      else if(avgSym>0.5)inside=(Math.abs(dx)+Math.abs(dy))<=r*1.2&&Math.abs(dx)<=r&&Math.abs(dy)<=r;
+      else inside=(Math.abs(dx)+Math.abs(dy))<=r;
+
+      if(inside){
+        const contrastPat=PATTERNS[(Math.floor(feature.strokeDir*8))%PATTERNS.length];
+        g[gy][gx]=getPatternCell(contrastPat,dx+r,dy+r);
+      }
+    }
+  }
+}
+
+function applySymmetry(g,x0,y0,w,h,mode){
+  if(mode===1||mode===3){
+    for(let y=0;y<h;y++)
+      for(let x=0;x<Math.floor(w/2);x++)
+        g[y0+y][x0+w-1-x]=g[y0+y][x0+x];
+  }
+  if(mode===2||mode===3){
+    for(let y=0;y<Math.floor(h/2);y++)
+      for(let x=0;x<w;x++)
+        g[y0+h-1-y][x0+x]=g[y0+y][x0+x];
+  }
+}
+
+function generateField(g,w,h,bw,features,comp,rng){
+  const ix=bw,iy=bw;
+  const iw=w-bw*2,ih=h-bw*2;
+  if(iw<=0||ih<=0)return;
+
+  let workW=iw,workH=ih;
+  if(comp.symmetryMode===1||comp.symmetryMode===3)workW=Math.ceil(iw/2);
+  if(comp.symmetryMode===2||comp.symmetryMode===3)workH=Math.ceil(ih/2);
+
+  const zoneH=Math.floor(workH/comp.zoneCount);
+  for(let z=0;z<comp.zoneCount;z++){
+    const feat=features[z%features.length];
+    const zy=z*zoneH;
+    const zh=(z===comp.zoneCount-1)?workH-zy:zoneH;
+    fillZone(g,ix,iy+zy,workW,zh,feat,rng);
+  }
+
+  if(comp.hasCentralMotif){
+    const cf=features[Math.floor(features.length/2)];
+    generateMedallion(g,ix,iy,iw,ih,cf,rng);
+  }
+
+  applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
+}
+
+// ─── MAIN GENERATE ──────────────────────────────────────────────
+function generatePattern(){
+  const name=document.getElementById('nameInput').value.trim();
+  if(!name){
+    grid=[];W=0;H=0;
+    if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3)">Enter a name above to generate weaving instructions.</p>';
+    return;
+  }
+
+  const seed=remixCounter>0?name+'_'+remixCounter:name;
+  const rng=createPRNG(seed);
+
+  const solitreoChars=transliterateToChars(name);
+  if(solitreoChars.length===0){
+    grid=[];W=0;H=0;
+    if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='No transliterable characters found.';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3)">Enter a name with Latin letters to generate weaving instructions.</p>';
+    return;
+  }
+
+  const features=solitreoChars.map(ch=>{
+    const bmp=rasterizeFromFont(ch,28);
+    return bmp?extractFeatures(bmp):defaultFeatures();
+  });
+
+  W=parseInt(document.getElementById('rugW').value)||18;
+  H=parseInt(document.getElementById('rugH').value)||30;
+
+  grid=[];
+  for(let y=0;y<H;y++)grid[y]=new Array(W).fill(0);
+
+  const comp=computeComposition(features,W,H,rng);
+  generateBorder(grid,W,H,comp.borderWidth,features[0],features[features.length-1],rng);
+  generateField(grid,W,H,comp.borderWidth,features,comp,rng);
+
+  if(rugSketch)rugSketch.refresh();
+
+  // Stats
+  let filled=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
+  const density=((filled/(W*H))*100).toFixed(1);
+  document.getElementById('patternStats').textContent=
+    W+'×'+H+' · '+filled+' filled · '+density+'% density · seed: '+seed;
+
+  generateTaalim();
+}
+
+// ─── TAALIM ─────────────────────────────────────────────────────
+function generateTaalim(){
+  if(!grid.length)return;
+  const body=document.getElementById('taalimBody');
+  let filled=0;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
+  const density=((filled/(W*H))*100).toFixed(1);
+
+  let html='<div class="taalim-section"><h3>Pattern Statistics</h3>';
+  html+='<div class="taalim-stats">';
+  html+='<div class="taalim-stat"><div class="val">'+W+'×'+H+'</div><div class="lbl">Grid Size</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+filled+'</div><div class="lbl">Filled Cells</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+density+'%</div><div class="lbl">Density</div></div>';
+  html+='</div></div>';
+
+  html+='<div class="taalim-section"><h3>Visual Pattern</h3>';
+  html+='<div class="taalim-visual">';
+  for(let y=0;y<H;y++){
+    let row='';for(let x=0;x<W;x++)row+=grid[y][x]?'█':'·';
+    html+=row+'\n';
+  }
+  html+='</div></div>';
+
+  html+='<div class="taalim-section"><h3>Row Instructions (RTL)</h3>';
+  html+='<div class="taalim-rows">';
+  const rowStrings=[];
+  for(let y=0;y<H;y++)rowStrings.push(grid[y].join(''));
+  let y=0;
+  while(y<H){
+    let repeatCount=1;
+    while(y+repeatCount<H&&rowStrings[y+repeatCount]===rowStrings[y])repeatCount++;
+    const row=grid[y];let rle=[];let cx=W-1;
+    while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'■':'□')+run);cx-=run;}
+    const prefix=repeatCount>1?'Rows '+(y+1)+'–'+(y+repeatCount):'Row '+(y+1);
+    html+='<div style="margin-bottom:2px;"><span style="color:var(--text-3);min-width:70px;display:inline-block;">'+prefix+'</span> '+rle.join(' ')+'</div>';
+    y+=repeatCount;
+  }
+  html+='</div></div>';
+  body.innerHTML=html;
+}
+
+// ─── EXPORTS ────────────────────────────────────────────────────
+function downloadFile(n,c,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
+
+function doExportWIF(){
+  if(!grid.length)return;
+  const name=document.getElementById('nameInput').value.trim()||'pattern';
+  let wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\n';
+  wif+='Developers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=5.0\n\n';
+  wif+='[CONTENTS]\nCOLOR PALETTE=true\nCOLOR TABLE=true\nWEAVING=true\n';
+  wif+='WARP=true\nWEFT=true\nTHREADING=true\nTIEUP=true\nLIFTPLAN=true\n\n';
+  wif+='[COLOR PALETTE]\nRange=0,255\nEntries=2\n\n[COLOR TABLE]\n1=0,0,0\n2=255,255,255\n\n';
+  wif+='[WEAVING]\nShafts='+W+'\nTreadles='+H+'\nRising Shed=true\n\n';
+  wif+='[WARP]\nThreads='+W+'\nColor=1\n\n[WEFT]\nThreads='+H+'\nColor=2\n\n';
+  wif+='[THREADING]\n';for(let x=0;x<W;x++)wif+=(x+1)+'='+(x+1)+'\n';wif+='\n';
+  wif+='[TIEUP]\n';for(let t=0;t<H;t++){const s=[];for(let x=0;x<W;x++)if(grid[t][x])s.push(x+1);if(s.length)wif+=(t+1)+'='+s.join(',')+'\n';}wif+='\n';
+  wif+='[LIFTPLAN]\n';for(let y=0;y<H;y++){const s=[];for(let x=0;x<W;x++)if(grid[y][x])s.push(x+1);wif+=(y+1)+'='+s.join(',')+'\n';}
+  downloadFile('ganchos-'+name.replace(/\s+/g,'-')+'.wif',wif,'text/plain');
+}
+
+function doExportPNG(){
+  if(!grid.length)return;
+  const name=document.getElementById('nameInput').value.trim()||'pattern';
+  const sc=4,ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;
+  const ectx=ec.getContext('2d');
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    ectx.fillStyle=grid[y][x]?'#1A1A1A':'#F5F5F0';
+    ectx.fillRect(x*sc,y*sc,sc,sc);
+  }
+  const a=document.createElement('a');a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';
+  a.href=ec.toDataURL('image/png');a.click();
+}
+
+function doExportTXT(){
+  if(!grid.length)return;
+  let txt='TAALIM — Ganchos Taalim Generative Pattern\n';
+  txt+='Name: '+document.getElementById('nameInput').value.trim()+'\n';
+  txt+='Grid: '+W+'×'+H+'\n\n';
+  for(let y=0;y<H;y++){
+    const row=grid[y];let rle=[];let cx=W-1;
+    while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'■':'□')+run);cx-=run;}
+    txt+='Row '+(y+1)+': '+rle.join(' ')+'\n';
+  }
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=document.querySelector('.gen-export .btn-outline:last-child');
+    if(btn){const orig=btn.textContent;btn.textContent='Copied!';setTimeout(()=>btn.textContent=orig,1500);}
+  }).catch(()=>alert('Copy failed — please use Ctrl+C manually.'));
+}
+
+// ─── p5.js SKETCH (instance mode) ──────────────────────────────
+function createRugSketch(containerEl){
+  return new p5(function(p){
+    let cellSize=8;
+
+    p.setup=function(){
+      const c=p.createCanvas(100,100);
+      c.parent(containerEl);
+      p.noLoop();
+      p.pixelDensity(1);
+    };
+
+    p.draw=function(){
+      if(!grid||!grid.length){
+        p.resizeCanvas(400,300);
+        p.background(250,250,245);
+        p.fill(180);p.noStroke();
+        p.textFont('Inter, sans-serif');p.textSize(16);p.textAlign(p.CENTER,p.CENTER);
+        p.text('Enter a name to generate a pattern',200,150);
+        return;
+      }
+
+      const maxW=containerEl.clientWidth||600;
+      const maxH=Math.min(window.innerHeight*0.65,700);
+      cellSize=Math.floor(Math.min(maxW/W,maxH/H));
+      cellSize=Math.max(2,cellSize);
+
+      p.resizeCanvas(W*cellSize,H*cellSize);
+      p.background(245,245,240);
+      p.noStroke();
+
+      for(let y=0;y<H;y++){
+        for(let x=0;x<W;x++){
+          if(grid[y][x]){
+            p.fill(26,26,26);
+            p.rect(x*cellSize,y*cellSize,cellSize,cellSize);
+          }
+        }
+      }
+
+      if(cellSize>5){
+        p.stroke(0,0,0,12);
+        p.strokeWeight(0.5);
+        for(let x=0;x<=W;x++)p.line(x*cellSize,0,x*cellSize,H*cellSize);
+        for(let y=0;y<=H;y++)p.line(0,y*cellSize,W*cellSize,y*cellSize);
+      }
+    };
+
+    p.refresh=function(){p.redraw();};
+  });
+}
+
+// ─── EVENT WIRING ───────────────────────────────────────────────
+let debounceTimer=null;
+
+document.getElementById('nameInput').addEventListener('input',function(){
+  const sol=transliterate(this.value);
+  document.getElementById('solitreoText').textContent=sol;
+  clearTimeout(debounceTimer);
+  debounceTimer=setTimeout(()=>{
+    remixCounter=0;
+    generatePattern();
+  },300);
+});
+
+document.getElementById('remixBtn').addEventListener('click',()=>{
+  remixCounter++;
+  generatePattern();
+});
+
+document.getElementById('rugPreset').addEventListener('change',function(){
+  const v=this.value;
+  if(v){
+    const[w,h]=v.split(',').map(Number);
+    document.getElementById('rugW').value=w;
+    document.getElementById('rugH').value=h;
+  }
+  generatePattern();
+});
+
+document.getElementById('rugW').addEventListener('change',()=>{
+  document.getElementById('rugPreset').value='';
+  generatePattern();
+});
+document.getElementById('rugH').addEventListener('change',()=>{
+  document.getElementById('rugPreset').value='';
+  generatePattern();
+});
+
+// ─── SCROLL ANIMATIONS ─────────────────────────────────────────
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});
+},{threshold:0.15});
+document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
+
+// ─── INIT ───────────────────────────────────────────────────────
+loadFont().then(()=>{
+  if(!fontLoaded)console.warn('GanchosSans font could not be loaded — patterns will use default features.');
+  rugSketch=createRugSketch(document.getElementById('rugCanvas'));
+}).catch(()=>{
+  console.warn('Font loading failed, creating canvas with defaults.');
+  rugSketch=createRugSketch(document.getElementById('rugCanvas'));
+});
+</script>
+</body>
+</html>
