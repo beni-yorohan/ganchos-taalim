@@ -998,6 +998,7 @@ function generateScriptMode(name){
       full.push({ch:q.ch,x:q.x,y:my,size:q.size,rotation:-q.rotation,alpha:q.alpha,flip:q.flip});}}
   scriptPlacements=full;
   scriptPlacements._cW=actualCW;scriptPlacements._cH=actualCH;
+  scriptMode=true;
   if(rugSketch)rugSketch.refresh();
   document.getElementById('patternStats').textContent=
     actualCW+'\u00d7'+actualCH+'px \u00b7 '+full.length+' glyphs \u00b7 script \u00b7 seed: '+seed;
