@@ -1094,14 +1094,22 @@ function doExportWIF(){
   downloadFile('ganchos-'+name.replace(/\s+/g,'-')+'.wif',wif,'text/plain');
 }
 function doExportPNG(){
-  if(scriptMode){var c=document.querySelector('#rugCanvas canvas');if(!c)return;var n=document.getElementById('nameInput').value.trim()||'pattern';var a=document.createElement('a');a.download='ganchos-'+n.replace(/\s+/g,'-')+'.png';a.href=c.toDataURL('image/png');a.click();return;}
+  if(scriptMode){
+    var cvs=document.querySelector('#rugCanvas canvas');if(!cvs)return;
+    var pngName=document.getElementById('nameInput').value.trim()||'pattern';
+    var link=document.createElement('a');link.download='ganchos-'+pngName.replace(/\s+/g,'-')+'.png';link.href=cvs.toDataURL('image/png');link.click();return;
+  }
   if(!grid.length)return;const name=document.getElementById('nameInput').value.trim()||'pattern';
   const sc=4,ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;const ectx=ec.getContext('2d');
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';ectx.fillRect(x*sc,y*sc,sc,sc);}
   const a=document.createElement('a');a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';a.href=ec.toDataURL('image/png');a.click();
 }
 function doExportTXT(){
-  if(scriptMode){var n=document.getElementById('nameInput').value.trim()||'pattern';var t='GANCHOS TAALIM \u2014 Script Pattern\nName: '+n+'\nGlyphs: '+scriptPlacements.length+'\n\nThis pattern uses undistorted Solitreo letterforms.\nNo grid instructions available for Script mode.\n';navigator.clipboard.writeText(t).then(function(){var b=document.querySelector('.gen-export .btn-outline:last-child');if(b){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1500);}}).catch(function(){alert('Copy failed.');});return;}
+  if(scriptMode){
+    var sn=document.getElementById('nameInput').value.trim()||'pattern';
+    var st='GANCHOS TAALIM \u2014 Script Pattern\nName: '+sn+'\nGlyphs: '+scriptPlacements.length+'\n\nThis pattern uses undistorted Solitreo letterforms.\nNo grid instructions available for Script mode.\n';
+    navigator.clipboard.writeText(st).then(function(){var b=document.querySelector('.gen-export .btn-outline:last-child');if(b){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1500);}}).catch(function(){alert('Copy failed.');});return;
+  }
   if(!grid.length)return;
   let txt='TAALIM \u2014 Ganchos Taalim Generative Pattern\nName: '+document.getElementById('nameInput').value.trim()+'\nGrid: '+W+'\u00d7'+H+'\n\n';
   for(let y=0;y<H;y++){const row=grid[y];let rle=[];let cx=W-1;while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'\u25a0':'\u25a1')+run);cx-=run;}txt+='Row '+(y+1)+': '+rle.join(' ')+'\n';}
