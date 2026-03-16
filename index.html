@@ -1282,36 +1282,39 @@ function createRugSketch(containerEl){
 
 // ─── TYPE SPECIMEN DATA ─────────────────────────────────────────
 const ALL_GLYPHS=[
-  // Hebrew Letters
-  {ch:'\u05D0',tip:'Alef \u2014 a'},{ch:'\u05D1',tip:'Bet \u2014 b'},{ch:'\u05D2',tip:'Gimel \u2014 g'},
-  {ch:'\u05D3',tip:'Dalet \u2014 d'},{ch:'\u05D4',tip:'He \u2014 h'},{ch:'\u05D5',tip:'Vav \u2014 v/u/o'},
-  {ch:'\u05D6',tip:'Zayin \u2014 z'},{ch:'\u05D7',tip:'Chet \u2014 ch'},{ch:'\u05D8',tip:'Tet \u2014 t'},
-  {ch:'\u05D9',tip:'Yod \u2014 y/i/e'},{ch:'\u05DB',tip:'Kaf \u2014 k'},{ch:'\u05DA',tip:'Final Kaf'},
+  // Hebrew Letters (Ladino phonetic values)
+  {ch:'\u05D0',tip:'Alef \u2014 silent'},{ch:'\u05D1',tip:'Bet \u2014 v'},{ch:'\u05D2',tip:'Gimel \u2014 g'},
+  {ch:'\u05D3',tip:'Dalet \u2014 d'},{ch:'\u05D4',tip:'He \u2014 h'},{ch:'\u05D5',tip:'Vav \u2014 u/o'},
+  {ch:'\u05D6',tip:'Zayin \u2014 z'},{ch:'\u05D7',tip:'Chet \u2014 kh'},{ch:'\u05D8',tip:'Tet \u2014 t'},
+  {ch:'\u05D9',tip:'Yod \u2014 y/i'},{ch:'\u05DB',tip:'Kaf \u2014 kh'},{ch:'\u05DA',tip:'Final Kaf \u2014 kh'},
   {ch:'\u05DC',tip:'Lamed \u2014 l'},{ch:'\u05DE',tip:'Mem \u2014 m'},{ch:'\u05DD',tip:'Final Mem'},
   {ch:'\u05E0',tip:'Nun \u2014 n'},{ch:'\u05DF',tip:'Final Nun'},{ch:'\u05E1',tip:'Samekh \u2014 s'},
-  {ch:'\u05E2',tip:'Ayin'},{ch:'\u05E4',tip:'Pe \u2014 p/f'},{ch:'\u05E3',tip:'Final Pe'},
+  {ch:'\u05E2',tip:'Ayin \u2014 silent'},{ch:'\u05E4',tip:'Pe \u2014 f'},{ch:'\u05E3',tip:'Final Pe \u2014 f'},
   {ch:'\u05E6',tip:'Tsadi \u2014 ts'},{ch:'\u05E5',tip:'Final Tsadi'},
-  {ch:'\u05E7',tip:'Qof \u2014 q'},{ch:'\u05E8',tip:'Resh \u2014 r'},
+  {ch:'\u05E7',tip:'Qof \u2014 k'},{ch:'\u05E8',tip:'Resh \u2014 r'},
   {ch:'\u05E9',tip:'Shin \u2014 sh'},{ch:'\u05EA',tip:'Tav \u2014 t'},
-  // Dagesh & Rafe Forms
-  {ch:'\uFB31',tip:'Bet Dagesh'},{ch:'\uFB32',tip:'Gimel Dagesh'},
-  {ch:'\uFB33',tip:'Dalet Dagesh'},{ch:'\uFB34',tip:'He Mapiq'},
-  {ch:'\uFB35',tip:'Vav Dagesh'},{ch:'\uFB36',tip:'Zayin Dagesh'},
-  {ch:'\uFB38',tip:'Tet Dagesh'},{ch:'\uFB39',tip:'Yod Dagesh'},
-  {ch:'\uFB3A',tip:'Final Kaf Dagesh'},{ch:'\uFB3B',tip:'Kaf Dagesh'},
-  {ch:'\uFB3C',tip:'Lamed Dagesh'},{ch:'\uFB3E',tip:'Mem Dagesh'},
-  {ch:'\uFB40',tip:'Nun Dagesh'},{ch:'\uFB41',tip:'Samekh Dagesh'},
-  {ch:'\uFB43',tip:'Final Pe Dagesh'},{ch:'\uFB44',tip:'Pe Dagesh'},
-  {ch:'\uFB46',tip:'Tsadi Dagesh'},{ch:'\uFB47',tip:'Qof Dagesh'},
-  {ch:'\uFB48',tip:'Resh Dagesh'},{ch:'\uFB49',tip:'Shin Dagesh'},
-  {ch:'\uFB4A',tip:'Tav Dagesh'},
-  {ch:'\uFB2A',tip:'Shin + Shin-Dot'},{ch:'\uFB2B',tip:'Shin + Sin-Dot'},
-  {ch:'\uFB2C',tip:'Shin Dagesh Shin-Dot'},{ch:'\uFB2D',tip:'Shin Dagesh Sin-Dot'},
+  // Dagesh Forms
+  {ch:'\uFB31',tip:'Bet Dagesh \u2014 b'},{ch:'\uFB32',tip:'Gimel Dagesh \u2014 g'},
+  {ch:'\uFB33',tip:'Dalet Dagesh \u2014 d'},{ch:'\uFB34',tip:'He Mapiq \u2014 h'},
+  {ch:'\uFB35',tip:'Vav Dagesh \u2014 u/o'},{ch:'\uFB36',tip:'Zayin Dagesh \u2014 z'},
+  {ch:'\uFB38',tip:'Tet Dagesh \u2014 t'},{ch:'\uFB39',tip:'Yod Dagesh \u2014 y/i'},
+  {ch:'\uFB3A',tip:'Final Kaf Dagesh \u2014 k'},{ch:'\uFB3B',tip:'Kaf Dagesh \u2014 k'},
+  {ch:'\uFB3C',tip:'Alef-Lamed \u2014 al'},{ch:'\uFB3E',tip:'Mem Dagesh \u2014 m'},
+  {ch:'\uFB40',tip:'Nun Dagesh \u2014 n'},{ch:'\uFB41',tip:'Samekh Dagesh \u2014 s'},
+  {ch:'\uFB43',tip:'Final Pe Dagesh \u2014 p'},{ch:'\uFB44',tip:'Pe Dagesh \u2014 p'},
+  {ch:'\uFB46',tip:'Tsadi Dagesh \u2014 ts'},{ch:'\uFB47',tip:'Qof Dagesh \u2014 k'},
+  {ch:'\uFB48',tip:'Resh Dagesh \u2014 r'},{ch:'\uFB49',tip:'Shin Dagesh \u2014 sh'},
+  {ch:'\uFB4A',tip:'Tav Dagesh \u2014 t'},
+  // Shin/Sin Dots
+  {ch:'\uFB2A',tip:'Shin \u2014 sh'},{ch:'\uFB2B',tip:'Sin \u2014 s'},
+  {ch:'\uFB2C',tip:'Shin Dagesh \u2014 sh'},{ch:'\uFB2D',tip:'Sin Dagesh \u2014 s'},
+  // Rafe Forms
   {ch:'\uFB4C',tip:'Bet Rafe \u2014 v'},{ch:'\uFB4D',tip:'Kaf Rafe \u2014 kh'},
   {ch:'\uFB4E',tip:'Pe Rafe \u2014 f'},
-  {ch:'\uFB1D',tip:'Yod Hiriq'},{ch:'\uFB2E',tip:'Alef Patah'},
-  {ch:'\uFB2F',tip:'Alef Qamats'},{ch:'\uFB30',tip:'Alef Mapiq'},
-  {ch:'\uFB4B',tip:'Vav Holam'}
+  // Vowel Forms
+  {ch:'\uFB1D',tip:'Yod Hiriq \u2014 i'},{ch:'\uFB2E',tip:'Alef Patah \u2014 a'},
+  {ch:'\uFB2F',tip:'Alef Qamats \u2014 a'},{ch:'\uFB30',tip:'Alef Mapiq \u2014 a'},
+  {ch:'\uFB4B',tip:'Vav Holam \u2014 o'}
 ];
 const NUMBERS=[
   {ch:'0',tip:'Zero'},{ch:'1',tip:'One'},{ch:'2',tip:'Two'},{ch:'3',tip:'Three'},
