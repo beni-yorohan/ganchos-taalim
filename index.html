@@ -132,10 +132,12 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:fixed;top:24px;
+  background:var(--surface);position:fixed;
+  top:50%;transform:translateY(-50%);right:24px;
   width:520px;aspect-ratio:4/5;
-  display:none;flex-direction:column;align-items:center;
-  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
+  display:flex;flex-direction:column;align-items:center;
+  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;
+  visibility:hidden;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
 .specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:140px;
@@ -1431,31 +1433,14 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Show fixed card when grid scrolls to top:24px, hide when grid leaves view
+  // Show/hide card when specimen section is in view
   (function(){
     var card=document.getElementById('specimenDetail');
-    var left=document.querySelector('.specimen-left');
-    var grid=document.getElementById('specimenAll');
-    if(!card||!left||!grid) return;
-    // Set left position from grid
-    function setLeft(){
-      var r=left.getBoundingClientRect();
-      card.style.left=(r.right+32)+'px';
-    }
-    setLeft();
-    window.addEventListener('resize',setLeft);
-    // Show/hide on scroll based on grid position
-    window.addEventListener('scroll',function(){
-      var gr=grid.getBoundingClientRect();
-      // Show when grid top is at or above 24px (card would align with grid)
-      // Hide when grid bottom is above viewport or grid top is below viewport
-      if(gr.top<=24 && gr.bottom>0){
-        card.style.display='flex';
-        setLeft();
-      } else {
-        card.style.display='none';
-      }
-    });
+    var sec=document.getElementById('specimen');
+    if(!card||!sec) return;
+    new IntersectionObserver(function(e){
+      card.style.visibility=e[0].isIntersecting?'visible':'hidden';
+    },{threshold:0.2}).observe(sec);
   })();
 }
 
