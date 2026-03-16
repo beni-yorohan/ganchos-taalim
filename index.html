@@ -1439,31 +1439,23 @@ function buildSpecimen(){
     var card=document.getElementById('specimenDetail');
     var sec=document.getElementById('specimen');
     if(!left||!grid||!card||!sec) return;
-    var topSet=false;
+    // Distance from section top to grid top (constant regardless of scroll)
+    var gridOffsetInSection=grid.offsetTop-sec.offsetTop;
     function setLeft(){
       var r=left.getBoundingClientRect();
       card.style.left=(r.right+32)+'px';
     }
+    // Fixed top = distance from section top to grid top
+    // This is where the grid sits when the section heading is at viewport top
+    card.style.top=gridOffsetInSection+'px';
     setLeft();
-    // Use IntersectionObserver on the grid itself to set top once
-    var gridObs=new IntersectionObserver(function(entries){
-      if(entries[0].isIntersecting&&!topSet){
-        // Grid just appeared — set card top to match grid top
-        var gt=grid.getBoundingClientRect().top;
-        card.style.top=Math.max(24,gt)+'px';
-        topSet=true;
-      }
-    },{threshold:0});
-    gridObs.observe(grid);
     // Show/hide card when section is in viewport
     var secObs=new IntersectionObserver(function(entries){
       card.style.visibility=entries[0].isIntersecting?'visible':'hidden';
       if(entries[0].isIntersecting) setLeft();
     },{threshold:0});
     secObs.observe(sec);
-    window.addEventListener('resize',function(){
-      topSet=false; setLeft();
-    });
+    window.addEventListener('resize',setLeft);
   })();
 }
 
