@@ -162,10 +162,11 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .specimen-numbers-grid .cell:hover::after{opacity:1;}
 
 /* ─── GENERATOR SECTION (centered) ───────────────────────────── */
-#generator{padding:80px 24px;display:flex;justify-content:center;align-items:flex-start;}
+#generator{padding:80px 0;display:block;}
+#generator::before{display:none !important;}
 .generator-frame{background:var(--surface);border:1px solid rgba(0,0,0,0.12);
-  border-radius:10px;padding:48px 40px;max-width:920px;width:100%;
-  margin:0 auto;position:relative;z-index:2;
+  border-radius:10px;padding:48px 40px;max-width:920px;width:calc(100% - 48px);
+  margin-left:auto;margin-right:auto;position:relative;z-index:2;
   box-shadow:0 4px 32px rgba(0,0,0,0.06);}
 .gen-header{text-align:left;margin-bottom:36px;}
 .gen-header h2{font-size:clamp(24px,3.5vw,34px);font-weight:600;letter-spacing:-0.02em;margin-bottom:6px;color:var(--text);}
@@ -257,8 +258,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .footer-col p{margin-bottom:6px;font-size:14px;line-height:1.6;color:var(--text);}
 .footer-col a{color:var(--text);text-decoration:underline;text-underline-offset:3px;}
 .footer-col a:hover{opacity:0.6;}
-.footer-col.col-ack .ack-list{columns:2;column-gap:8px;}
-.footer-col.col-ack .ack-list p{break-inside:avoid;}
+.footer-col.col-ack .ack-list{display:grid;grid-template-columns:auto auto;column-gap:24px;row-gap:0;}
+.footer-col.col-ack .ack-list p{margin-bottom:6px;}
 .footer-copyright{margin-top:48px;padding-top:20px;border-top:1px solid var(--border);
   font-size:12px;color:var(--text-3);}
 
@@ -280,7 +281,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   .specimen-numbers-grid{grid-template-columns:repeat(5,1fr);}
   .hero-title{font-size:clamp(40px,12vw,72px);}
   .footer-grid{grid-template-columns:1fr 1fr;gap:24px;}
-  .footer-col.col-ack .ack-list{columns:1;}
+  .footer-col.col-ack .ack-list{grid-template-columns:1fr;}
   .gallery-wrap{padding-left:16px;}
   .solitreo-gallery{padding-right:16px;}
   .solitreo-gallery img{height:200px;}
