@@ -134,8 +134,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
   background:var(--surface);position:fixed;
-  top:50%;transform:translateY(-50%);right:calc(100vw - max(24px,12vw) - var(--col) - 520px - 56px);
-  width:520px;aspect-ratio:4/5;
+  top:50%;transform:translateY(-50%);right:calc(100vw - max(24px,12vw) - var(--col) - var(--card-w) - 56px);
+  width:var(--card-w);aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
   padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;
   visibility:hidden;}
