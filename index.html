@@ -1431,25 +1431,26 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Make card fixed: aligned with letter grid, show only on specimen section
+  // Fixed card: top=24px, left next to grid, visible only when grid is on screen
   (function(){
     var card=document.getElementById('specimenDetail');
     var left=document.querySelector('.specimen-left');
     var grid=document.getElementById('specimenAll');
-    var sec=document.getElementById('specimen');
-    if(!card||!left||!grid||!sec) return;
-    // Distance from section top to grid top (doesn't change)
-    var gridOffset=grid.offsetTop-sec.offsetTop;
+    if(!card||!left||!grid) return;
     var r=left.getBoundingClientRect();
     card.style.position='fixed';
-    card.style.top=gridOffset+'px';
+    card.style.top='24px';
     card.style.left=(r.right+32)+'px';
     card.style.width='520px';
     card.style.visibility='hidden';
-    // Show only when the grid itself is near the viewport
+    // Show only when the letter grid is in the viewport
     var obs=new IntersectionObserver(function(entries){
       card.style.visibility=entries[0].isIntersecting?'visible':'hidden';
-    },{threshold:0});
+      if(entries[0].isIntersecting){
+        var r2=left.getBoundingClientRect();
+        card.style.left=(r2.right+32)+'px';
+      }
+    },{threshold:0.1});
     obs.observe(grid);
     window.addEventListener('resize',function(){
       var r2=left.getBoundingClientRect();
