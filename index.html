@@ -128,15 +128,14 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:block;
-  margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);}
-.specimen-left{min-width:0;}
+.specimen-layout{display:grid;grid-template-columns:var(--col) 520px;gap:32px;align-items:start;
+  margin-left:max(24px,12vw);margin-right:24px;}
+.specimen-left{min-width:0;min-height:1200px;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:fixed;top:24px;
-  width:520px;aspect-ratio:4/5;
+  background:var(--surface);position:sticky;top:24px;align-self:start;
+  aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
-  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;
-  visibility:hidden;}
+  padding:40px 28px;text-align:center;box-sizing:border-box;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
 .specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:140px;
@@ -1432,31 +1431,7 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Position the fixed card aligned with the letter grid
-  (function(){
-    var left=document.querySelector('.specimen-left');
-    var grid=document.getElementById('specimenAll');
-    var card=document.getElementById('specimenDetail');
-    var sec=document.getElementById('specimen');
-    if(!left||!grid||!card||!sec) return;
-    // Distance from section top to grid top (constant regardless of scroll)
-    var gridOffsetInSection=grid.offsetTop-sec.offsetTop;
-    function setLeft(){
-      var r=left.getBoundingClientRect();
-      card.style.left=(r.right+32)+'px';
-    }
-    // Fixed top = distance from section top to grid top
-    // This is where the grid sits when the section heading is at viewport top
-    card.style.top=gridOffsetInSection+'px';
-    setLeft();
-    // Show/hide card when section is in viewport
-    var secObs=new IntersectionObserver(function(entries){
-      card.style.visibility=entries[0].isIntersecting?'visible':'hidden';
-      if(entries[0].isIntersecting) setLeft();
-    },{threshold:0});
-    secObs.observe(sec);
-    window.addEventListener('resize',setLeft);
-  })();
+  // Card is position:sticky in grid — CSS handles positioning
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
