@@ -9,7 +9,7 @@
 <meta property="og:description" content="Translate Sephardic names into unique generative woven patterns through the Solitreo script.">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#DFCDA0">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23F5C842'/><text x='50' y='50' dominant-baseline='central' text-anchor='middle' font-size='65' fill='%23E8528A' font-family='serif'>&#x05D1;</text></svg>">
+<link rel="icon" id="favicon" type="image/png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <style>
 /* ─── FONTS ─────────────────────────────────────────────────── */
@@ -626,6 +626,17 @@ async function loadFont(){
     try{
       const face=new FontFace('GanchosSans','url('+path+')');
       await face.load();document.fonts.add(face);fontLoaded=true;
+      // Generate favicon with GanchosSans Bet
+      try{
+        var fc=document.createElement('canvas');fc.width=128;fc.height=128;
+        var fx=fc.getContext('2d');
+        fx.fillStyle='#F5C842';
+        fx.beginPath();fx.roundRect(0,0,128,128,16);fx.fill();
+        fx.font='80px GanchosSans';fx.fillStyle='#E8528A';
+        fx.textAlign='center';fx.textBaseline='middle';
+        fx.fillText('\u05D1',64,60);
+        document.getElementById('favicon').href=fc.toDataURL('image/png');
+      }catch(e){}
       return;
     }catch(e){}
   }
