@@ -131,35 +131,32 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .specimen-section{margin-bottom:40px;}
 .specimen-label{font-size:12px;font-weight:600;text-transform:uppercase;
   letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px;padding-left:4px;}
-.specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));
+.specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
   gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
-.specimen-grid .cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;
-  font-family:var(--solitreo);font-size:clamp(40px,6vw,60px);
+.specimen-grid .cell{display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-end;padding:16px 8px 8px;
   border-right:1px solid var(--border);border-bottom:1px solid var(--border);
   position:relative;transition:background 0.15s ease;color:var(--text);}
 .specimen-grid .cell:hover{background:rgba(0,0,0,0.06);}
-.specimen-grid .cell::after{content:attr(data-tip);position:absolute;
-  bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
-  background:var(--text);color:#fff;font-family:var(--font);font-size:11px;
-  font-weight:500;padding:4px 10px;border-radius:4px;white-space:nowrap;
-  opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:20;
-  direction:ltr;letter-spacing:0;line-height:1.3;}
-.specimen-grid .cell:hover::after{opacity:1;}
+.specimen-grid .cell .glyph{font-family:var(--solitreo);font-size:clamp(48px,7vw,68px);
+  line-height:1;height:72px;display:flex;align-items:baseline;justify-content:center;
+  overflow:hidden;width:100%;}
+.specimen-grid .cell .glyph-name{font-family:var(--font);font-size:10px;
+  color:var(--text-3);margin-top:8px;text-align:center;line-height:1.3;
+  letter-spacing:0;direction:ltr;}
 .specimen-numbers-grid{display:grid;grid-template-columns:repeat(10,1fr);
   gap:0;border:1px solid var(--border);border-radius:var(--radius);
   max-width:600px;}
-.specimen-numbers-grid .cell{min-height:56px;padding:10px 0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--solitreo);font-size:clamp(28px,5vw,44px);
+.specimen-numbers-grid .cell{display:flex;flex-direction:column;align-items:center;
+  justify-content:flex-end;padding:12px 4px 6px;
+  font-family:var(--solitreo);
   border-right:1px solid var(--border);border-bottom:1px solid var(--border);
   position:relative;transition:background 0.15s ease;color:var(--text);}
 .specimen-numbers-grid .cell:hover{background:rgba(0,0,0,0.06);}
-.specimen-numbers-grid .cell::after{content:attr(data-tip);position:absolute;
-  bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
-  background:var(--text);color:#fff;font-family:var(--font);font-size:11px;
-  font-weight:500;padding:4px 10px;border-radius:4px;white-space:nowrap;
-  opacity:0;pointer-events:none;transition:opacity 0.15s;z-index:20;
-  letter-spacing:0;line-height:1.3;}
-.specimen-numbers-grid .cell:hover::after{opacity:1;}
+.specimen-numbers-grid .cell .glyph{font-size:clamp(28px,5vw,44px);line-height:1;
+  height:48px;display:flex;align-items:baseline;justify-content:center;overflow:hidden;}
+.specimen-numbers-grid .cell .glyph-name{font-family:var(--font);font-size:9px;
+  color:var(--text-3);margin-top:6px;text-align:center;letter-spacing:0;direction:ltr;}
 
 /* ─── GENERATOR SECTION (centered) ───────────────────────────── */
 #generator{padding:80px 0;display:block;}
@@ -277,7 +274,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   .gen-controls{flex-direction:column;align-items:stretch;}
   .gen-params{flex-direction:column;align-items:stretch;}
   .gen-export{flex-direction:column;}
-  .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));}
+  .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));}
+  .specimen-grid .cell .glyph{height:56px;font-size:40px;}
   .specimen-numbers-grid{grid-template-columns:repeat(5,1fr);}
   .hero-title{font-size:clamp(40px,12vw,72px);}
   .footer-grid{grid-template-columns:1fr 1fr;gap:24px;}
@@ -1328,8 +1326,16 @@ function buildSpecimen(){
       if(!hasGlyph(item.ch))return;
       const div=document.createElement('div');
       div.className='cell';
-      div.textContent=item.ch;
-      div.setAttribute('data-tip',item.tip);
+      const glyph=document.createElement('span');
+      glyph.className='glyph';
+      glyph.textContent=item.ch;
+      div.appendChild(glyph);
+      const name=document.createElement('span');
+      name.className='glyph-name';
+      // Extract short name (before the dash)
+      const short=item.tip.split(' \u2014 ')[0];
+      name.textContent=short;
+      div.appendChild(name);
       el.appendChild(div);
     });
   }
