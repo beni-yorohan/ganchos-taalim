@@ -1294,9 +1294,38 @@ const NUMBERS=[
 ];
 
 function buildSpecimen(){
+  // Detect which glyphs actually render in GanchosSans
+  const testCanvas=document.createElement('canvas');
+  testCanvas.width=64;testCanvas.height=64;
+  const tctx=testCanvas.getContext('2d');
+  function hasGlyph(ch){
+    tctx.clearRect(0,0,64,64);
+    tctx.font='48px GanchosSans';
+    tctx.fillStyle='#000';
+    tctx.textAlign='center';tctx.textBaseline='middle';
+    tctx.fillText(ch,32,32);
+    // Check if fallback: compare with a known missing char
+    const w1=tctx.measureText(ch).width;
+    const w2=tctx.measureText('\uFFFD').width;
+    // Also check if any pixels were drawn
+    const d=tctx.getImageData(0,0,64,64).data;
+    let pixels=0;
+    for(let i=3;i<d.length;i+=4){if(d[i]>10)pixels++;}
+    if(pixels<3)return false;
+    // Compare against .notdef — render a clearly invalid char
+    tctx.clearRect(0,0,64,64);
+    tctx.fillText('\uFFFD',32,32);
+    const d2=tctx.getImageData(0,0,64,64).data;
+    let pixels2=0;
+    for(let i=3;i<d2.length;i+=4){if(d2[i]>10)pixels2++;}
+    // If both render identically (same pixel count), it's likely a .notdef
+    if(pixels2>0&&Math.abs(pixels-pixels2)<3)return false;
+    return true;
+  }
   function populateGrid(containerId,data){
     const el=document.getElementById(containerId);if(!el)return;
     data.forEach(item=>{
+      if(!hasGlyph(item.ch))return;
       const div=document.createElement('div');
       div.className='cell';
       div.textContent=item.ch;
