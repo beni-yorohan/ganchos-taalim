@@ -132,8 +132,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   margin-left:max(24px,12vw);margin-right:24px;}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:fixed;top:24px;
-  left:calc(max(24px,12vw) + var(--col) + 32px);width:460px;
+  background:var(--surface);position:fixed;top:24px;right:24px;
   display:flex;flex-direction:column;align-items:center;
   aspect-ratio:4/5;padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
@@ -1431,13 +1430,18 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Position fixed detail card next to letter grid
+  // Size and position fixed detail card to fill space right of letter grid
   function positionDetailCard(){
     var left=document.querySelector('.specimen-left');
     var card=document.getElementById('specimenDetail');
     if(!left||!card)return;
     var rect=left.getBoundingClientRect();
+    var availW=window.innerWidth-rect.right-32-24; // 32px gap, 24px right margin
+    if(availW<200){card.style.display='none';return;}
+    card.style.display='';
+    card.style.width=availW+'px';
     card.style.left=(rect.right+32)+'px';
+    card.style.right='auto';
   }
   positionDetailCard();
   window.addEventListener('resize',positionDetailCard);
