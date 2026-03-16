@@ -132,7 +132,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   margin-left:max(24px,12vw);margin-right:24px;}
 .specimen-left{max-width:var(--col);}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:fixed;right:24px;
+  background:var(--surface);position:fixed;top:24px;
+  width:340px;aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
   padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
@@ -1430,35 +1431,16 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Size and position fixed detail card to match letter grid vertically
+  // Position fixed detail card next to letter grid
   function positionDetailCard(){
     var grid=document.querySelector('.specimen-left');
     var card=document.getElementById('specimenDetail');
     if(!grid||!card)return;
     var rect=grid.getBoundingClientRect();
-    var scrollY=window.scrollY||document.documentElement.scrollTop;
-    var gridTop=rect.top+scrollY;
-    var gridBottom=gridTop+rect.height;
-    var viewTop=scrollY;
-    var viewBottom=scrollY+window.innerHeight;
-    // Card top: grid top clamped to viewport
-    var top=Math.max(24,rect.top);
-    // Card height: from top to grid bottom (clamped to viewport)
-    var bottom=Math.min(window.innerHeight-24,rect.bottom);
-    var h=bottom-top;
-    if(h<200){card.style.display='none';return;}
-    var availW=window.innerWidth-rect.right-32-24;
-    if(availW<200){card.style.display='none';return;}
-    card.style.display='';
-    card.style.top=top+'px';
-    card.style.height=h+'px';
-    card.style.width=availW+'px';
     card.style.left=(rect.right+32)+'px';
-    card.style.right='auto';
   }
   positionDetailCard();
   window.addEventListener('resize',positionDetailCard);
-  window.addEventListener('scroll',positionDetailCard);
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
