@@ -1147,6 +1147,178 @@ function generateScriptMode(name){
   html+='</p></div>';body.innerHTML=html;
 }
 
+// ─── DRAFT MODE (Binary Textile Code) ────────────────────────────
+function generateDraftMode(name){
+  scriptMode=false;
+  const seed=remixCounter>0?name+'_'+remixCounter:name;
+  const rng=createPRNG(seed);
+  const chars=transliterateToChars(name);
+  if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='No transliterable characters found.';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
+  W=parseInt(document.getElementById('rugW').value)||18;
+  H=parseInt(document.getElementById('rugH').value)||30;
+  grid=[];for(let y=0;y<H;y++)grid[y]=new Array(W).fill(0);
+  // Rasterize each letter to a bitmap sized to fit inside the rug
+  const letterH=Math.max(5,Math.floor(H/Math.max(1,chars.length)));
+  const letterW=Math.min(W,Math.max(5,Math.floor(W*0.8)));
+  const bitmaps=chars.map(ch=>rasterizeFromFont(ch,Math.max(letterW,letterH)));
+  // Symmetry from UI
+  const symSel=document.getElementById('symmetryMode').value;
+  let symV=false,symH=false;
+  if(symSel==='vertical'||symSel==='both')symV=true;
+  if(symSel==='horizontal'||symSel==='both')symH=true;
+  if(symSel==='auto'){symV=true;symH=rng()>0.5;}
+  // Glide reflection option
+  const useGlide=rng()>0.5;
+  // Fill grid: tile letter bitmaps as weaving picks
+  const srcW=symV?Math.ceil(W/2):W;
+  const srcH=symH?Math.ceil(H/2):H;
+  for(let y=0;y<srcH;y++){
+    const charIdx=Math.floor((y/srcH)*chars.length)%chars.length;
+    const bmp=bitmaps[charIdx];
+    if(!bmp)continue;
+    const bmpH=bmp.length,bmpW=bmp[0].length;
+    for(let x=0;x<srcW;x++){
+      // Map rug cell to bitmap pixel with tiling
+      const bx=x%bmpW,by=y%bmpH;
+      // Glide reflection: flip every other tile
+      const tileX=Math.floor(x/bmpW),tileY=Math.floor(y/bmpH);
+      let sx=bx,sy=by;
+      if(useGlide&&tileX%2===1)sx=bmpW-1-bx;
+      if(useGlide&&tileY%2===1)sy=bmpH-1-by;
+      if(sy<bmpH&&sx<bmpW) grid[y][x]=bmp[sy][sx];
+    }
+  }
+  // Apply symmetry
+  if(symV){for(let y=0;y<H;y++)for(let x=0;x<Math.floor(W/2);x++)grid[y][W-1-x]=grid[y][x];}
+  if(symH){for(let y=0;y<Math.floor(H/2);y++)for(let x=0;x<W;x++)grid[H-1-y][x]=grid[y][x];}
+  if(rugSketch)rugSketch.refresh();
+  let filled=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
+  const density=((filled/(W*H))*100).toFixed(1);
+  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 draft \u00b7 seed: '+seed;
+  // Taalim
+  var body=document.getElementById('taalimBody');
+  var html='<div class="taalim-section"><h3>Binary Textile Draft</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">Each letter\u2019s rasterized bitmap is used directly as a weaving draft. ';
+  html+='Pixel rows = weft picks, pixel columns = warp threads. ';
+  html+='Letters are tiled across the rug with '+(useGlide?'glide reflection':'simple repeat')+' and ';
+  html+=(symV&&symH)?'four-way':'(symV?'vertical':'horizontal')'+' symmetry.</p>';
+  html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p></div>';
+  body.innerHTML=html;
+}
+
+// ─── MOTIF MODE (Letter-as-Symbol) ───────────────────────────────
+// Map Solitreo letters to traditional Anatolian/Sephardic rug motifs
+const MOTIF_MAP={
+  '\u05D0':{name:'Star',fn:function(g,x,y,s){// 8-pointed star
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      var dx=Math.abs(i-c),dy=Math.abs(j-c);
+      if(dx+dy<=c||dx<=1||dy<=1)g[y+j][x+i]=1;}}},
+  '\u05D1':{name:'Hands-on-hips (Elibelinde)',fn:function(g,x,y,s){// fertility symbol
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      var dx=Math.abs(i-c),dy=Math.abs(j-c);
+      if(dy<=1||(dx<=c-1&&dy<=c-1&&(dx+dy)%2===0)||(j>c&&dx<=2))g[y+j][x+i]=1;}}},
+  '\u05D2':{name:'Ram\u2019s horn (Ko\u00e7boynuzu)',fn:function(g,x,y,s){// spiral
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      var a=Math.atan2(j-c,i-c),r=Math.sqrt((i-c)*(i-c)+(j-c)*(j-c));
+      if(Math.abs(r-c*0.6-a*1.2)<1.8||Math.abs(r-c*0.6+a*1.2)<1.8)g[y+j][x+i]=1;}}},
+  '\u05D3':{name:'Chest (Sand\u0131k)',fn:function(g,x,y,s){// rectangle with diamond
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      if(i===0||i===s-1||j===0||j===s-1)g[y+j][x+i]=1;
+      var dx=Math.abs(i-c),dy=Math.abs(j-c);if(dx+dy<=Math.floor(s/4))g[y+j][x+i]=1;}}},
+  '\u05D4':{name:'Tree of Life',fn:function(g,x,y,s){// vertical with branches
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      if(i===c)g[y+j][x+i]=1;
+      if(j%3===0&&Math.abs(i-c)<=Math.floor((s-j)/3))g[y+j][x+i]=1;}}},
+  '\u05D5':{name:'Water (Su)',fn:function(g,x,y,s){// wave/zigzag
+    for(var j=0;j<s;j++){var wave=Math.round(Math.sin(j*Math.PI*2/s)*s*0.3)+Math.floor(s/2);
+      if(wave>=0&&wave<s)g[y+j][x+wave]=1;if(wave+1<s)g[y+j][x+wave+1]=1;}}},
+  '\u05D6':{name:'Hook (\u00c7engel)',fn:function(g,x,y,s){// S-hook
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      if((j<c&&i===c+Math.min(j,c-1))||(j>=c&&i===c-Math.min(j-c,c-1))||(j===0&&i>=c)||(j===s-1&&i<=c))g[y+j][x+i]=1;}}},
+  '\u05D7':{name:'Scorpion (Akrep)',fn:function(g,x,y,s){// protection
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      if(j===c&&i>=1&&i<s-1)g[y+j][x+i]=1;
+      if(i===c&&j>=c)g[y+j][x+i]=1;
+      if(j<c&&(i===1||i===s-2)&&j>c-3)g[y+j][x+i]=1;}}},
+  '\u05D8':{name:'Eye (G\u00f6z)',fn:function(g,x,y,s){// evil eye protection
+    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+      var dx=Math.abs(i-c),dy=Math.abs(j-c);
+      if(dx+dy===c||dx+dy===Math.floor(c/2)||(dx<=1&&dy<=1))g[y+j][x+i]=1;}}},
+  '\u05D9':{name:'Comb (Tarak)',fn:function(g,x,y,s){// horizontal lines with teeth
+    for(var j=0;j<s;j++)for(var i=0;i<s;i++){
+      if(j%3===0)g[y+j][x+i]=1;
+      if(j%3!==0&&i%2===0)g[y+j][x+i]=1;}}},
+};
+// Default motif for unmapped letters
+function defaultMotif(g,x,y,s){
+  var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
+    var dx=Math.abs(i-c),dy=Math.abs(j-c);
+    if(dx+dy<=c)g[y+j][x+i]=1;} // diamond
+}
+
+function generateMotifMode(name){
+  scriptMode=false;
+  const seed=remixCounter>0?name+'_'+remixCounter:name;
+  const rng=createPRNG(seed);
+  const chars=transliterateToChars(name);
+  if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='No transliterable characters found.';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
+  W=parseInt(document.getElementById('rugW').value)||18;
+  H=parseInt(document.getElementById('rugH').value)||30;
+  grid=[];for(let y=0;y<H;y++)grid[y]=new Array(W).fill(0);
+  // Symmetry
+  const symSel=document.getElementById('symmetryMode').value;
+  let symMode=3;// default both
+  if(symSel==='none')symMode=0;else if(symSel==='vertical')symMode=1;
+  else if(symSel==='horizontal')symMode=2;else if(symSel==='both')symMode=3;
+  // Border
+  const bw=Math.max(1,Math.floor(W*0.05));
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+    if(x<bw||x>=W-bw||y<bw||y>=H-bw)grid[y][x]=(x+y)%2;
+  }
+  // Place motifs in the field
+  const ix=bw,iy=bw,iw=W-bw*2,ih=H-bw*2;
+  const motifSize=Math.max(5,Math.min(Math.floor(iw/2),Math.floor(ih/3)));
+  const cols=Math.max(1,Math.floor(iw/motifSize));
+  const rows=Math.max(1,Math.floor(ih/motifSize));
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const ci=Math.floor((r*cols+c)%chars.length);
+      const ch=chars[ci];
+      const mx=ix+c*motifSize;
+      const my=iy+r*motifSize;
+      // Bounds check
+      if(mx+motifSize>W||my+motifSize>H)continue;
+      const motif=MOTIF_MAP[ch];
+      if(motif)motif.fn(grid,mx,my,motifSize);
+      else defaultMotif(grid,mx,my,motifSize);
+    }
+  }
+  // Apply symmetry to field
+  if(symMode===1||symMode===3){for(let y=iy;y<iy+ih;y++)for(let x=0;x<Math.floor(iw/2);x++)grid[y][ix+iw-1-x]=grid[y][ix+x];}
+  if(symMode===2||symMode===3){for(let y=0;y<Math.floor(ih/2);y++)for(let x=0;x<iw;x++)grid[iy+ih-1-y][ix+x]=grid[iy+y][ix+x];}
+  if(rugSketch)rugSketch.refresh();
+  let filled=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
+  const density=((filled/(W*H))*100).toFixed(1);
+  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 motif \u00b7 seed: '+seed;
+  // Taalim
+  var body=document.getElementById('taalimBody');
+  var motifNames=chars.map(function(ch){var m=MOTIF_MAP[ch];return m?m.name:'Diamond';});
+  var html='<div class="taalim-section"><h3>Motif Pattern</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">Each Solitreo letter maps to a traditional Anatolian rug motif:</p>';
+  html+='<ul style="font-size:14px;color:var(--text);margin:8px 0;padding-left:20px;">';
+  for(var i=0;i<chars.length;i++){
+    var m=MOTIF_MAP[chars[i]];
+    html+='<li>'+chars[i]+' \u2192 '+(m?m.name:'Diamond')+'</li>';
+  }
+  html+='</ul>';
+  html+='<p style="font-size:14px;color:var(--text-3);">'+filled+' filled \u00b7 '+cols+'\u00d7'+rows+' motif grid</p></div>';
+  body.innerHTML=html;
+}
+
 // ─── MAIN GENERATE ──────────────────────────────────────────────
 function generatePattern(){
   const name=document.getElementById('nameInput').value.trim();
