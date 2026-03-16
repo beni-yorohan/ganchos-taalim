@@ -1431,35 +1431,21 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Sticky card: when section scrolls past, freeze card as fixed
+  // Sticky card: freeze to fixed once card reaches its sticky position
   (function(){
     var card=document.getElementById('specimenDetail');
-    var layout=document.querySelector('.specimen-layout');
-    if(!card||!layout) return;
+    if(!card) return;
     var frozen=false;
-    var frozenLeft='';
-    var frozenTop='';
     window.addEventListener('scroll',function(){
-      var lr=layout.getBoundingClientRect();
+      if(frozen) return;
       var cr=card.getBoundingClientRect();
-      // Layout bottom is above card bottom = card would unstick
-      if(lr.bottom < cr.bottom && !frozen){
-        // Freeze card at its current viewport position
-        frozenLeft=cr.left+'px';
-        frozenTop=cr.top+'px';
+      // Card has reached its sticky position (top:24px) — freeze it
+      if(cr.top<=24 && cr.top>=-5 && cr.width>0){
         card.style.position='fixed';
-        card.style.top=frozenTop;
-        card.style.left=frozenLeft;
+        card.style.top='24px';
+        card.style.left=cr.left+'px';
         card.style.width=cr.width+'px';
         frozen=true;
-      }
-      // Layout is back in view = unfreeze, go back to sticky
-      if(frozen && lr.bottom >= cr.bottom+50){
-        card.style.position='sticky';
-        card.style.top='24px';
-        card.style.left='';
-        card.style.width='';
-        frozen=false;
       }
     });
   })();
