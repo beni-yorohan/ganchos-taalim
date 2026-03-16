@@ -103,7 +103,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   scroll-behavior:smooth;scrollbar-width:none;}
 .solitreo-gallery::-webkit-scrollbar{display:none;}
 .solitreo-gallery figure{margin:0;flex:0 0 auto;scroll-snap-align:start;position:relative;}
-.solitreo-gallery img{height:260px;width:auto;border-radius:6px;display:block;
+.solitreo-gallery img{height:clamp(220px,18vw,320px);width:auto;border-radius:6px;display:block;
   box-shadow:0 2px 16px rgba(0,0,0,0.1);transition:transform 0.35s ease,box-shadow 0.35s ease;}
 .solitreo-gallery figure:hover img{transform:scale(1.03);box-shadow:0 8px 40px rgba(0,0,0,0.2);}
 .solitreo-gallery figcaption{font-size:11px;color:var(--text-3);
