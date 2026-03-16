@@ -633,8 +633,11 @@ async function loadFont(){
         fx.fillStyle='#F5C842';
         fx.beginPath();fx.roundRect(0,0,128,128,16);fx.fill();
         fx.font='80px GanchosSans';fx.fillStyle='#E8528A';
-        fx.textAlign='center';fx.textBaseline='middle';
-        fx.fillText('\u05D1',64,60);
+        fx.textAlign='center';fx.textBaseline='alphabetic';
+        var m=fx.measureText('\u05D1');
+        var glyphH=(m.actualBoundingBoxAscent||40)+(m.actualBoundingBoxDescent||10);
+        var yOff=64+((m.actualBoundingBoxAscent||40)-(glyphH/2));
+        fx.fillText('\u05D1',64,yOff);
         document.getElementById('favicon').href=fc.toDataURL('image/png');
       }catch(e){}
       return;
