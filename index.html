@@ -1431,21 +1431,24 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Lock the card: start sticky, then freeze to fixed once position is known
+  // Lock the card: start sticky, freeze to fixed once grid is at card level
   (function(){
     var card=document.getElementById('specimenDetail');
+    var grid=document.getElementById('specimenAll');
     var sec=document.getElementById('specimen');
-    if(!card||!sec) return;
+    if(!card||!grid||!sec) return;
     var locked=false;
     function tryLock(){
       if(locked) return;
-      var r=card.getBoundingClientRect();
-      // Only lock when card is visible on screen (sticky has kicked in)
-      if(r.top>=0 && r.top<window.innerHeight && r.width>0){
+      var gr=grid.getBoundingClientRect();
+      var cr=card.getBoundingClientRect();
+      // Lock when grid top is at or above the card's sticky top (24px)
+      // This means the card and grid are aligned
+      if(gr.top<=cr.top+5 && gr.top>-100 && cr.width>0){
         card.style.position='fixed';
-        card.style.top=r.top+'px';
-        card.style.left=r.left+'px';
-        card.style.width=r.width+'px';
+        card.style.top=gr.top+'px';
+        card.style.left=cr.left+'px';
+        card.style.width=cr.width+'px';
         locked=true;
         window.removeEventListener('scroll',tryLock);
         // Show/hide when specimen section leaves viewport
