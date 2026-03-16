@@ -1431,24 +1431,26 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Make card fixed: read left from grid, top=24px, show only on specimen section
+  // Make card fixed: aligned with letter grid, show only on specimen section
   (function(){
     var card=document.getElementById('specimenDetail');
     var left=document.querySelector('.specimen-left');
+    var grid=document.getElementById('specimenAll');
     var sec=document.getElementById('specimen');
-    if(!card||!left||!sec) return;
-    // Read the left position from the grid layout
+    if(!card||!left||!grid||!sec) return;
+    // Distance from section top to grid top (doesn't change)
+    var gridOffset=grid.offsetTop-sec.offsetTop;
     var r=left.getBoundingClientRect();
     card.style.position='fixed';
-    card.style.top='24px';
+    card.style.top=gridOffset+'px';
     card.style.left=(r.right+32)+'px';
     card.style.width='520px';
     card.style.visibility='hidden';
-    // Show only when specimen section is in view
+    // Show only when the grid itself is near the viewport
     var obs=new IntersectionObserver(function(entries){
       card.style.visibility=entries[0].isIntersecting?'visible':'hidden';
     },{threshold:0});
-    obs.observe(sec);
+    obs.observe(grid);
     window.addEventListener('resize',function(){
       var r2=left.getBoundingClientRect();
       card.style.left=(r2.right+32)+'px';
