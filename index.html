@@ -1432,24 +1432,38 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Position the fixed card next to the letter grid
+  // Position the fixed card aligned with the letter grid
   (function(){
     var left=document.querySelector('.specimen-left');
+    var grid=document.getElementById('specimenAll');
     var card=document.getElementById('specimenDetail');
     var sec=document.getElementById('specimen');
-    if(!left||!card||!sec) return;
-    function place(){
+    if(!left||!grid||!card||!sec) return;
+    var topSet=false;
+    function setLeft(){
       var r=left.getBoundingClientRect();
       card.style.left=(r.right+32)+'px';
     }
-    place();
-    // Show card only when specimen section is in viewport
-    var obs=new IntersectionObserver(function(entries){
-      card.style.visibility=entries[0].isIntersecting?'visible':'hidden';
-      if(entries[0].isIntersecting) place();
+    setLeft();
+    // Use IntersectionObserver on the grid itself to set top once
+    var gridObs=new IntersectionObserver(function(entries){
+      if(entries[0].isIntersecting&&!topSet){
+        // Grid just appeared — set card top to match grid top
+        var gt=grid.getBoundingClientRect().top;
+        card.style.top=Math.max(24,gt)+'px';
+        topSet=true;
+      }
     },{threshold:0});
-    obs.observe(sec);
-    window.addEventListener('resize',place);
+    gridObs.observe(grid);
+    // Show/hide card when section is in viewport
+    var secObs=new IntersectionObserver(function(entries){
+      card.style.visibility=entries[0].isIntersecting?'visible':'hidden';
+      if(entries[0].isIntersecting) setLeft();
+    },{threshold:0});
+    secObs.observe(sec);
+    window.addEventListener('resize',function(){
+      topSet=false; setLeft();
+    });
   })();
 }
 
