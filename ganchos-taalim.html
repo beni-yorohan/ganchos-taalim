@@ -1203,7 +1203,7 @@ function generateDraftMode(name){
   html+='<p style="font-size:14px;color:var(--text);">Each letter\u2019s rasterized bitmap is used directly as a weaving draft. ';
   html+='Pixel rows = weft picks, pixel columns = warp threads. ';
   html+='Letters are tiled across the rug with '+(useGlide?'glide reflection':'simple repeat')+' and ';
-  html+=(symV&&symH)?'four-way':'(symV?'vertical':'horizontal')'+' symmetry.</p>';
+  html+=(symV&&symH?'four-way':symV?'vertical':'horizontal')+' symmetry.</p>';
   html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p></div>';
   body.innerHTML=html;
 }
