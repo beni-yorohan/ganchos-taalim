@@ -128,19 +128,19 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:grid;grid-template-columns:var(--col) minmax(200px,280px);gap:32px;align-items:start;
+.specimen-layout{display:grid;grid-template-columns:var(--col) 360px;gap:32px;align-items:start;
   margin-left:max(24px,12vw);margin-right:24px;}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
   background:var(--surface);position:sticky;top:24px;
   display:flex;flex-direction:column;align-items:center;
-  aspect-ratio:4/5;padding:32px 28px;text-align:center;overflow:hidden;box-sizing:border-box;}
+  aspect-ratio:4/5;padding:40px 28px;text-align:center;box-sizing:border-box;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
-  width:100%;min-height:0;overflow:hidden;}
-.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:clamp(72px,10vw,110px);
-  line-height:1.2;color:var(--text);max-height:100%;overflow:hidden;}
+  width:100%;min-height:0;padding:16px 0;}
+.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:100px;
+  line-height:1.4;color:var(--text);}
 .specimen-detail .detail-bottom{flex-shrink:0;width:100%;padding-top:20px;
-  border-top:1px solid var(--border);margin-top:auto;}
+  border-top:1px solid var(--border);}
 .specimen-detail .detail-name{font-size:18px;font-weight:600;color:var(--text);
   margin-bottom:14px;letter-spacing:0.02em;}
 .specimen-detail .detail-scripts{display:flex;gap:32px;justify-content:center;}
