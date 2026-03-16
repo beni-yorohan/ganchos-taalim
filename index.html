@@ -134,9 +134,9 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
   background:var(--surface);position:sticky;top:24px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:500px;padding:48px 32px;text-align:center;overflow:hidden;}
-.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:clamp(140px,20vw,240px);
-  line-height:1;color:var(--text);margin-bottom:28px;}
+  aspect-ratio:4/5;padding:40px 28px;text-align:center;overflow:hidden;box-sizing:border-box;}
+.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:clamp(80px,12vw,140px);
+  line-height:1;color:var(--text);margin-bottom:24px;flex-shrink:0;}
 .specimen-detail .detail-name{font-size:18px;font-weight:600;color:var(--text);
   margin-bottom:16px;letter-spacing:0.02em;}
 .specimen-detail .detail-scripts{display:flex;gap:32px;justify-content:center;
@@ -1354,17 +1354,17 @@ function buildSpecimen(){
   // Letter cross-script mappings: Solitreo char -> {latin, hebrew, arabic}
   const SCRIPT_MAP={
     '\u05D0':{latin:'A',hebrew:'\u05D0',arabic:'\u0627'},
-    '\u05D1':{latin:'B',hebrew:'\u05D1',arabic:'\u0628'},
+    '\u05D1':{latin:'V',hebrew:'\u05D1',arabic:'\u0628'},
     '\u05D2':{latin:'G',hebrew:'\u05D2',arabic:'\u062C'},
     '\u05D3':{latin:'D',hebrew:'\u05D3',arabic:'\u062F'},
     '\u05D4':{latin:'H',hebrew:'\u05D4',arabic:'\u0647'},
-    '\u05D5':{latin:'V',hebrew:'\u05D5',arabic:'\u0648'},
+    '\u05D5':{latin:'U/O',hebrew:'\u05D5',arabic:'\u0648'},
     '\u05D6':{latin:'Z',hebrew:'\u05D6',arabic:'\u0632'},
     '\u05D7':{latin:'Ch',hebrew:'\u05D7',arabic:'\u062D'},
     '\u05D8':{latin:'T',hebrew:'\u05D8',arabic:'\u0637'},
     '\u05D9':{latin:'Y',hebrew:'\u05D9',arabic:'\u064A'},
-    '\u05DB':{latin:'K',hebrew:'\u05DB',arabic:'\u0643'},
-    '\u05DA':{latin:'K',hebrew:'\u05DA',arabic:'\u0643'},
+    '\u05DB':{latin:'Kh',hebrew:'\u05DB',arabic:'\u0643'},
+    '\u05DA':{latin:'Kh',hebrew:'\u05DA',arabic:'\u0643'},
     '\u05DC':{latin:'L',hebrew:'\u05DC',arabic:'\u0644'},
     '\u05DE':{latin:'M',hebrew:'\u05DE',arabic:'\u0645'},
     '\u05DD':{latin:'M',hebrew:'\u05DD',arabic:'\u0645'},
@@ -1372,7 +1372,7 @@ function buildSpecimen(){
     '\u05DF':{latin:'N',hebrew:'\u05DF',arabic:'\u0646'},
     '\u05E1':{latin:'S',hebrew:'\u05E1',arabic:'\u0633'},
     '\u05E2':{latin:'\u2018',hebrew:'\u05E2',arabic:'\u0639'},
-    '\u05E4':{latin:'P',hebrew:'\u05E4',arabic:'\u0641'},
+    '\u05E4':{latin:'F',hebrew:'\u05E4',arabic:'\u0641'},
     '\u05E3':{latin:'F',hebrew:'\u05E3',arabic:'\u0641'},
     '\u05E6':{latin:'Ts',hebrew:'\u05E6',arabic:'\u0635'},
     '\u05E5':{latin:'Ts',hebrew:'\u05E5',arabic:'\u0635'},
