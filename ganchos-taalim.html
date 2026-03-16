@@ -1435,12 +1435,13 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Show/hide card when specimen section is in view
+  // Show/hide card when specimen section is in view (desktop only)
   (function(){
     var card=document.getElementById('specimenDetail');
     var sec=document.getElementById('specimen');
     if(!card||!sec) return;
     new IntersectionObserver(function(e){
+      if(window.innerWidth<=900) return; // handled by CSS on small screens
       card.style.visibility=e[0].isIntersecting?'visible':'hidden';
     },{threshold:0.2}).observe(sec);
   })();
