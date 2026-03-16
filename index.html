@@ -322,16 +322,24 @@ section+section::before{content:'';display:block;width:40px;height:1px;
     <button class="gallery-nav next" aria-label="Scroll right">&rarr;</button>
     <div class="solitreo-gallery" id="galleryScroll">
       <figure>
-        <img src="el-tiempo-masthead.jpg" alt="Masthead of El Tiempo, the prominent Ladino newspaper printed in Rashi Hebrew script">
-        <figcaption>El Tiempo — Ladino newspaper, Istanbul. Rashi script masthead.</figcaption>
-      </figure>
-      <figure>
         <img src="poema-relijyoza-01.jpg" alt="Aged parchment manuscript page of a Poema Relijyoza, a religious poem handwritten in Solitreo cursive script">
         <figcaption>Poema Relijyoza — religious poem in Solitreo on parchment.</figcaption>
       </figure>
       <figure>
+        <img src="solitreo-contract.jpg" alt="Historical contract written in Solitreo cursive script">
+        <figcaption>Solitreo contract — legal document in cursive Judaeo-Spanish. Wikimedia Commons.</figcaption>
+      </figure>
+      <figure>
         <img src="komunikado-de-smirna.jpg" alt="Komunikado from the Gran Rabinato of Smirna, 1945, combining typed Ladino text with handwritten Solitreo script and an official stamp">
         <figcaption>Komunikado de Smirna, 1945 — Gran Rabinato communique.</figcaption>
+      </figure>
+      <figure>
+        <img src="livro-de-embezar.jpg" alt="Page from Livro de Embezar showing Solitreo script alongside other writing systems">
+        <figcaption>Livro de Embezar — instructional page with Solitreo script. Wikimedia Commons.</figcaption>
+      </figure>
+      <figure>
+        <img src="meam-loez.jpg" alt="Page from Me'am Lo'ez, the classic Ladino Torah commentary">
+        <figcaption>Me'am Lo'ez — Ladino Torah commentary, first printed Constantinople 1730. Wikimedia Commons.</figcaption>
       </figure>
       <figure>
         <img src="poema-relijyoza-02.jpg" alt="Open manuscript book showing four pages of handwritten Solitreo text">
@@ -342,6 +350,10 @@ section+section::before{content:'';display:block;width:40px;height:1px;
         <figcaption>Izmir marriage records — community ledger in Solitreo.</figcaption>
       </figure>
       <figure>
+        <img src="avanti-ladino.jpg" alt="Front page of Avanti, Ladino-language socialist newspaper from Thessaloniki, 1914">
+        <figcaption>Avanti, Thessaloniki 1914 — Ladino socialist newspaper, Ottoman Empire. Wikimedia Commons.</figcaption>
+      </figure>
+      <figure>
         <img src="gnchs_01_.jpeg" alt="Handwritten Solitreo script on lined notebook paper in blue ink">
         <figcaption>Handwritten Solitreo — modern cursive practice.</figcaption>
       </figure>
@@ -350,8 +362,20 @@ section+section::before{content:'';display:block;width:40px;height:1px;
         <figcaption>Letter to Delacroix, 1832 — Solitreo correspondence from Tangier by Jamila Buzaglo.</figcaption>
       </figure>
       <figure>
-        <img src="solitreo-map.jpg" alt="Geographic map showing the distribution of Solitreo script usage across the Sephardic diaspora">
-        <figcaption>Solitreo Map — geographic distribution of the script across the Sephardic diaspora.</figcaption>
+        <img src="niche-kilim.jpg" alt="Traditional niche kilim with geometric patterns">
+        <figcaption>Niche kilim — traditional geometric weaving pattern. Wikimedia Commons.</figcaption>
+      </figure>
+      <figure>
+        <img src="konya-kilim.jpg" alt="Kilim from Konya region, Ottoman-era geometric textile">
+        <figcaption>Konya kilim — geometric textile from the Ottoman heartland. Wikimedia Commons.</figcaption>
+      </figure>
+      <figure>
+        <img src="ottoman-carpet-met.jpg" alt="Ottoman court carpet with geometric medallion design, Metropolitan Museum of Art">
+        <figcaption>Ottoman court carpet — geometric medallion design. Metropolitan Museum of Art, Wikimedia Commons.</figcaption>
+      </figure>
+      <figure>
+        <img src="rashi-script.png" alt="Example of Rashi semi-cursive script used for printing Ladino texts">
+        <figcaption>Rashi script — the semi-cursive typeface used for printing Ladino from the 15th century. Wikimedia Commons.</figcaption>
       </figure>
     </div>
   </div>
@@ -489,6 +513,7 @@ section+section::before{content:'';display:block;width:40px;height:1px;
     <div class="gen-export">
       <button class="btn-outline" onclick="doExportWIF()">Export WIF</button>
       <button class="btn-outline" onclick="doExportPNG()">Export PNG</button>
+      <button class="btn-outline" onclick="doExportSVG()">Export SVG</button>
       <button class="btn-outline" onclick="doExportTXT()">Copy Taalim</button>
     </div>
 
@@ -1142,6 +1167,34 @@ function doExportPNG(){
   const sc=4,ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;const ectx=ec.getContext('2d');
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';ectx.fillRect(x*sc,y*sc,sc,sc);}
   const a=document.createElement('a');a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';a.href=ec.toDataURL('image/png');a.click();
+}
+function doExportSVG(){
+  const name=document.getElementById('nameInput').value.trim()||'pattern';
+  const fname='ganchos-'+name.replace(/\s+/g,'-')+'.svg';
+  let svg='';
+  if(scriptMode&&scriptPlacements.length>0){
+    const cw=scriptPlacements._cW||480,ch=scriptPlacements._cH||600;
+    svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+cw+'" height="'+ch+'" viewBox="0 0 '+cw+' '+ch+'">';
+    svg+='<rect width="100%" height="100%" fill="#F5F5F0"/>';
+    svg+='<style>@font-face{font-family:GanchosSans;src:url(GanchosSansv8-Regular.ttf);}</style>';
+    for(var i=0;i<scriptPlacements.length;i++){
+      var p=scriptPlacements[i];
+      var t='translate('+p.x+','+p.y+')';
+      if(p.rotation)t+=' rotate('+(p.rotation*180/Math.PI)+')';
+      if(p.flip)t+=' scale(-1,1)';
+      var a=p.alpha!==undefined?p.alpha/255:1;
+      svg+='<text transform="'+t+'" font-family="GanchosSans" font-size="'+p.size+'" fill="rgba(17,17,17,'+a.toFixed(2)+')" text-anchor="middle" dominant-baseline="central">'+p.ch+'</text>';
+    }
+    svg+='</svg>';
+  }else{
+    if(!grid.length)return;
+    const sc=4;
+    svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(W*sc)+'" height="'+(H*sc)+'" viewBox="0 0 '+(W*sc)+' '+(H*sc)+'">';
+    svg+='<rect width="100%" height="100%" fill="#F5F5F0"/>';
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(grid[y][x])svg+='<rect x="'+(x*sc)+'" y="'+(y*sc)+'" width="'+sc+'" height="'+sc+'" fill="#111"/>';}
+    svg+='</svg>';
+  }
+  downloadFile(fname,svg,'image/svg+xml');
 }
 function doExportTXT(){
   if(scriptMode){
