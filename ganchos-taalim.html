@@ -626,6 +626,17 @@ async function loadFont(){
     try{
       const face=new FontFace('GanchosSans','url('+path+')');
       await face.load();document.fonts.add(face);fontLoaded=true;
+      // Generate favicon with GanchosSans Bet
+      try{
+        var fc=document.createElement('canvas');fc.width=128;fc.height=128;
+        var fx=fc.getContext('2d');
+        fx.fillStyle='#F5C842';
+        fx.beginPath();fx.roundRect(0,0,128,128,16);fx.fill();
+        fx.font='80px GanchosSans';fx.fillStyle='#E8528A';
+        fx.textAlign='center';fx.textBaseline='middle';
+        fx.fillText('\u05D1',64,60);
+        document.getElementById('favicon').href=fc.toDataURL('image/png');
+      }catch(e){}
       return;
     }catch(e){}
   }
