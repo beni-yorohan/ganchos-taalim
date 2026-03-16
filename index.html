@@ -139,8 +139,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   position:relative;transition:background 0.15s ease;color:var(--text);}
 .specimen-grid .cell:hover{background:rgba(0,0,0,0.06);}
 .specimen-grid .cell .glyph{font-family:var(--solitreo);font-size:clamp(48px,7vw,68px);
-  line-height:1;height:72px;display:flex;align-items:baseline;justify-content:center;
-  overflow:hidden;width:100%;}
+  line-height:1.2;display:flex;align-items:center;justify-content:center;
+  width:100%;min-height:72px;}
 .specimen-grid .cell .glyph-name{font-family:var(--font);font-size:10px;
   color:var(--text-3);margin-top:8px;text-align:center;line-height:1.3;
   letter-spacing:0;direction:ltr;}
@@ -153,8 +153,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   border-right:1px solid var(--border);border-bottom:1px solid var(--border);
   position:relative;transition:background 0.15s ease;color:var(--text);}
 .specimen-numbers-grid .cell:hover{background:rgba(0,0,0,0.06);}
-.specimen-numbers-grid .cell .glyph{font-size:clamp(28px,5vw,44px);line-height:1;
-  height:48px;display:flex;align-items:baseline;justify-content:center;overflow:hidden;}
+.specimen-numbers-grid .cell .glyph{font-family:var(--solitreo);font-size:clamp(28px,5vw,44px);
+  line-height:1.2;display:flex;align-items:center;justify-content:center;min-height:48px;}
 .specimen-numbers-grid .cell .glyph-name{font-family:var(--font);font-size:9px;
   color:var(--text-3);margin-top:6px;text-align:center;letter-spacing:0;direction:ltr;}
 
@@ -275,7 +275,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   .gen-params{flex-direction:column;align-items:stretch;}
   .gen-export{flex-direction:column;}
   .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr));}
-  .specimen-grid .cell .glyph{height:56px;font-size:40px;}
+  .specimen-grid .cell .glyph{min-height:52px;font-size:40px;}
   .specimen-numbers-grid{grid-template-columns:repeat(5,1fr);}
   .hero-title{font-size:clamp(40px,12vw,72px);}
   .footer-grid{grid-template-columns:1fr 1fr;gap:24px;}
