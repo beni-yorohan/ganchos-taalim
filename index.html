@@ -128,11 +128,11 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:block;
-  margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);}
-.specimen-left{min-width:0;}
+.specimen-layout{display:grid;grid-template-columns:var(--col) 520px;gap:32px;align-items:start;
+  margin-left:max(24px,12vw);margin-right:24px;}
+.specimen-left{min-width:0;padding-bottom:600px;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);
+  background:var(--surface);position:sticky;top:24px;align-self:start;
   aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
   padding:40px 28px;text-align:center;box-sizing:border-box;}
@@ -1431,42 +1431,36 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Fixed card: top=24px, left next to grid, visible only when grid is on screen
+  // Sticky card: when section scrolls past, freeze card as fixed
   (function(){
     var card=document.getElementById('specimenDetail');
-    var left=document.querySelector('.specimen-left');
-    var grid=document.getElementById('specimenAll');
-    if(!card||!left||!grid) return;
-    var r=left.getBoundingClientRect();
-    card.style.position='fixed';
-    card.style.left=(r.right+32)+'px';
-    card.style.width='520px';
-    card.style.visibility='hidden';
-    // Set top to match the grid's viewport position when it first appears
-    var topLocked=false;
-    // Show only when the letter grid is in the viewport
-    var obs=new IntersectionObserver(function(entries){
-      var isIn=entries[0].isIntersecting;
-      card.style.visibility=isIn?'visible':'hidden';
-      if(isIn){
-        var r2=left.getBoundingClientRect();
-        card.style.left=(r2.right+32)+'px';
-        if(!topLocked){
-          // Set card top to match grid top, but only the first time
-          var gt=grid.getBoundingClientRect().top;
-          // Clamp: if grid top is below middle of screen, use grid top
-          // if grid has scrolled up, use a minimum of 24px
-          card.style.top=Math.max(24,gt)+'px';
-          topLocked=true;
-        }
-      } else {
-        topLocked=false;
+    var layout=document.querySelector('.specimen-layout');
+    if(!card||!layout) return;
+    var frozen=false;
+    var frozenLeft='';
+    var frozenTop='';
+    window.addEventListener('scroll',function(){
+      var lr=layout.getBoundingClientRect();
+      var cr=card.getBoundingClientRect();
+      // Layout bottom is above card bottom = card would unstick
+      if(lr.bottom < cr.bottom && !frozen){
+        // Freeze card at its current viewport position
+        frozenLeft=cr.left+'px';
+        frozenTop=cr.top+'px';
+        card.style.position='fixed';
+        card.style.top=frozenTop;
+        card.style.left=frozenLeft;
+        card.style.width=cr.width+'px';
+        frozen=true;
       }
-    },{threshold:0.3});
-    obs.observe(grid);
-    window.addEventListener('resize',function(){
-      var r2=left.getBoundingClientRect();
-      card.style.left=(r2.right+32)+'px';
+      // Layout is back in view = unfreeze, go back to sticky
+      if(frozen && lr.bottom >= cr.bottom+50){
+        card.style.position='sticky';
+        card.style.top='24px';
+        card.style.left='';
+        card.style.width='';
+        frozen=false;
+      }
     });
   })();
 }
