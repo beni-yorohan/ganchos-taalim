@@ -1328,7 +1328,10 @@ function generatePattern(){
     document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>';
     return;
   }
-  if(document.getElementById('patternStyle').value==='script'){generateScriptMode(name);return;}
+  var pVal=document.getElementById('patternStyle').value;
+  if(pVal==='script'){generateScriptMode(name);return;}
+  if(pVal==='draft'){generateDraftMode(name);return;}
+  if(pVal==='motif'){generateMotifMode(name);return;}
   scriptMode=false;
   const seed=remixCounter>0?name+'_'+remixCounter:name;
   const rng=createPRNG(seed);
