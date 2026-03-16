@@ -291,7 +291,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   .col{margin-left:max(16px,6vw);}
   .gallery-wrap{padding-left:max(16px,6vw);}
   .specimen-layout{grid-template-columns:1fr;margin-left:max(16px,6vw);margin-right:16px;}
-  .specimen-detail{position:static;min-height:300px;aspect-ratio:auto;margin-bottom:32px;}
+  .specimen-detail{position:static !important;width:auto !important;min-height:300px;aspect-ratio:auto;
+    margin-bottom:32px;visibility:visible !important;transform:none;top:auto;right:auto;left:auto;}
   .gallery-nav.prev{left:max(4px,calc(6vw - 16px));}
 }
 @media(max-width:600px){
