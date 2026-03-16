@@ -45,7 +45,8 @@ a,button,[role="button"],input,select,label,.btn,.btn-outline{
   --grid-on:#111111;
   --grid-off:#F5F5F0;
   --radius:6px;
-  --col:800px;
+  --col:clamp(700px, 50vw, 900px);
+  --card-w:clamp(400px, 28vw, 560px);
   --font:Inter,-apple-system,system-ui,sans-serif;
   --mono:'SF Mono',SFMono-Regular,Menlo,Consolas,monospace;
   --solitreo:'GanchosSans',serif;
@@ -102,7 +103,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   scroll-behavior:smooth;scrollbar-width:none;}
 .solitreo-gallery::-webkit-scrollbar{display:none;}
 .solitreo-gallery figure{margin:0;flex:0 0 auto;scroll-snap-align:start;position:relative;}
-.solitreo-gallery img{height:260px;width:auto;border-radius:6px;display:block;
+.solitreo-gallery img{height:clamp(220px,18vw,320px);width:auto;border-radius:6px;display:block;
   box-shadow:0 2px 16px rgba(0,0,0,0.1);transition:transform 0.35s ease,box-shadow 0.35s ease;}
 .solitreo-gallery figure:hover img{transform:scale(1.03);box-shadow:0 8px 40px rgba(0,0,0,0.2);}
 .solitreo-gallery figcaption{font-size:11px;color:var(--text-3);
@@ -129,18 +130,18 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
 .specimen-layout{display:block;
-  margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);}
+  margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);width:100%;box-sizing:border-box;}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
   background:var(--surface);position:fixed;
-  top:50%;transform:translateY(-50%);right:calc(100vw - max(24px,12vw) - var(--col) - 520px - 56px);
-  width:520px;aspect-ratio:4/5;
+  top:50%;transform:translateY(-50%);right:calc(100vw - max(24px,12vw) - var(--col) - var(--card-w) - 56px);
+  width:var(--card-w);aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
   padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;
   visibility:hidden;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
-.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:180px;
+.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:clamp(120px,12vw,200px);
   line-height:1.3;color:var(--text);max-height:calc(100% - 16px);}
 .specimen-detail .detail-bottom{flex-shrink:0;width:calc(100% + 56px);margin-left:-28px;margin-right:-28px;padding-top:20px;
   border-top:1px solid #000;align-self:stretch;}
@@ -187,7 +188,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 #generator{padding:80px 0;display:block;}
 #generator::before{display:none !important;}
 .generator-frame{background:var(--surface);border:1px solid rgba(0,0,0,0.12);
-  border-radius:10px;padding:48px 40px;max-width:920px;width:calc(100% - 48px);
+  border-radius:10px;padding:48px 40px;max-width:clamp(800px,60vw,1000px);width:calc(100% - 48px);
   margin-left:auto;margin-right:auto;position:relative;z-index:2;
   box-shadow:0 4px 32px rgba(0,0,0,0.06);}
 .gen-header{text-align:left;margin-bottom:36px;}
@@ -290,7 +291,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   .col{margin-left:max(16px,6vw);}
   .gallery-wrap{padding-left:max(16px,6vw);}
   .specimen-layout{grid-template-columns:1fr;margin-left:max(16px,6vw);margin-right:16px;}
-  .specimen-detail{position:static;min-height:300px;aspect-ratio:auto;margin-bottom:32px;}
+  .specimen-detail{position:static !important;width:auto !important;min-height:300px;aspect-ratio:auto;
+    margin-bottom:32px;visibility:visible !important;transform:none;top:auto;right:auto;left:auto;}
   .gallery-nav.prev{left:max(4px,calc(6vw - 16px));}
 }
 @media(max-width:600px){
@@ -1433,12 +1435,13 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Show/hide card when specimen section is in view
+  // Show/hide card when specimen section is in view (desktop only)
   (function(){
     var card=document.getElementById('specimenDetail');
     var sec=document.getElementById('specimen');
     if(!card||!sec) return;
     new IntersectionObserver(function(e){
+      if(window.innerWidth<=900) return; // handled by CSS on small screens
       card.style.visibility=e[0].isIntersecting?'visible':'hidden';
     },{threshold:0.2}).observe(sec);
   })();
