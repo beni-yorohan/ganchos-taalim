@@ -248,16 +248,18 @@ section+section::before{content:'';display:block;width:40px;height:1px;
   border-radius:var(--radius);border:1px solid var(--border);}
 
 /* ─── COLOPHON ─────────────────────────────────────────────── */
-#colophon{padding:80px 0 48px;color:var(--text-3);font-size:13px;
-  border-top:1px solid var(--border);margin-top:20px;
-  margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);}
-.footer-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-  gap:40px;}
+#colophon{padding:60px 24px 48px;color:var(--text);font-size:13px;
+  border-top:1px solid var(--text);margin-top:20px;}
+.footer-grid{display:grid;grid-template-columns:1fr 1fr 2fr 1fr;
+  gap:60px;}
 .footer-col h4{font-size:11px;font-weight:600;text-transform:uppercase;
   letter-spacing:0.1em;color:var(--text);margin-bottom:12px;}
-.footer-col p{margin-bottom:6px;font-size:14px;line-height:1.6;color:var(--text-3);}
+.footer-col p{margin-bottom:6px;font-size:14px;line-height:1.6;color:var(--text);}
 .footer-col a{color:var(--text);text-decoration:underline;text-underline-offset:3px;}
-.footer-col a:hover{color:var(--text-3);}
+.footer-col a:hover{opacity:0.6;}
+.footer-col.col-ack .ack-list{columns:2;column-gap:32px;}
+.footer-col.col-ack .ack-list p{break-inside:avoid;}
+.footer-col.col-links{text-align:right;}
 
 /* ─── RESPONSIVE ───────────────────────────────────────────── */
 @media(max-width:900px){
@@ -276,7 +278,9 @@ section+section::before{content:'';display:block;width:40px;height:1px;
   .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));}
   .specimen-numbers-grid{grid-template-columns:repeat(5,1fr);}
   .hero-title{font-size:clamp(40px,12vw,72px);}
-  .footer-grid{grid-template-columns:1fr 1fr;gap:20px;}
+  .footer-grid{grid-template-columns:1fr 1fr;gap:24px;}
+  .footer-col.col-links{text-align:left;}
+  .footer-col.col-ack .ack-list{columns:1;}
   .gallery-wrap{padding-left:16px;}
   .solitreo-gallery{padding-right:16px;}
   .solitreo-gallery img{height:200px;}
@@ -541,22 +545,24 @@ section+section::before{content:'';display:block;width:40px;height:1px;
       <p>Ganchos Sans v8</p>
       <p>Based on historical Solitreo letterforms</p>
     </div>
-    <div class="footer-col">
+    <div class="footer-col col-ack">
       <h4>Acknowledgments</h4>
-      <p>Prof. Bryan Kirschen</p>
-      <p>Karen Sarhon</p>
-      <p>Benni Aguado</p>
-      <p>Defne Ozozer</p>
-      <p>Nesi Altaras</p>
-      <p>Ryan Diaz</p>
-      <p>Cem Eskinazi</p>
-      <p>Viki Gerson</p>
-      <p>Lara Arditi</p>
-      <p>Scott-Martin Kosofsky</p>
-      <p>David Bunis</p>
-      <p>Nathan Gross</p>
+      <div class="ack-list">
+        <p>Prof. Bryan Kirschen</p>
+        <p>Karen Sarhon</p>
+        <p>Benni Aguado</p>
+        <p>Defne Ozozer</p>
+        <p>Nesi Altaras</p>
+        <p>Ryan Diaz</p>
+        <p>Cem Eskinazi</p>
+        <p>Viki Gerson</p>
+        <p>Lara Arditi</p>
+        <p>Scott-Martin Kosofsky</p>
+        <p>David Bunis</p>
+        <p>Nathan Gross</p>
+      </div>
     </div>
-    <div class="footer-col">
+    <div class="footer-col col-links">
       <h4>Links</h4>
       <p><a href="https://beniyorohan-design.com" target="_blank">beniyorohan-design.com</a></p>
       <p><a href="https://instagram.com/beniyorohan.design" target="_blank">@beniyorohan.design</a></p>
