@@ -128,14 +128,15 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:grid;grid-template-columns:var(--col) 340px;gap:32px;align-items:start;
-  margin-left:max(24px,12vw);margin-right:24px;position:relative;}
+.specimen-layout{display:block;
+  margin-left:max(24px,12vw);margin-right:24px;}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:sticky;top:24px;align-self:start;
-  width:340px;aspect-ratio:4/5;
+  background:var(--surface);position:fixed;
+  width:400px;aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
-  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
+  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;
+  display:none;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
 .specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:140px;
@@ -1431,7 +1432,26 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Card is position:sticky in the grid — no JS positioning needed
+  // Fixed card: show when specimen section visible, pinned at top:24px
+  var specLeft=document.querySelector('.specimen-left');
+  var card=document.getElementById('specimenDetail');
+  var specSection=document.getElementById('specimen');
+  if(specLeft&&card&&specSection){
+    function setCardLeft(){
+      var gl=specLeft.getBoundingClientRect();
+      card.style.left=(gl.right+32)+'px';
+    }
+    card.style.top='24px';
+    setCardLeft();
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        card.style.display=e.isIntersecting?'flex':'none';
+        if(e.isIntersecting) setCardLeft();
+      });
+    },{threshold:0.05});
+    io.observe(specSection);
+    window.addEventListener('resize',setCardLeft);
+  }
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
