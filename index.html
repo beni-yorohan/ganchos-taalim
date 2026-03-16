@@ -128,14 +128,15 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:grid;grid-template-columns:var(--col) 480px;gap:32px;align-items:start;
-  margin-left:max(24px,12vw);margin-right:24px;}
+.specimen-layout{display:block;
+  margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:sticky;top:24px;align-self:start;
-  aspect-ratio:4/5;
+  background:var(--surface);position:fixed;top:24px;
+  width:520px;aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
-  padding:40px 28px;text-align:center;box-sizing:border-box;}
+  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;
+  visibility:hidden;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
 .specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:140px;
@@ -1431,7 +1432,25 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Card uses position:sticky in the grid — no JS needed for positioning
+  // Position the fixed card next to the letter grid
+  (function(){
+    var left=document.querySelector('.specimen-left');
+    var card=document.getElementById('specimenDetail');
+    var sec=document.getElementById('specimen');
+    if(!left||!card||!sec) return;
+    function place(){
+      var r=left.getBoundingClientRect();
+      card.style.left=(r.right+32)+'px';
+    }
+    place();
+    // Show card only when specimen section is in viewport
+    var obs=new IntersectionObserver(function(entries){
+      card.style.visibility=entries[0].isIntersecting?'visible':'hidden';
+      if(entries[0].isIntersecting) place();
+    },{threshold:0});
+    obs.observe(sec);
+    window.addEventListener('resize',place);
+  })();
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
