@@ -1431,17 +1431,34 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Position and size fixed card to match grid
+  // Position and size fixed card aligned with grid, visible only when grid is in view
   var specLeft=document.querySelector('.specimen-left');
+  var specGrid=document.getElementById('specimenAll');
   var card=document.getElementById('specimenDetail');
-  if(specLeft&&card){
+  if(specLeft&&specGrid&&card){
+    // Store absolute page position of grid top
+    var gridPageTop=specGrid.getBoundingClientRect().top+(window.scrollY||0);
+    var cardTop=24; // fixed top when grid has scrolled past
     function alignCard(){
-      var r=specLeft.getBoundingClientRect();
-      card.style.left=(r.right+32)+'px';
-      card.style.height=r.height+'px';
+      var gl=specLeft.getBoundingClientRect();
+      var gr=specGrid.getBoundingClientRect();
+      // If grid top is below viewport top, align card with grid
+      // If grid has scrolled up past viewport, clamp card at top:24px
+      var t=Math.max(24,gr.top);
+      // If grid is completely off screen below, hide card
+      if(gr.top>window.innerHeight){card.style.display='none';return;}
+      // If grid bottom is above viewport, hide card
+      if(gl.bottom<0){card.style.display='none';return;}
+      card.style.display='';
+      card.style.left=(gl.right+32)+'px';
+      card.style.top=t+'px';
     }
     alignCard();
-    window.addEventListener('resize',alignCard);
+    window.addEventListener('resize',function(){
+      gridPageTop=specGrid.getBoundingClientRect().top+(window.scrollY||0);
+      alignCard();
+    });
+    window.addEventListener('scroll',alignCard);
   }
 }
 
