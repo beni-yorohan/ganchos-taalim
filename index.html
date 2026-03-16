@@ -128,14 +128,14 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:grid;grid-template-columns:var(--col) 520px;gap:32px;align-items:start;
-  margin-left:max(24px,12vw);margin-right:24px;}
-.specimen-left{min-width:0;padding-bottom:600px;}
+.specimen-layout{display:block;
+  margin-left:max(24px,12vw);margin-right:24px;max-width:var(--col);}
+.specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:sticky;top:24px;align-self:start;
-  aspect-ratio:4/5;
-  display:flex;flex-direction:column;align-items:center;
-  padding:40px 28px;text-align:center;box-sizing:border-box;}
+  background:var(--surface);position:fixed;top:24px;
+  width:520px;aspect-ratio:4/5;
+  display:none;flex-direction:column;align-items:center;
+  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
 .specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:140px;
@@ -1431,21 +1431,29 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Sticky card: freeze to fixed once card reaches its sticky position
+  // Show fixed card when grid scrolls to top:24px, hide when grid leaves view
   (function(){
     var card=document.getElementById('specimenDetail');
-    if(!card) return;
-    var frozen=false;
+    var left=document.querySelector('.specimen-left');
+    var grid=document.getElementById('specimenAll');
+    if(!card||!left||!grid) return;
+    // Set left position from grid
+    function setLeft(){
+      var r=left.getBoundingClientRect();
+      card.style.left=(r.right+32)+'px';
+    }
+    setLeft();
+    window.addEventListener('resize',setLeft);
+    // Show/hide on scroll based on grid position
     window.addEventListener('scroll',function(){
-      if(frozen) return;
-      var cr=card.getBoundingClientRect();
-      // Card has reached its sticky position (top:24px) — freeze it
-      if(cr.top<=24 && cr.top>=-5 && cr.width>0){
-        card.style.position='fixed';
-        card.style.top='24px';
-        card.style.left=cr.left+'px';
-        card.style.width=cr.width+'px';
-        frozen=true;
+      var gr=grid.getBoundingClientRect();
+      // Show when grid top is at or above 24px (card would align with grid)
+      // Hide when grid bottom is above viewport or grid top is below viewport
+      if(gr.top<=24 && gr.bottom>0){
+        card.style.display='flex';
+        setLeft();
+      } else {
+        card.style.display='none';
       }
     });
   })();
