@@ -129,17 +129,17 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
 .specimen-layout{display:grid;grid-template-columns:var(--col) 340px;gap:32px;align-items:start;
-  margin-left:max(24px,12vw);margin-right:24px;}
+  margin-left:max(24px,12vw);margin-right:24px;position:relative;}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:fixed;top:24px;
-  aspect-ratio:4/5;
+  background:var(--surface);position:sticky;top:24px;align-self:start;
+  width:340px;aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
   padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
-.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:100px;
-  line-height:1.4;color:var(--text);}
+.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:140px;
+  line-height:1.3;color:var(--text);max-height:calc(100% - 16px);}
 .specimen-detail .detail-bottom{flex-shrink:0;width:100%;padding-top:20px;
   border-top:1px solid var(--border);}
 .specimen-detail .detail-name{font-size:18px;font-weight:600;color:var(--text);
@@ -1431,35 +1431,7 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Position and size fixed card aligned with grid, visible only when grid is in view
-  var specLeft=document.querySelector('.specimen-left');
-  var specGrid=document.getElementById('specimenAll');
-  var card=document.getElementById('specimenDetail');
-  if(specLeft&&specGrid&&card){
-    // Store absolute page position of grid top
-    var gridPageTop=specGrid.getBoundingClientRect().top+(window.scrollY||0);
-    var cardTop=24; // fixed top when grid has scrolled past
-    function alignCard(){
-      var gl=specLeft.getBoundingClientRect();
-      var gr=specGrid.getBoundingClientRect();
-      // If grid top is below viewport top, align card with grid
-      // If grid has scrolled up past viewport, clamp card at top:24px
-      var t=Math.max(24,gr.top);
-      // If grid is completely off screen below, hide card
-      if(gr.top>window.innerHeight){card.style.display='none';return;}
-      // If grid bottom is above viewport, hide card
-      if(gl.bottom<0){card.style.display='none';return;}
-      card.style.display='';
-      card.style.left=(gl.right+32)+'px';
-      card.style.top=t+'px';
-    }
-    alignCard();
-    window.addEventListener('resize',function(){
-      gridPageTop=specGrid.getBoundingClientRect().top+(window.scrollY||0);
-      alignCard();
-    });
-    window.addEventListener('scroll',alignCard);
-  }
+  // Card is position:sticky in the grid — no JS positioning needed
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
