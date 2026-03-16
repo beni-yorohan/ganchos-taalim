@@ -128,14 +128,14 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{
+.specimen-layout{display:grid;grid-template-columns:var(--col) 340px;gap:32px;align-items:start;
   margin-left:max(24px,12vw);margin-right:24px;}
-.specimen-left{max-width:var(--col);}
+.specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:fixed;top:24px;
+  background:var(--surface);position:sticky;top:24px;
   width:340px;aspect-ratio:4/5;
   display:flex;flex-direction:column;align-items:center;
-  padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
+  padding:40px 28px;text-align:center;box-sizing:border-box;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
 .specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:100px;
@@ -1431,16 +1431,6 @@ function buildSpecimen(){
   populateGrid('specimenAll',ALL_GLYPHS);
   populateGrid('specimenNumbers',NUMBERS);
 
-  // Position fixed detail card next to letter grid
-  function positionDetailCard(){
-    var grid=document.querySelector('.specimen-left');
-    var card=document.getElementById('specimenDetail');
-    if(!grid||!card)return;
-    var rect=grid.getBoundingClientRect();
-    card.style.left=(rect.right+32)+'px';
-  }
-  positionDetailCard();
-  window.addEventListener('resize',positionDetailCard);
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
