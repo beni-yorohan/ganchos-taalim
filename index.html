@@ -128,13 +128,13 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:block;
-  margin-left:max(24px,12vw);margin-right:calc(420px + 32px + 24px);}
+.specimen-layout{display:grid;grid-template-columns:var(--col) 420px;gap:32px;align-items:start;
+  margin-left:max(24px,12vw);margin-right:24px;}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
-  background:var(--surface);position:fixed;top:24px;right:24px;width:420px;
+  background:var(--surface);position:sticky;top:24px;align-self:start;
   display:flex;flex-direction:column;align-items:center;
-  aspect-ratio:4/5;padding:40px 28px;text-align:center;box-sizing:border-box;z-index:10;}
+  aspect-ratio:4/5;padding:40px 28px;text-align:center;box-sizing:border-box;}
 .specimen-detail .detail-glyph-wrap{flex:1;display:flex;align-items:center;justify-content:center;
   width:100%;min-height:0;padding:16px 0;}
 .specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:100px;
@@ -286,8 +286,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 @media(max-width:900px){
   .col{margin-left:max(16px,6vw);}
   .gallery-wrap{padding-left:max(16px,6vw);}
-  .specimen-layout{margin-left:max(16px,6vw);margin-right:16px;}
-  .specimen-detail{position:static;width:auto;right:auto;min-height:300px;aspect-ratio:auto;margin-bottom:32px;}
+  .specimen-layout{grid-template-columns:1fr;margin-left:max(16px,6vw);margin-right:16px;}
+  .specimen-detail{position:static;min-height:300px;aspect-ratio:auto;margin-bottom:32px;}
   .gallery-nav.prev{left:max(4px,calc(6vw - 16px));}
 }
 @media(max-width:600px){
@@ -298,8 +298,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   .gen-controls{flex-direction:column;align-items:stretch;}
   .gen-params{flex-direction:column;align-items:stretch;}
   .gen-export{flex-direction:column;}
-  .specimen-layout{margin-left:16px;margin-right:16px;}
-  .specimen-detail{position:static;width:auto;right:auto;min-height:250px;aspect-ratio:auto;margin-bottom:24px;}
+  .specimen-layout{grid-template-columns:1fr;margin-left:16px;margin-right:16px;}
+  .specimen-detail{position:static;min-height:250px;aspect-ratio:auto;margin-bottom:24px;}
   .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));}
   .specimen-grid .cell .glyph{height:40px;font-size:24px;}
   .specimen-numbers-grid{grid-template-columns:repeat(5,1fr);}
