@@ -128,14 +128,15 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ─── TYPE SPECIMEN (grid) ────────────────────────────────── */
-.specimen-layout{display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:start;}
+.specimen-layout{display:grid;grid-template-columns:var(--col) 1fr;gap:40px;align-items:start;
+  margin-left:max(24px,12vw);margin-right:24px;}
 .specimen-left{min-width:0;}
 .specimen-detail{border:1px solid var(--border);border-radius:var(--radius);
   background:var(--surface);position:sticky;top:24px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:400px;padding:40px 24px;text-align:center;}
-.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:clamp(120px,18vw,200px);
-  line-height:1;color:var(--text);margin-bottom:24px;}
+  min-height:500px;padding:48px 32px;text-align:center;overflow:hidden;}
+.specimen-detail .detail-glyph{font-family:var(--solitreo);font-size:clamp(140px,20vw,240px);
+  line-height:1;color:var(--text);margin-bottom:28px;}
 .specimen-detail .detail-name{font-size:18px;font-weight:600;color:var(--text);
   margin-bottom:16px;letter-spacing:0.02em;}
 .specimen-detail .detail-scripts{display:flex;gap:32px;justify-content:center;
@@ -149,7 +150,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .specimen-section{margin-bottom:40px;}
 .specimen-label{font-size:12px;font-weight:600;text-transform:uppercase;
   letter-spacing:0.08em;color:var(--text-3);margin-bottom:12px;padding-left:4px;}
-.specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+.specimen-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));
   gap:0;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .specimen-grid .cell{display:flex;flex-direction:column;align-items:center;
   justify-content:flex-end;padding:16px 8px 8px;
@@ -282,6 +283,8 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 @media(max-width:900px){
   .col{margin-left:max(16px,6vw);}
   .gallery-wrap{padding-left:max(16px,6vw);}
+  .specimen-layout{grid-template-columns:1fr;margin-left:max(16px,6vw);}
+  .specimen-detail{position:static;min-height:300px;}
   .gallery-nav.prev{left:max(4px,calc(6vw - 16px));}
 }
 @media(max-width:600px){
@@ -292,7 +295,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   .gen-controls{flex-direction:column;align-items:stretch;}
   .gen-params{flex-direction:column;align-items:stretch;}
   .gen-export{flex-direction:column;}
-  .specimen-layout{grid-template-columns:1fr;}
+  .specimen-layout{grid-template-columns:1fr;margin-left:16px;margin-right:16px;}
   .specimen-detail{min-height:250px;position:static;}
   .specimen-grid{grid-template-columns:repeat(auto-fill,minmax(70px,1fr));}
   .specimen-grid .cell .glyph{height:40px;font-size:24px;}
@@ -417,23 +420,22 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
     <div class="section-label">Typeface</div>
     <h2 class="section-title">Ganchos Sans</h2>
     <div class="section-body">
-      <p>A digital revival of the Solitreo alphabet. Hover over any character to learn its name and sound.</p>
+      <p>A digital revival of the Solitreo alphabet. Click any character to see it larger.</p>
     </div>
-
-    <div class="specimen-layout">
-      <div class="specimen-left">
-        <div class="specimen-section">
-          <div class="specimen-label">Hebrew Letters &amp; Dagesh / Rafe</div>
-          <div class="specimen-grid" id="specimenAll"></div>
-        </div>
-        <div class="specimen-section">
-          <div class="specimen-label">Numbers</div>
-          <div class="specimen-numbers-grid" id="specimenNumbers"></div>
-        </div>
+  </div>
+  <div class="specimen-layout">
+    <div class="specimen-left">
+      <div class="specimen-section">
+        <div class="specimen-label">Hebrew Letters &amp; Dagesh / Rafe</div>
+        <div class="specimen-grid" id="specimenAll"></div>
       </div>
-      <div class="specimen-detail" id="specimenDetail">
-        <div class="detail-placeholder">Click a letter to see it larger</div>
+      <div class="specimen-section">
+        <div class="specimen-label">Numbers</div>
+        <div class="specimen-numbers-grid" id="specimenNumbers"></div>
       </div>
+    </div>
+    <div class="specimen-detail" id="specimenDetail">
+      <div class="detail-placeholder">Click a letter to see it larger</div>
     </div>
   </div>
 </section>
