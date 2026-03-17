@@ -1103,7 +1103,8 @@ function generateScriptMode(name){
   const srcCols=symV?Math.ceil(cols/2):cols;
   const srcRows=symH?Math.ceil(rows/2):rows;
   const useBrick=complexity!=='simple'&&rng()>0.4;
-  const useRotation=complexity==='complex';
+  // Pattern-making: pick a layout strategy based on seed
+  const layoutMode=Math.floor(rng()*5); // 0=rotate-grid, 1=radial, 2=wave, 3=scale-cascade, 4=tessellate
   const src=[];
   for(let r=0;r<srcRows;r++){
     for(let c=0;c<srcCols;c++){
@@ -1113,9 +1114,40 @@ function generateScriptMode(name){
       const brickOff=(useBrick&&r%2===1)?cellSz*0.5:0;
       const x=c*cellSz+cellSz/2+brickOff;
       const y=r*cellSz+cellSz/2;
-      const sz=isBorder?cellSz*0.36:cellSz*(0.58+rng()*0.2);
-      const rot=useRotation?(rng()-0.5)*0.25:0;
-      const alpha=isBorder?100:185+Math.floor(rng()*70);
+      // Dynamic size and rotation based on layout mode
+      let sz,rot,alpha;
+      const cx=actualCW/2,cy=actualCH/2;
+      const distFromCenter=Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));
+      const maxDist=Math.sqrt(cx*cx+cy*cy);
+      const normDist=distFromCenter/maxDist;
+      const angleFromCenter=Math.atan2(y-cy,x-cx);
+      if(isBorder){
+        sz=cellSz*0.36;rot=0;alpha=100;
+      } else {
+        switch(layoutMode){
+          case 0: // Rotating grid: each cell rotates progressively
+            sz=cellSz*(0.55+rng()*0.15);
+            rot=(r*srcCols+c)*0.18+rng()*0.1;
+            alpha=185+Math.floor(rng()*70);break;
+          case 1: // Radial: letters fan out from center, size grows outward
+            sz=cellSz*(0.3+normDist*0.5);
+            rot=angleFromCenter+Math.PI/2;
+            alpha=Math.floor(120+normDist*135);break;
+          case 2: // Wave: size and rotation follow sine waves
+            sz=cellSz*(0.4+0.3*Math.sin(r*0.8+c*0.5));
+            rot=Math.sin(r*0.6)*0.5+Math.cos(c*0.7)*0.3;
+            alpha=160+Math.floor(Math.sin(r*0.5+c*0.3)*60+40);break;
+          case 3: // Scale cascade: diagonal size gradient with rotation
+            var diag=(r+c)/(srcRows+srcCols);
+            sz=cellSz*(0.25+diag*0.55);
+            rot=diag*Math.PI*0.5*(rng()>0.5?1:-1);
+            alpha=100+Math.floor(diag*155);break;
+          default: // Tessellate: alternating flip/rotation, interlocking
+            sz=cellSz*(0.5+rng()*0.2);
+            rot=((r+c)%2===0?0:Math.PI/4)+((r%3===0)?Math.PI/6:0);
+            alpha=170+Math.floor(rng()*85);break;
+        }
+      }
       src.push({ch:ch,x:x,y:y,size:sz,rotation:rot,alpha:alpha});
     }
   }
