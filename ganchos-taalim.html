@@ -1210,46 +1210,47 @@ function generateDraftMode(name){
 
 // ─── MOTIF MODE (Letter-as-Symbol) ───────────────────────────────
 // Map Solitreo letters to traditional Anatolian/Sephardic rug motifs
+function safeSet(g,y,x,v){if(y>=0&&y<g.length&&x>=0&&x<g[0].length)g[y][x]=v;}
 const MOTIF_MAP={
-  '\u05D0':{name:'Star',fn:function(g,x,y,s){// 8-pointed star
+  '\u05D0':{name:'Star',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
       var dx=Math.abs(i-c),dy=Math.abs(j-c);
-      if(dx+dy<=c||dx<=1||dy<=1)g[y+j][x+i]=1;}}},
-  '\u05D1':{name:'Hands-on-hips (Elibelinde)',fn:function(g,x,y,s){// fertility symbol
+      if(dx+dy<=c||dx<=1||dy<=1)safeSet(g,y+j,x+i,1);}}},
+  '\u05D1':{name:'Hands-on-hips (Elibelinde)',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
       var dx=Math.abs(i-c),dy=Math.abs(j-c);
-      if(dy<=1||(dx<=c-1&&dy<=c-1&&(dx+dy)%2===0)||(j>c&&dx<=2))g[y+j][x+i]=1;}}},
-  '\u05D2':{name:'Ram\u2019s horn (Ko\u00e7boynuzu)',fn:function(g,x,y,s){// spiral
+      if(dy<=1||(dx<=c-1&&dy<=c-1&&(dx+dy)%2===0)||(j>c&&dx<=2))safeSet(g,y+j,x+i,1);}}},
+  '\u05D2':{name:'Ram\u2019s horn (Ko\u00e7boynuzu)',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
       var a=Math.atan2(j-c,i-c),r=Math.sqrt((i-c)*(i-c)+(j-c)*(j-c));
-      if(Math.abs(r-c*0.6-a*1.2)<1.8||Math.abs(r-c*0.6+a*1.2)<1.8)g[y+j][x+i]=1;}}},
-  '\u05D3':{name:'Chest (Sand\u0131k)',fn:function(g,x,y,s){// rectangle with diamond
+      if(Math.abs(r-c*0.6-a*1.2)<1.8||Math.abs(r-c*0.6+a*1.2)<1.8)safeSet(g,y+j,x+i,1);}}},
+  '\u05D3':{name:'Chest (Sand\u0131k)',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if(i===0||i===s-1||j===0||j===s-1)g[y+j][x+i]=1;
-      var dx=Math.abs(i-c),dy=Math.abs(j-c);if(dx+dy<=Math.floor(s/4))g[y+j][x+i]=1;}}},
-  '\u05D4':{name:'Tree of Life',fn:function(g,x,y,s){// vertical with branches
+      if(i===0||i===s-1||j===0||j===s-1)safeSet(g,y+j,x+i,1);
+      var dx=Math.abs(i-c),dy=Math.abs(j-c);if(dx+dy<=Math.floor(s/4))safeSet(g,y+j,x+i,1);}}},
+  '\u05D4':{name:'Tree of Life',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if(i===c)g[y+j][x+i]=1;
-      if(j%3===0&&Math.abs(i-c)<=Math.floor((s-j)/3))g[y+j][x+i]=1;}}},
-  '\u05D5':{name:'Water (Su)',fn:function(g,x,y,s){// wave/zigzag
+      if(i===c)safeSet(g,y+j,x+i,1);
+      if(j%3===0&&Math.abs(i-c)<=Math.floor((s-j)/3))safeSet(g,y+j,x+i,1);}}},
+  '\u05D5':{name:'Water (Su)',fn:function(g,x,y,s){
     for(var j=0;j<s;j++){var wave=Math.round(Math.sin(j*Math.PI*2/s)*s*0.3)+Math.floor(s/2);
-      if(wave>=0&&wave<s)g[y+j][x+wave]=1;if(wave+1<s)g[y+j][x+wave+1]=1;}}},
-  '\u05D6':{name:'Hook (\u00c7engel)',fn:function(g,x,y,s){// S-hook
+      if(wave>=0&&wave<s)safeSet(g,y+j,x+wave,1);if(wave+1<s)safeSet(g,y+j,x+wave+1,1);}}},
+  '\u05D6':{name:'Hook (\u00c7engel)',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if((j<c&&i===c+Math.min(j,c-1))||(j>=c&&i===c-Math.min(j-c,c-1))||(j===0&&i>=c)||(j===s-1&&i<=c))g[y+j][x+i]=1;}}},
-  '\u05D7':{name:'Scorpion (Akrep)',fn:function(g,x,y,s){// protection
+      if((j<c&&i===c+Math.min(j,c-1))||(j>=c&&i===c-Math.min(j-c,c-1))||(j===0&&i>=c)||(j===s-1&&i<=c))safeSet(g,y+j,x+i,1);}}},
+  '\u05D7':{name:'Scorpion (Akrep)',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if(j===c&&i>=1&&i<s-1)g[y+j][x+i]=1;
-      if(i===c&&j>=c)g[y+j][x+i]=1;
-      if(j<c&&(i===1||i===s-2)&&j>c-3)g[y+j][x+i]=1;}}},
-  '\u05D8':{name:'Eye (G\u00f6z)',fn:function(g,x,y,s){// evil eye protection
+      if(j===c&&i>=1&&i<s-1)safeSet(g,y+j,x+i,1);
+      if(i===c&&j>=c)safeSet(g,y+j,x+i,1);
+      if(j<c&&(i===1||i===s-2)&&j>c-3)safeSet(g,y+j,x+i,1);}}},
+  '\u05D8':{name:'Eye (G\u00f6z)',fn:function(g,x,y,s){
     var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
       var dx=Math.abs(i-c),dy=Math.abs(j-c);
-      if(dx+dy===c||dx+dy===Math.floor(c/2)||(dx<=1&&dy<=1))g[y+j][x+i]=1;}}},
-  '\u05D9':{name:'Comb (Tarak)',fn:function(g,x,y,s){// horizontal lines with teeth
+      if(dx+dy===c||dx+dy===Math.floor(c/2)||(dx<=1&&dy<=1))safeSet(g,y+j,x+i,1);}}},
+  '\u05D9':{name:'Comb (Tarak)',fn:function(g,x,y,s){
     for(var j=0;j<s;j++)for(var i=0;i<s;i++){
-      if(j%3===0)g[y+j][x+i]=1;
-      if(j%3!==0&&i%2===0)g[y+j][x+i]=1;}}},
+      if(j%3===0)safeSet(g,y+j,x+i,1);
+      if(j%3!==0&&i%2===0)safeSet(g,y+j,x+i,1);}}},
 };
 // Default motif for unmapped letters
 function defaultMotif(g,x,y,s){
