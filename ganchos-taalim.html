@@ -507,11 +507,11 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   <div class="generator-frame">
     <div class="gen-header">
       <h2>Generate Your Pattern</h2>
-      <p>Type text in Latin letters. Letters become visible through texture differentiation &mdash; like damask or brocade.</p>
+      <p>Type a name. Each letter becomes a building block &mdash; transformed through rotation, mirroring, and nesting into a rug pattern.</p>
     </div>
 
     <div class="name-input-wrap">
-      <input type="text" id="nameInput" placeholder="Enter text" autocomplete="off" spellcheck="false">
+      <input type="text" id="nameInput" placeholder="Enter a name" autocomplete="off" spellcheck="false">
     </div>
 
     <div class="solitreo-display">
@@ -519,57 +519,17 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
     </div>
 
     <div class="gen-controls">
-      <label>Canvas
+      <label>Size
         <select id="rugPreset" autocomplete="off">
-          <option value="64,64">Sampler 64&times;64</option>
-          <option value="128,128" selected>Pillow 128&times;128</option>
-          <option value="256,256">Wall Hanging 256&times;256</option>
-          <option value="256,128">Runner 256&times;128</option>
-          <option value="128,256">Prayer Rug 128&times;256</option>
+          <option value="64,96">Small 64&times;96</option>
+          <option value="96,128" selected>Medium 96&times;128</option>
+          <option value="128,192">Large 128&times;192</option>
+          <option value="80,200">Runner 80&times;200</option>
           <option value="">Custom</option>
         </select>
       </label>
-      <label>W <input type="number" id="rugW" value="128" min="32" max="512"></label>
-      <label>H <input type="number" id="rugH" value="128" min="32" max="512"></label>
-    </div>
-
-    <div class="gen-params">
-      <label>Interior Structure
-        <select id="interiorStructure" autocomplete="off">
-          <option value="twill22" selected>2/2 Twill</option>
-          <option value="twill21">2/1 Twill</option>
-          <option value="satin5">5-Shaft Satin</option>
-          <option value="basket">Basket Weave</option>
-          <option value="tabby">Plain Weave</option>
-        </select>
-      </label>
-      <label>Exterior Structure
-        <select id="exteriorStructure" autocomplete="off">
-          <option value="tabby" selected>Plain Weave</option>
-          <option value="twill22">2/2 Twill</option>
-          <option value="twill21">2/1 Twill</option>
-          <option value="satin5">5-Shaft Satin</option>
-          <option value="basket">Basket Weave</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="gen-params">
-      <label>Layout
-        <select id="layoutMode" autocomplete="off">
-          <option value="centered" selected>Centered Block</option>
-          <option value="tiled">Tiled Repeat</option>
-          <option value="flowing">Flowing Fill</option>
-        </select>
-      </label>
-      <label>Border
-        <select id="borderWidth" autocomplete="off">
-          <option value="0">None</option>
-          <option value="4" selected>Thin</option>
-          <option value="8">Medium</option>
-          <option value="16">Wide</option>
-        </select>
-      </label>
+      <label>W <input type="number" id="rugW" value="96" min="32" max="256"></label>
+      <label>H <input type="number" id="rugH" value="128" min="32" max="256"></label>
       <button class="btn" id="remixBtn">Remix</button>
     </div>
 
@@ -586,9 +546,9 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
     </div>
 
     <details class="gen-taalim">
-      <summary>Weaving Instructions (Taalim)</summary>
+      <summary>Pattern Breakdown</summary>
       <div class="taalim-content" id="taalimBody">
-        <p style="color:var(--text-3);font-size:14px;">Enter text to generate weaving instructions.</p>
+        <p style="color:var(--text-3);font-size:14px;">Enter a name to generate a pattern.</p>
       </div>
     </details>
   </div>
