@@ -2109,19 +2109,19 @@ function captureThumb(){
     var cvs=document.querySelector('#rugCanvas canvas');
     if(cvs){
       var tc=document.createElement('canvas');
-      var tw=200,th=Math.round(200*(cvs.height/cvs.width));
+      var tw=150,th=Math.round(150*(cvs.height/cvs.width));
       tc.width=tw;tc.height=th;
       tc.getContext('2d').drawImage(cvs,0,0,tw,th);
-      return tc.toDataURL('image/jpeg',0.7);
+      return tc.toDataURL('image/jpeg',0.5);
     }
     if(grid&&grid.length&&W&&H){
-      var sc=Math.max(1,Math.min(Math.floor(200/W),Math.floor(260/H)));
+      var sc=Math.max(1,Math.min(Math.floor(150/W),Math.floor(200/H)));
       var fc=document.createElement('canvas');fc.width=W*sc;fc.height=H*sc;
       var fx=fc.getContext('2d');
       for(var y=0;y<H;y++)for(var x=0;x<W;x++){
         fx.fillStyle=grid[y][x]?'#111':'#F5F5F0';fx.fillRect(x*sc,y*sc,sc,sc);
       }
-      return fc.toDataURL('image/jpeg',0.7);
+      return fc.toDataURL('image/jpeg',0.5);
     }
   }catch(e){}
   return null;
