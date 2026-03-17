@@ -1170,9 +1170,10 @@ function generateScriptMode(name){
   // Taalim info for script mode
   var body=document.getElementById('taalimBody');
   var html='<div class="taalim-section"><h3>Script Pattern</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">Undistorted Solitreo letterforms in a ';
-  html+=(symV&&symH)?'four-way symmetric':symV?'vertically mirrored':symH?'horizontally mirrored':'free';
-  html+=' composition.</p>';
+  var layoutNames=['rotating grid','radial burst','wave flow','scale cascade','tessellation'];
+  html+='<p style="font-size:14px;color:var(--text);">Solitreo letterforms arranged in a <strong>'+layoutNames[layoutMode]+'</strong> pattern with ';
+  html+=(symV&&symH)?'four-way':symV?'vertical mirror':symH?'horizontal mirror':'free';
+  html+=' symmetry.</p>';
   html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p>';
   html+='<p style="font-size:14px;color:var(--text-3);">'+full.length+' glyphs \u00b7 '+cols+'\u00d7'+rows+' layout';
   if(useBrick)html+=' \u00b7 brick offset';
