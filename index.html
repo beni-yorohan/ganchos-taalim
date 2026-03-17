@@ -1067,116 +1067,157 @@ function generateField(g,w,h,bw,features,comp,rng){
   applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
 }
 
-// ─── SCRIPT MODE (pure letterforms, no grid) ────────────────────
+// ─── SCRIPT MODE (compound letterform shapes on grid) ───────────
+function rotateBitmap(bmp,angle){
+  // Rotate a square bitmap by angle (radians). Returns new bitmap same size.
+  const n=bmp.length;const out=[];
+  for(let y=0;y<n;y++){out[y]=[];for(let x=0;x<n;x++)out[y][x]=0;}
+  const cx=n/2,cy=n/2;const cos=Math.cos(angle),sin=Math.sin(angle);
+  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
+    const sx=Math.round(cx+(x-cx)*cos+(y-cy)*sin);
+    const sy=Math.round(cy-(x-cx)*sin+(y-cy)*cos);
+    if(sx>=0&&sx<n&&sy>=0&&sy<n)out[y][x]=bmp[sy][sx];
+  }
+  return out;
+}
+function scaleBitmap(bmp,newSize){
+  const n=bmp.length;const out=[];
+  for(let y=0;y<newSize;y++){out[y]=[];for(let x=0;x<newSize;x++){
+    const sy=Math.floor(y*n/newSize),sx=Math.floor(x*n/newSize);
+    out[y][x]=bmp[sy]&&bmp[sy][sx]?1:0;
+  }}
+  return out;
+}
+function combineBitmaps(a,b,op){
+  const n=a.length;const out=[];
+  for(let y=0;y<n;y++){out[y]=[];for(let x=0;x<n;x++){
+    if(op==='xor')out[y][x]=(a[y][x]!==b[y][x])?1:0;
+    else if(op==='and')out[y][x]=(a[y][x]&&b[y][x])?1:0;
+    else out[y][x]=(a[y][x]||b[y][x])?1:0; // or
+  }}
+  return out;
+}
 function generateScriptMode(name){
-  scriptPlacements=[];
+  scriptMode=false;scriptPlacements=[];
   const seed=remixCounter>0?name+'_'+remixCounter:name;
   const rng=createPRNG(seed);
   const chars=transliterateToChars(name);
-  if(!chars.length){scriptMode=false;grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+  if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='No transliterable characters found.';
     document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
   W=parseInt(document.getElementById('rugW').value)||18;
   H=parseInt(document.getElementById('rugH').value)||30;
-  grid=[];
   document.getElementById('solitreoText').textContent=transliterate(name);
   const complexity=document.getElementById('complexityLevel').value;
   const symSel=document.getElementById('symmetryMode').value;
   const borderSel=document.getElementById('borderStyle').value;
-  // Canvas dimensions from rug ratio
-  const ratio=H/W;const cW=480;const cH=Math.round(cW*ratio);
-  const cellSz=complexity==='simple'?56:complexity==='complex'?28:40;
-  const cols=Math.max(2,Math.floor(cW/cellSz));
-  const rows=Math.max(2,Math.floor(cH/cellSz));
-  const actualCW=cols*cellSz;const actualCH=rows*cellSz;
-  // Symmetry
-  let symV=false,symH=false;
-  if(symSel==='vertical'){symV=true;}
-  else if(symSel==='horizontal'){symH=true;}
-  else if(symSel==='both'){symV=true;symH=true;}
-  else if(symSel==='auto'){symV=true;symH=rng()>0.4;}
-  // Border cells
+  // Tile size based on complexity
+  const tileSize=complexity==='simple'?16:complexity==='complex'?24:20;
+  // Rasterize all letters as bitmaps at tile size
+  const bmps=chars.map(function(ch){return rasterizeFromFont(ch,tileSize);}).filter(Boolean);
+  if(!bmps.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();return;}
+  // Create compound tiles by combining pairs of letter bitmaps
+  const ops=['xor','or','and'];
+  const compounds=[];
+  const compoundDescs=[];
+  // Strategy: pick from 4 combination approaches based on seed
+  const strategy=Math.floor(rng()*4);
+  // 0: overlay pairs at different rotations
+  // 1: nest one letter inside another (scale + OR)
+  // 2: rotate same letter by increments and XOR
+  // 3: combine 3 letters with mixed ops
+  for(let i=0;i<bmps.length;i++){
+    const a=bmps[i];
+    const b=bmps[(i+1)%bmps.length];
+    const c=bmps[(i+2)%bmps.length];
+    let tile;
+    switch(strategy){
+      case 0:{ // Rotated overlay — XOR two letters at different angles
+        const angle=(Math.PI/6)+(rng()*Math.PI/3);
+        const rotB=rotateBitmap(b,angle);
+        const op=ops[Math.floor(rng()*2)]; // xor or or
+        tile=combineBitmaps(a,rotB,op);
+        break;
+      }
+      case 1:{ // Nested — shrink one letter, center inside another
+        const inner=scaleBitmap(b,Math.floor(tileSize*0.5));
+        const padded=[];
+        for(let y=0;y<tileSize;y++){padded[y]=[];for(let x=0;x<tileSize;x++)padded[y][x]=0;}
+        const off=Math.floor((tileSize-inner.length)/2);
+        for(let y=0;y<inner.length;y++)for(let x=0;x<inner[0].length;x++){
+          padded[off+y][off+x]=inner[y][x];
+        }
+        tile=combineBitmaps(a,padded,rng()>0.5?'xor':'or');
+        break;
+      }
+      case 2:{ // Self-rotation — same letter XORed with rotated copies
+        const r1=rotateBitmap(a,Math.PI/4);
+        const r2=rotateBitmap(a,Math.PI/2);
+        tile=combineBitmaps(combineBitmaps(a,r1,'xor'),r2,'or');
+        break;
+      }
+      default:{ // Triple merge — three letters combined
+        const rotA=rotateBitmap(a,rng()*Math.PI*0.5);
+        const rotC=rotateBitmap(c,Math.PI/2+rng()*Math.PI*0.5);
+        tile=combineBitmaps(combineBitmaps(rotA,b,'xor'),rotC,'or');
+        break;
+      }
+    }
+    compounds.push(tile);
+    compoundDescs.push(chars[i]+'+'+chars[(i+1)%chars.length]);
+  }
+  // Build rug grid by tiling compound shapes
+  grid=[];
+  for(let y=0;y<H;y++){grid[y]=[];for(let x=0;x<W;x++)grid[y][x]=0;}
+  // Determine how many tiles fit, tile with alternation
+  const tilesX=Math.ceil(W/tileSize);
+  const tilesY=Math.ceil(H/tileSize);
+  // Border
   let bCells=0;
   if(borderSel==='simple'||borderSel==='auto')bCells=1;
   else if(borderSel==='double'||borderSel==='stepped')bCells=2;
-  // Source quadrant
-  const srcCols=symV?Math.ceil(cols/2):cols;
-  const srcRows=symH?Math.ceil(rows/2):rows;
-  const useBrick=complexity!=='simple'&&rng()>0.4;
-  // Pattern-making: pick a layout strategy based on seed
-  const layoutMode=Math.floor(rng()*5); // 0=rotate-grid, 1=radial, 2=wave, 3=scale-cascade, 4=tessellate
-  const src=[];
-  for(let r=0;r<srcRows;r++){
-    for(let c=0;c<srcCols;c++){
-      const isBorder=r<bCells||c<bCells;
-      const idx=(r*srcCols+c)%chars.length;
-      const ch=chars[idx];
-      const brickOff=(useBrick&&r%2===1)?cellSz*0.5:0;
-      const x=c*cellSz+cellSz/2+brickOff;
-      const y=r*cellSz+cellSz/2;
-      // Dynamic size and rotation based on layout mode
-      let sz,rot,alpha;
-      const cx=actualCW/2,cy=actualCH/2;
-      const distFromCenter=Math.sqrt((x-cx)*(x-cx)+(y-cy)*(y-cy));
-      const maxDist=Math.sqrt(cx*cx+cy*cy);
-      const normDist=distFromCenter/maxDist;
-      const angleFromCenter=Math.atan2(y-cy,x-cx);
-      if(isBorder){
-        sz=cellSz*0.36;rot=0;alpha=100;
-      } else {
-        switch(layoutMode){
-          case 0: // Rotating grid: each cell rotates progressively
-            sz=cellSz*(0.55+rng()*0.15);
-            rot=(r*srcCols+c)*0.18+rng()*0.1;
-            alpha=185+Math.floor(rng()*70);break;
-          case 1: // Radial: letters fan out from center, size grows outward
-            sz=cellSz*(0.3+normDist*0.5);
-            rot=angleFromCenter+Math.PI/2;
-            alpha=Math.floor(120+normDist*135);break;
-          case 2: // Wave: size and rotation follow sine waves
-            sz=cellSz*(0.4+0.3*Math.sin(r*0.8+c*0.5));
-            rot=Math.sin(r*0.6)*0.5+Math.cos(c*0.7)*0.3;
-            alpha=160+Math.floor(Math.sin(r*0.5+c*0.3)*60+40);break;
-          case 3: // Scale cascade: diagonal size gradient with rotation
-            var diag=(r+c)/(srcRows+srcCols);
-            sz=cellSz*(0.25+diag*0.55);
-            rot=diag*Math.PI*0.5*(rng()>0.5?1:-1);
-            alpha=100+Math.floor(diag*155);break;
-          default: // Tessellate: alternating flip/rotation, interlocking
-            sz=cellSz*(0.5+rng()*0.2);
-            rot=((r+c)%2===0?0:Math.PI/4)+((r%3===0)?Math.PI/6:0);
-            alpha=170+Math.floor(rng()*85);break;
+  for(let ty=0;ty<tilesY;ty++){
+    for(let tx=0;tx<tilesX;tx++){
+      const tileIdx=(ty*tilesX+tx)%compounds.length;
+      const tile=compounds[tileIdx];
+      // Optionally flip tile for variety
+      const flipH=(ty%2===1);
+      const flipV=(tx%2===1);
+      for(let py=0;py<tileSize;py++){
+        for(let px=0;px<tileSize;px++){
+          const gy=ty*tileSize+py;
+          const gx=tx*tileSize+px;
+          if(gy>=H||gx>=W)continue;
+          const sy=flipV?(tileSize-1-py):py;
+          const sx=flipH?(tileSize-1-px):px;
+          if(tile[sy]&&tile[sy][sx])grid[gy][gx]=1;
         }
       }
-      src.push({ch:ch,x:x,y:y,size:sz,rotation:rot,alpha:alpha});
     }
   }
-  // Build full placements with symmetry
-  const full=[];
-  for(var i=0;i<src.length;i++){
-    var p=src[i];full.push(p);
-    if(symV){var mx=actualCW-p.x;if(Math.abs(mx-p.x)>4)
-      full.push({ch:p.ch,x:mx,y:p.y,size:p.size,rotation:-p.rotation,alpha:p.alpha,flip:true});}
+  // Border frame
+  if(bCells>0){
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+      if(y<bCells||y>=H-bCells||x<bCells||x>=W-bCells)grid[y][x]=1;
+    }
   }
-  if(symH){var top=full.slice();for(var j=0;j<top.length;j++){
-    var q=top[j];var my=actualCH-q.y;if(Math.abs(my-q.y)>4)
-      full.push({ch:q.ch,x:q.x,y:my,size:q.size,rotation:-q.rotation,alpha:q.alpha,flip:q.flip});}}
-  scriptPlacements=full;
-  scriptPlacements._cW=actualCW;scriptPlacements._cH=actualCH;
-  scriptMode=true;
+  // Apply symmetry
+  let symMode=0;
+  if(symSel==='vertical')symMode=1;
+  else if(symSel==='horizontal')symMode=2;
+  else if(symSel==='both')symMode=3;
+  else if(symSel==='auto')symMode=rng()>0.4?3:1;
+  if(symMode)applySymmetry(grid,0,0,W,H,symMode);
   if(rugSketch)rugSketch.refresh();
+  var stratNames=['rotated overlay','nested letters','self-rotation','triple merge'];
   document.getElementById('patternStats').textContent=
-    actualCW+'\u00d7'+actualCH+'px \u00b7 '+full.length+' glyphs \u00b7 script \u00b7 seed: '+seed;
-  // Taalim info for script mode
+    W+'\u00d7'+H+' \u00b7 '+compounds.length+' compound shapes \u00b7 '+stratNames[strategy]+' \u00b7 seed: '+seed;
   var body=document.getElementById('taalimBody');
-  var html='<div class="taalim-section"><h3>Script Pattern</h3>';
-  var layoutNames=['rotating grid','radial burst','wave flow','scale cascade','tessellation'];
-  html+='<p style="font-size:14px;color:var(--text);">Solitreo letterforms arranged in a <strong>'+layoutNames[layoutMode]+'</strong> pattern with ';
-  html+=(symV&&symH)?'four-way':symV?'vertical mirror':symH?'horizontal mirror':'free';
-  html+=' symmetry.</p>';
+  var html='<div class="taalim-section"><h3>Script Pattern — Compound Shapes</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">Letters are merged into compound forms using <strong>'+stratNames[strategy]+'</strong> — ';
+  html+='each letter\u2019s bitmap is combined with its neighbor through boolean operations (XOR, OR, AND) to create new shapes.</p>';
   html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);">'+full.length+' glyphs \u00b7 '+cols+'\u00d7'+rows+' layout';
-  if(useBrick)html+=' \u00b7 brick offset';
+  html+='<p style="font-size:14px;color:var(--text-3);">'+compounds.length+' tiles \u00b7 '+tileSize+'\u00d7'+tileSize+'px each';
   html+='</p></div>';body.innerHTML=html;
 }
 
