@@ -2065,14 +2065,13 @@ function buildSpecimen(){
   })();
 }
 
-// ─── LIBRARY (shared via npoint.io) ─────────────────────────────
-var LIBRARY_ENDPOINT='';// will be set after creating the shared bin
+// ─── LIBRARY (shared via jsonblob.com) ──────────────────────────
+var LIBRARY_ENDPOINT='https://jsonblob.com/api/jsonBlob/019cf989-4fc3-7952-9df3-a0dba3befee4';
 var LIBRARY_LOCAL_KEY='ganchos_library';
 var libSaveTimer=null;
-var libCache=[];// in-memory cache of the shared library
-var libSyncing=false;
+var libCache=[];
 
-// ── Local fallback (always works) ──
+// ── Local fallback ──
 function getLocalLib(){
   try{var d=localStorage.getItem(LIBRARY_LOCAL_KEY);return d?JSON.parse(d):[];}catch(e){return [];}
 }
@@ -2080,64 +2079,29 @@ function setLocalLib(arr){
   try{localStorage.setItem(LIBRARY_LOCAL_KEY,JSON.stringify(arr));}catch(e){}
 }
 
-// ── Shared cloud sync ──
+// ── Fetch shared library from cloud ──
 function fetchSharedLibrary(cb){
-  if(!LIBRARY_ENDPOINT){cb(getLocalLib());return;}
-  fetch(LIBRARY_ENDPOINT).then(function(r){return r.json();}).then(function(data){
-    var entries=Array.isArray(data.patterns)?data.patterns:[];
-    libCache=entries;
-    setLocalLib(entries);// cache locally too
-    if(cb)cb(entries);
-  }).catch(function(){
-    if(cb)cb(getLocalLib());// fallback to local
-  });
-}
-
-function pushToSharedLibrary(entries){
-  if(!LIBRARY_ENDPOINT){setLocalLib(entries);return;}
-  // PATCH/PUT to shared endpoint
-  fetch(LIBRARY_ENDPOINT,{
-    method:'PATCH',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({patterns:entries})
-  }).catch(function(){
-    setLocalLib(entries);// save locally if cloud fails
-  });
-  setLocalLib(entries);// always keep local in sync
-}
-
-// ── Initialize shared bin (one-time setup) ──
-function initSharedLibrary(){
-  // Check if we already have a bin ID stored
-  var binId=localStorage.getItem('ganchos_bin_id');
-  if(binId){
-    LIBRARY_ENDPOINT='https://api.npoint.io/'+binId;
-    fetchSharedLibrary(function(entries){
+  fetch(LIBRARY_ENDPOINT,{headers:{'Accept':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var entries=Array.isArray(data.patterns)?data.patterns:[];
       libCache=entries;
-      renderLibrary();
+      setLocalLib(entries);
+      if(cb)cb(entries);
+    }).catch(function(){
+      libCache=getLocalLib();
+      if(cb)cb(libCache);
     });
-    return;
-  }
-  // Create a new shared bin
-  fetch('https://api.npoint.io/',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({patterns:[]})
-  }).then(function(r){return r.json();}).then(function(data){
-    // npoint returns the full URL, extract the ID
-    // The response format differs — try to get the bin path
-    // npoint.io POST returns something like: the data itself, and the URL is based on what we posted to
-    // Actually npoint.io's API: POST to / creates a new document, response includes an ID
-    // We need to store the endpoint
-    // npoint returns: the data we posted. The ID is not in the response body.
-    // Actually we should use a KNOWN shared bin. Let me use a hardcoded one.
-    console.log('npoint response:',data);
-  }).catch(function(e){
-    console.warn('Could not create shared bin, using local storage.',e);
-  });
-  // Meanwhile render from local
-  libCache=getLocalLib();
-  renderLibrary();
+}
+
+// ── Push library to cloud ──
+function pushToSharedLibrary(entries){
+  setLocalLib(entries);
+  fetch(LIBRARY_ENDPOINT,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({patterns:entries})
+  }).catch(function(e){console.warn('Cloud sync failed, saved locally.',e);});
 }
 
 function captureThumb(){
