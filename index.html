@@ -507,11 +507,11 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   <div class="generator-frame">
     <div class="gen-header">
       <h2>Generate Your Pattern</h2>
-      <p>Type a name in Latin letters. Adjust style and parameters below.</p>
+      <p>Type text in Latin letters. Letters become visible through texture differentiation &mdash; like damask or brocade.</p>
     </div>
 
     <div class="name-input-wrap">
-      <input type="text" id="nameInput" placeholder="Enter a name" autocomplete="off" spellcheck="false">
+      <input type="text" id="nameInput" placeholder="Enter text" autocomplete="off" spellcheck="false">
     </div>
 
     <div class="solitreo-display">
@@ -519,59 +519,58 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
     </div>
 
     <div class="gen-controls">
-      <label>Size
+      <label>Canvas
         <select id="rugPreset" autocomplete="off">
-          <option value="18,30" selected>Yastik 18x30</option>
-          <option value="36,60">Seccade 36x60</option>
-          <option value="48,72">Accent 48x72</option>
-          <option value="30,96">Runner 30x96</option>
-          <option value="60,90">Area 60x90</option>
+          <option value="64,64">Sampler 64&times;64</option>
+          <option value="128,128" selected>Pillow 128&times;128</option>
+          <option value="256,256">Wall Hanging 256&times;256</option>
+          <option value="256,128">Runner 256&times;128</option>
+          <option value="128,256">Prayer Rug 128&times;256</option>
           <option value="">Custom</option>
         </select>
       </label>
-      <label>W <input type="number" id="rugW" value="18" min="8" max="256"></label>
-      <label>H <input type="number" id="rugH" value="30" min="8" max="256"></label>
-      <button class="btn" id="remixBtn">Remix</button>
+      <label>W <input type="number" id="rugW" value="128" min="32" max="512"></label>
+      <label>H <input type="number" id="rugH" value="128" min="32" max="512"></label>
     </div>
 
     <div class="gen-params">
-      <label>Style
-        <select id="patternStyle" autocomplete="off">
-          <option value="letterform" selected>Letterform</option>
-          <option value="geometric">Geometric</option>
-          <option value="kilim">Kilim</option>
-          <option value="medallion">Medallion</option>
-          <option value="striped">Striped</option>
-          <option value="script">Script</option>
-          <option value="draft">Draft (Binary Textile)</option>
-          <option value="motif">Motif (Letter-as-Symbol)</option>
+      <label>Interior Structure
+        <select id="interiorStructure" autocomplete="off">
+          <option value="twill22" selected>2/2 Twill</option>
+          <option value="twill21">2/1 Twill</option>
+          <option value="satin5">5-Shaft Satin</option>
+          <option value="basket">Basket Weave</option>
+          <option value="tabby">Plain Weave</option>
         </select>
       </label>
-      <label>Symmetry
-        <select id="symmetryMode" autocomplete="off">
-          <option value="auto" selected>Auto</option>
-          <option value="none">None</option>
-          <option value="vertical">Vertical</option>
-          <option value="horizontal">Horizontal</option>
-          <option value="both">Both</option>
+      <label>Exterior Structure
+        <select id="exteriorStructure" autocomplete="off">
+          <option value="tabby" selected>Plain Weave</option>
+          <option value="twill22">2/2 Twill</option>
+          <option value="twill21">2/1 Twill</option>
+          <option value="satin5">5-Shaft Satin</option>
+          <option value="basket">Basket Weave</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="gen-params">
+      <label>Layout
+        <select id="layoutMode" autocomplete="off">
+          <option value="centered" selected>Centered Block</option>
+          <option value="tiled">Tiled Repeat</option>
+          <option value="flowing">Flowing Fill</option>
         </select>
       </label>
       <label>Border
-        <select id="borderStyle" autocomplete="off">
-          <option value="auto" selected>Auto</option>
-          <option value="none">None</option>
-          <option value="simple">Simple</option>
-          <option value="double">Double</option>
-          <option value="stepped">Stepped</option>
+        <select id="borderWidth" autocomplete="off">
+          <option value="0">None</option>
+          <option value="4" selected>Thin</option>
+          <option value="8">Medium</option>
+          <option value="16">Wide</option>
         </select>
       </label>
-      <label>Complexity
-        <select id="complexityLevel" autocomplete="off">
-          <option value="simple">Simple</option>
-          <option value="medium" selected>Medium</option>
-          <option value="complex">Complex</option>
-        </select>
-      </label>
+      <button class="btn" id="remixBtn">Remix</button>
     </div>
 
     <div class="canvas-wrap">
@@ -584,13 +583,12 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
       <button class="btn-outline" onclick="doExportWIF()">Export WIF</button>
       <button class="btn-outline" onclick="doExportPNG()">Export PNG</button>
       <button class="btn-outline" onclick="doExportSVG()">Export SVG</button>
-      <button class="btn-outline" onclick="doExportTXT()">Copy Taalim</button>
     </div>
 
     <details class="gen-taalim">
       <summary>Weaving Instructions (Taalim)</summary>
       <div class="taalim-content" id="taalimBody">
-        <p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>
+        <p style="color:var(--text-3);font-size:14px;">Enter text to generate weaving instructions.</p>
       </div>
     </details>
   </div>
@@ -655,7 +653,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 <!-- ═══════════════════════════ JAVASCRIPT ════════════════════ -->
 <script>
 // ─── STATE ──────────────────────────────────────────────────────
-let W=18, H=30;
+let W=128, H=128;
 let grid=[];
 let fontLoaded=false;
 let remixCounter=0;
@@ -766,1141 +764,374 @@ function transliterate(input){
   return transliterateToChars(input).join('');
 }
 
-// ─── FEATURE EXTRACTION ────────────────────────────────────────
-function extractFeatures(binaryGrid){
-  const h=binaryGrid.length,w=binaryGrid[0].length;
-  let filled=0,sumX=0,sumY=0;
-  let minX=w,maxX=0,minY=h,maxY=0;
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-    if(binaryGrid[y][x]){
-      filled++;sumX+=x;sumY+=y;
-      if(x<minX)minX=x;if(x>maxX)maxX=x;
-      if(y<minY)minY=y;if(y>maxY)maxY=y;
-    }
-  }
-  const density=filled/(w*h);
-  const comX=filled>0?(sumX/filled)/w:0.5;
-  const comY=filled>0?(sumY/filled)/h:0.5;
-  const bbW=maxX-minX+1||1,bbH=maxY-minY+1||1;
-  const aspectRatio=bbW/bbH;
-  let symV=0,symVT=0;
-  for(let y=0;y<h;y++)for(let x=0;x<Math.floor(w/2);x++){
-    symVT++;if(binaryGrid[y][x]===binaryGrid[y][w-1-x])symV++;
-  }
-  const vertSymmetry=symVT>0?symV/symVT:0;
-  let symH=0,symHT=0;
-  for(let y=0;y<Math.floor(h/2);y++)for(let x=0;x<w;x++){
-    symHT++;if(binaryGrid[y][x]===binaryGrid[h-1-y][x])symH++;
-  }
-  const horizSymmetry=symHT>0?symH/symHT:0;
-  const visited=Array.from({length:h},()=>new Array(w).fill(false));
-  let components=0;
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-    if(binaryGrid[y][x]&&!visited[y][x]){
-      components++;
-      const q=[[x,y]];visited[y][x]=true;
-      while(q.length){
-        const[cx,cy]=q.shift();
-        for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){
-          const nx=cx+dx,ny=cy+dy;
-          if(nx>=0&&nx<w&&ny>=0&&ny<h&&binaryGrid[ny][nx]&&!visited[ny][nx]){
-            visited[ny][nx]=true;q.push([nx,ny]);
-          }
-        }
-      }
-    }
-  }
-  let hTrans=0,vTrans=0;
-  for(let y=0;y<h;y++)for(let x=0;x<w-1;x++)if(binaryGrid[y][x]!==binaryGrid[y][x+1])hTrans++;
-  for(let y=0;y<h-1;y++)for(let x=0;x<w;x++)if(binaryGrid[y][x]!==binaryGrid[y+1][x])vTrans++;
-  const strokeDir=(hTrans+vTrans)>0?hTrans/(hTrans+vTrans):0.5;
-  return{density,comX,comY,aspectRatio,vertSymmetry,horizSymmetry,components,strokeDir};
-}
-
-function defaultFeatures(){
-  return{density:0.15,comX:0.5,comY:0.5,aspectRatio:1,vertSymmetry:0.5,
-    horizSymmetry:0.5,components:1,strokeDir:0.5};
-}
-
-// ─── SEEDED PRNG (mulberry32) ───────────────────────────────────
-function createPRNG(seed){
-  let h=0;
-  for(let i=0;i<seed.length;i++)h=Math.imul(31,h)+seed.charCodeAt(i)|0;
-  let t=h>>>0;
-  return function(){
-    t+=0x6D2B79F5;let z=t;
-    z=Math.imul(z^(z>>>15),z|1);
-    z^=z+Math.imul(z^(z>>>7),z|61);
-    return((z^(z>>>14))>>>0)/4294967296;
-  };
-}
-
-// ─── PATTERN CELLS ──────────────────────────────────────────────
-function getPatternCell(t,x,y){
-  switch(t){
-    case'tabby':return(x+y)%2;
-    case'twill22':return((x+y)%4<2)?1:0;
-    case'twill31':return((x+y)%4<3)?1:0;
-    case'satin5':return((x*2+y)%5===0)?1:0;
-    case'herringbone':{const p=(y%8)<4?(x+y)%4:(x-y+400)%4;return p<2?1:0;}
-    case'houndstooth':{const bx=Math.floor(x/4),by=Math.floor(y/4),ix=x%4,iy=y%4;const b=((ix+iy)%4<2)?1:0;return(bx+by)%2===0?b:1-b;}
-    case'basket':return(Math.floor(x/2)+Math.floor(y/2))%2;
-    case'waffle':{const cx=x%8,cy=y%8;if(cx===0||cy===0)return 1;if(cx===4||cy===4)return 0;return(cx+cy)%2;}
-    case'diamond':{const s=Math.max(1,Math.floor(Math.min(x,y)/2)+2);return(Math.abs((x%s)-Math.floor(s/2))+Math.abs((y%s)-Math.floor(s/2))<=Math.floor(s/2))?1:0;}
-    case'zigzag':{const p=8;const phase=y%p;const v=(x+phase)%(p*2);return v<p?1:0;}
-    case'cross':{const s=6;return(x%s===Math.floor(s/2)||y%s===Math.floor(s/2))?1:0;}
-    case'dots':{return(x%4===0&&y%4===0)?1:0;}
-    default:return 0;
-  }
-}
-const PATTERNS=['tabby','twill22','twill31','satin5','herringbone','houndstooth','basket','waffle','diamond','zigzag','cross','dots'];
-
-function getBorderVal(bp,x,y){
-  switch(bp){
-    case 0:return 1;case 1:return(y%2===0)?1:0;
-    case 2:return(x%4<2)?1:0;case 3:return((x+y)%4<2)?1:0;
-    case 4:return((x%6<3)^(y%6<3))?1:0;
-    case 5:return(x%3===0)?1:0;
-    case 6:return((x+y)%2===0&&(x%4<2))?1:0;
-    default:return 1;
-  }
-}
-
-// ─── GENERATIVE ALGORITHM ───────────────────────────────────────
-function mapRange(v,inMin,inMax,outMin,outMax){
-  return outMin+(v-inMin)/(inMax-inMin)*(outMax-outMin);
-}
-
-function getSymmetryFromUI(features){
-  const sel=document.getElementById('symmetryMode').value;
-  if(sel==='none') return 0;
-  if(sel==='vertical') return 1;
-  if(sel==='horizontal') return 2;
-  if(sel==='both') return 3;
-  // auto
-  const n=features.length;
-  const avgSymV=features.reduce((s,f)=>s+f.vertSymmetry,0)/n;
-  const avgSymH=features.reduce((s,f)=>s+f.horizSymmetry,0)/n;
-  if(avgSymV>0.6&&avgSymH>0.6)return 3;
-  if(avgSymV>0.55)return 1;
-  if(avgSymH>0.55)return 2;
-  return 3;
-}
-
-function getBorderWidth(features,rugW,rng){
-  const sel=document.getElementById('borderStyle').value;
-  if(sel==='none') return 0;
-  const n=features.length;
-  const avgDensity=features.reduce((s,f)=>s+f.density,0)/n;
-  if(sel==='simple') return Math.max(1,Math.min(3,Math.floor(rugW*0.04)));
-  if(sel==='double') return Math.max(3,Math.min(6,Math.floor(rugW*0.08)));
-  if(sel==='stepped') return Math.max(4,Math.min(8,Math.floor(rugW*0.1)));
-  // auto
-  return Math.round(mapRange(Math.min(Math.max(avgDensity,0.05),0.4),0.05,0.4,2,Math.min(6,Math.floor(rugW*0.08))));
-}
-
-function computeComposition(features,rugW,rugH,rng){
-  const n=features.length;
-  const borderWidth=getBorderWidth(features,rugW,rng);
-  const symmetryMode=getSymmetryFromUI(features);
-  const style=document.getElementById('patternStyle').value;
-  const complexity=document.getElementById('complexityLevel').value;
-  const hasCentralMotif=style==='medallion'||(style==='letterform'&&n%2===1)||(style==='geometric'&&rng()>0.4);
-  const zoneCount=complexity==='simple'?Math.max(2,Math.ceil(n/3)):
-                  complexity==='complex'?Math.max(4,n):
-                  Math.min(n,Math.max(3,Math.ceil(n/2)));
-  return{borderWidth,symmetryMode,hasCentralMotif,zoneCount,style,complexity};
-}
-
-function generateBorder(g,w,h,bw,firstF,lastF,rng,style){
-  const bsel=document.getElementById('borderStyle').value;
-  if(bw<=0)return;
-  const patIdx=Math.floor(firstF.strokeDir*7)%7;
-  if(bsel==='stepped'||style==='geometric'){
-    // Stepped border: alternating fill/empty layers
-    for(let layer=0;layer<bw;layer++){
-      const isFilled=layer%2===0;
-      const bp=isFilled?patIdx:0;
-      for(let x=0;x<w;x++){const v=isFilled?getBorderVal(bp,x,layer):((x+layer)%3===0?1:0);g[layer][x]=v;g[h-1-layer][x]=v;}
-      for(let y=0;y<h;y++){const v=isFilled?getBorderVal(bp,y,layer):((y+layer)%3===0?1:0);g[y][layer]=v;g[y][w-1-layer]=v;}
-    }
-  }else if(bsel==='double'){
-    // Double border: outer solid, gap, inner pattern
-    for(let x=0;x<w;x++){g[0][x]=1;g[h-1][x]=1;if(bw>2){g[bw-1][x]=getBorderVal(patIdx,x,0);g[h-bw][x]=getBorderVal(patIdx,x,0);}}
-    for(let y=0;y<h;y++){g[y][0]=1;g[y][w-1]=1;if(bw>2){g[y][bw-1]=getBorderVal(patIdx,y,0);g[y][w-bw]=getBorderVal(patIdx,y,0);}}
-  }else{
-    for(let layer=0;layer<bw;layer++){
-      for(let x=0;x<w;x++){const v=getBorderVal(patIdx,x,layer);g[layer][x]=v;g[h-1-layer][x]=v;}
-      for(let y=0;y<h;y++){const v=getBorderVal(patIdx,y,layer);g[y][layer]=v;g[y][w-1-layer]=v;}
-    }
-  }
-  // Corner accents for complex designs
-  const complexity=document.getElementById('complexityLevel').value;
-  if(complexity!=='simple'&&bw>=3){
-    for(let dy=0;dy<bw;dy++)for(let dx=0;dx<bw;dx++){
-      const v=(dx+dy)%2;
-      g[dy][dx]=v;g[dy][w-1-dx]=v;
-      g[h-1-dy][dx]=v;g[h-1-dy][w-1-dx]=v;
-    }
-  }
-}
-
-function fillZone(g,x0,y0,w,h,feature,rng,style,complexity){
-  let patIdx;
-  if(style==='kilim'){
-    patIdx=PATTERNS.indexOf('tabby');
-    if(rng()>0.5)patIdx=PATTERNS.indexOf('zigzag');
-  }else if(style==='geometric'){
-    const geoPatterns=['diamond','cross','houndstooth','zigzag'];
-    patIdx=PATTERNS.indexOf(geoPatterns[Math.floor(rng()*geoPatterns.length)]);
-  }else if(style==='striped'){
-    patIdx=rng()>0.5?PATTERNS.indexOf('twill22'):PATTERNS.indexOf('twill31');
-  }else{
-    patIdx=Math.min(PATTERNS.length-1,Math.floor(feature.density*PATTERNS.length*1.5)%PATTERNS.length);
-  }
-  const basePattern=PATTERNS[patIdx];
-  const scaleX=Math.max(1,Math.round(feature.aspectRatio*2));
-  const scaleY=Math.max(1,Math.round((1/Math.max(0.1,feature.aspectRatio))*2));
-  const phaseX=Math.round(feature.comX*7);const phaseY=Math.round(feature.comY*7);
-  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-    const gx=x0+x,gy=y0+y;
-    if(gx>=0&&gx<g[0].length&&gy>=0&&gy<g.length){
-      g[gy][gx]=getPatternCell(basePattern,Math.floor((x+phaseX)/scaleX),Math.floor((y+phaseY)/scaleY));
-    }
-  }
-  // Accent lines
-  if(complexity!=='simple'){
-    if(feature.strokeDir>0.6){
-      const spacing=Math.max(3,Math.round(h/(feature.components+1)));
-      for(let y=spacing;y<h;y+=spacing)for(let x=0;x<w;x++){const gy=y0+y,gx=x0+x;if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;}
-    }else if(feature.strokeDir<0.4){
-      const spacing=Math.max(3,Math.round(w/(feature.components+1)));
-      for(let x=spacing;x<w;x+=spacing)for(let y=0;y<h;y++){const gy=y0+y,gx=x0+x;if(gy<g.length&&gx<g[0].length)g[gy][gx]=1;}
-    }
-  }
-  // Scattered motifs
-  const motifCount=complexity==='complex'?Math.floor(rng()*feature.components*4)+2:
-                   complexity==='simple'?0:Math.floor(rng()*feature.components*2);
-  for(let m=0;m<motifCount;m++){
-    const mx=x0+Math.floor(rng()*w),my=y0+Math.floor(rng()*h);
-    const ms=complexity==='complex'?Math.floor(rng()*4)+1:Math.floor(rng()*3)+1;
-    const motifType=rng();
-    for(let dy=-ms;dy<=ms;dy++)for(let dx=-ms;dx<=ms;dx++){
-      let inside;
-      if(motifType>0.66) inside=(dx*dx+dy*dy)<=ms*ms; // circle
-      else if(motifType>0.33) inside=Math.abs(dx)+Math.abs(dy)<=ms; // diamond
-      else inside=Math.abs(dx)<=ms&&Math.abs(dy)<=ms; // square
-      if(inside){const gx=mx+dx,gy=my+dy;if(gy>=0&&gy<g.length&&gx>=0&&gx<g[0].length)g[gy][gx]=1-g[gy][gx];}
-    }
-  }
-}
-
-function generateMedallion(g,x0,y0,w,h,feature,rng,style,complexity){
-  const cx=x0+Math.floor(w/2),cy=y0+Math.floor(h/2);
-  const maxR=Math.floor(Math.min(w,h)*0.3);
-  const r=Math.max(3,Math.round(maxR*(0.4+feature.density*0.8)));
-  const avgSym=(feature.vertSymmetry+feature.horizSymmetry)/2;
-  // Outer ring
-  if(complexity!=='simple'){
-    const outerR=r+Math.max(1,Math.floor(r*0.3));
-    for(let dy=-outerR;dy<=outerR;dy++)for(let dx=-outerR;dx<=outerR;dx++){
-      const gx=cx+dx,gy=cy+dy;
-      if(gx<x0||gx>=x0+w||gy<y0||gy>=y0+h)continue;
-      const dist=dx*dx+dy*dy;
-      if(dist<=outerR*outerR&&dist>r*r) g[gy][gx]=(dx+dy)%2===0?1:0;
-    }
-  }
-  // Inner medallion
-  for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
-    const gx=cx+dx,gy=cy+dy;
-    if(gx<x0||gx>=x0+w||gy<y0||gy>=y0+h)continue;
-    let inside=false;
-    if(style==='geometric'||avgSym>0.65) inside=(dx*dx+dy*dy)<=r*r;
-    else if(style==='medallion') inside=Math.abs(dx)+Math.abs(dy)<=r*1.1;
-    else if(avgSym>0.5) inside=(Math.abs(dx)+Math.abs(dy))<=r*1.2&&Math.abs(dx)<=r&&Math.abs(dy)<=r;
-    else inside=(Math.abs(dx)+Math.abs(dy))<=r;
-    if(inside){
-      const contrastPat=PATTERNS[(Math.floor(feature.strokeDir*PATTERNS.length))%PATTERNS.length];
-      g[gy][gx]=getPatternCell(contrastPat,dx+r,dy+r);
-    }
-  }
-  // Center dot for complex
-  if(complexity==='complex'){
-    const dotR=Math.max(1,Math.floor(r*0.2));
-    for(let dy=-dotR;dy<=dotR;dy++)for(let dx=-dotR;dx<=dotR;dx++){
-      if(dx*dx+dy*dy<=dotR*dotR){
-        const gx=cx+dx,gy=cy+dy;
-        if(gy>=0&&gy<g.length&&gx>=0&&gx<g[0].length) g[gy][gx]=1;
-      }
-    }
-  }
-}
-
-function applySymmetry(g,x0,y0,w,h,mode){
-  if(mode===1||mode===3){for(let y=0;y<h;y++)for(let x=0;x<Math.floor(w/2);x++)g[y0+y][x0+w-1-x]=g[y0+y][x0+x];}
-  if(mode===2||mode===3){for(let y=0;y<Math.floor(h/2);y++)for(let x=0;x<w;x++)g[y0+h-1-y][x0+x]=g[y0+y][x0+x];}
-}
-
-function generateKilimBands(g,x0,y0,w,h,features,rng){
-  const bandCount=Math.max(3,Math.min(features.length*2,12));
-  const bandH=Math.floor(h/bandCount);
-  for(let b=0;b<bandCount;b++){
-    const feat=features[b%features.length];
-    const by=y0+b*bandH;
-    const bh=(b===bandCount-1)?h-b*bandH:bandH;
-    const pat=b%2===0?'tabby':'zigzag';
-    const scale=Math.max(1,Math.round(feat.density*4));
-    for(let y=0;y<bh;y++)for(let x=0;x<w;x++){
-      const gx=x0+x,gy=by+y;
-      if(gy<g.length&&gx<g[0].length){
-        g[gy][gx]=getPatternCell(pat,Math.floor(x/scale),Math.floor(y/scale));
-      }
-    }
-    // Divider line
-    if(b<bandCount-1){
-      const divY=by+bh-1;
-      if(divY<g.length)for(let x=0;x<w;x++){const gx=x0+x;if(gx<g[0].length)g[divY][gx]=1;}
-    }
-  }
-}
-
-function generateStriped(g,x0,y0,w,h,features,rng){
-  const stripeCount=Math.max(4,features.length*2);
-  const stripeW=Math.floor(w/stripeCount);
-  for(let s=0;s<stripeCount;s++){
-    const feat=features[s%features.length];
-    const sx=x0+s*stripeW;
-    const sw=(s===stripeCount-1)?w-s*stripeW:stripeW;
-    const patIdx=Math.floor(feat.density*PATTERNS.length)%PATTERNS.length;
-    const pat=PATTERNS[patIdx];
-    for(let y=0;y<h;y++)for(let x=0;x<sw;x++){
-      const gx=sx+x,gy=y0+y;
-      if(gy<g.length&&gx<g[0].length) g[gy][gx]=getPatternCell(pat,x,y);
-    }
-  }
-}
-
-function generateField(g,w,h,bw,features,comp,rng){
-  const ix=bw,iy=bw,iw=w-bw*2,ih=h-bw*2;
-  if(iw<=0||ih<=0)return;
-
-  if(comp.style==='kilim'){
-    generateKilimBands(g,ix,iy,iw,ih,features,rng);
-    applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
-    return;
-  }
-  if(comp.style==='striped'){
-    generateStriped(g,ix,iy,iw,ih,features,rng);
-    applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
-    return;
-  }
-
-  let workW=iw,workH=ih;
-  if(comp.symmetryMode===1||comp.symmetryMode===3)workW=Math.ceil(iw/2);
-  if(comp.symmetryMode===2||comp.symmetryMode===3)workH=Math.ceil(ih/2);
-  const zoneH=Math.floor(workH/comp.zoneCount);
-  for(let z=0;z<comp.zoneCount;z++){
-    const feat=features[z%features.length],zy=z*zoneH,zh=(z===comp.zoneCount-1)?workH-zy:zoneH;
-    fillZone(g,ix,iy+zy,workW,zh,feat,rng,comp.style,comp.complexity);
-  }
-  if(comp.hasCentralMotif){
-    generateMedallion(g,ix,iy,iw,ih,features[Math.floor(features.length/2)],rng,comp.style,comp.complexity);
-  }
-  applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
-}
-
-// ─── SCRIPT MODE (letterforms as rug motifs) ────────────────────
-// Helpers for bitmap manipulation
-function scaleBitmap(bmp,newSize){
-  var n=bmp.length;var out=[];
-  for(var y=0;y<newSize;y++){out[y]=[];for(var x=0;x<newSize;x++){
-    var sy=Math.floor(y*n/newSize),sx=Math.floor(x*n/newSize);
-    out[y][x]=(bmp[sy]&&bmp[sy][sx])?1:0;
-  }}
-  return out;
-}
-function mirrorBitmapH(bmp){
-  var n=bmp.length;var out=[];
-  for(var y=0;y<n;y++){out[y]=[];for(var x=0;x<n;x++)out[y][x]=bmp[y][n-1-x];}
-  return out;
-}
-function mirrorBitmapV(bmp){
-  var n=bmp.length;var out=[];
-  for(var y=0;y<n;y++){out[y]=[];for(var x=0;x<n;x++)out[y][x]=bmp[n-1-y][x];}
-  return out;
-}
-function stampBitmap(g,bmp,gx,gy,W,H){
-  var n=bmp.length;
-  for(var y=0;y<n;y++)for(var x=0;x<n;x++){
-    var ry=gy+y,rx=gx+x;
-    if(ry>=0&&ry<H&&rx>=0&&rx<W&&bmp[y][x])g[ry][rx]=1;
-  }
-}
-function generateScriptMode(name){
-  scriptMode=false;scriptPlacements=[];
-  var seed=remixCounter>0?name+'_'+remixCounter:name;
-  var rng=createPRNG(seed);
-  var chars=transliterateToChars(name);
-  if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='No transliterable characters found.';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
-  W=parseInt(document.getElementById('rugW').value)||18;
-  H=parseInt(document.getElementById('rugH').value)||30;
-  document.getElementById('solitreoText').textContent=transliterate(name);
-  var complexity=document.getElementById('complexityLevel').value;
-  var symSel=document.getElementById('symmetryMode').value;
-  var borderSel=document.getElementById('borderStyle').value;
-  // Initialize empty grid
-  grid=[];
-  for(var y=0;y<H;y++){grid[y]=[];for(var x=0;x<W;x++)grid[y][x]=0;}
-  // Rasterize letters at a small size so they become geometric/pixelated
-  var motifSize=complexity==='simple'?6:complexity==='complex'?10:8;
-  var bmps=[];
-  for(var i=0;i<chars.length;i++){
-    var b=rasterizeFromFont(chars[i],motifSize);
-    if(b)bmps.push(b);
-  }
-  if(!bmps.length){W=0;H=0;if(rugSketch)rugSketch.refresh();return;}
-  // ── OUTER BORDER: stepped frame ──
-  var borderW=complexity==='simple'?1:complexity==='complex'?3:2;
-  if(borderSel==='none')borderW=0;
-  else if(borderSel==='double'||borderSel==='stepped')borderW=Math.min(borderW+1,4);
-  // Solid outer line
-  for(y=0;y<H;y++)for(x=0;x<W;x++){
-    if(y<borderW||y>=H-borderW||x<borderW||x>=W-borderW)grid[y][x]=1;
-  }
-  // Inner zigzag border band using first letter motif
-  var zigW=borderW>0?Math.max(1,Math.floor(borderW*0.7)+1):0;
-  if(zigW>0&&borderW>1){
-    var zigY1=borderW,zigY2=borderW+zigW;
-    for(y=zigY1;y<Math.min(zigY2,H-borderW);y++){
-      for(x=borderW;x<W-borderW;x++){
-        var phase=(x+y)%4;
-        if(phase===0||phase===1)grid[y][x]=1;
-      }
-    }
-    // Mirror at bottom
-    for(y=H-borderW-zigW;y<H-borderW;y++){
-      for(x=borderW;x<W-borderW;x++){
-        var phase2=(x+y)%4;
-        if(phase2===0||phase2===1)grid[y][x]=1;
-      }
-    }
-    // Left/right zigzag borders
-    for(y=borderW;y<H-borderW;y++){
-      for(x=borderW;x<Math.min(borderW+zigW,W-borderW);x++){
-        var phase3=(x+y)%4;
-        if(phase3===0||phase3===1)grid[y][x]=1;
-      }
-      for(x=W-borderW-zigW;x<W-borderW;x++){
-        var phase4=(x+y)%4;
-        if(phase4===0||phase4===1)grid[y][x]=1;
-      }
-    }
-  }
-  // ── INTERIOR: divide into horizontal bands ──
-  var innerX=borderW+zigW;
-  var innerY=borderW+zigW;
-  var innerW=W-2*(borderW+zigW);
-  var innerH=H-2*(borderW+zigW);
-  if(innerW<4||innerH<4){if(rugSketch)rugSketch.refresh();return;}
-  // Number of bands based on name length and complexity
-  var bandCount=Math.max(3,Math.min(chars.length+2,complexity==='simple'?5:complexity==='complex'?9:7));
-  var bandH=Math.floor(innerH/bandCount);
-  var layoutDesc=[];
-  for(var band=0;band<bandCount;band++){
-    var by=innerY+band*bandH;
-    var bh=(band===bandCount-1)?innerH-band*bandH:bandH;
-    var bmpIdx=band%bmps.length;
-    var letterBmp=bmps[bmpIdx];
-    // Alternate between band types
-    var bandType;
-    if(band===0||band===bandCount-1){
-      bandType='repeat'; // top/bottom: repeating letter border
-    } else if(band===Math.floor(bandCount/2)){
-      bandType='diamond'; // center: diamond medallion with letter
-    } else if(band%3===1){
-      bandType='zigzag'; // zigzag fill derived from letter
-    } else if(band%3===2){
-      bandType='stepped'; // stepped diamonds with letter motifs
-    } else {
-      bandType='repeat';
-    }
-    switch(bandType){
-      case 'repeat':{
-        // Tile the letter motif horizontally, mirrored alternately
-        var motif=scaleBitmap(letterBmp,Math.min(bh,motifSize));
-        var mw=motif[0].length,mh=motif.length;
-        for(var tx=0;tx<Math.ceil(innerW/mw);tx++){
-          var useMirror=(tx%2===1);
-          var src=useMirror?mirrorBitmapH(motif):motif;
-          for(var py=0;py<mh&&py<bh;py++)for(var px=0;px<mw;px++){
-            var ry=by+py,rx=innerX+tx*mw+px;
-            if(ry<H&&rx<W&&rx>=innerX&&rx<innerX+innerW&&src[py]&&src[py][px])grid[ry][rx]=1;
-          }
-        }
-        layoutDesc.push('repeat band');
-        break;
-      }
-      case 'diamond':{
-        // Stepped diamond frame centered in band, letter motif inside
-        var dSize=Math.min(bh,innerW,Math.floor(Math.max(bh,innerW)*0.8));
-        var dCx=Math.floor(innerW/2);
-        var dCy=Math.floor(bh/2);
-        var dRad=Math.floor(dSize/2)-1;
-        // Draw stepped diamond outline
-        for(var dy=-dRad;dy<=dRad;dy++){
-          var dWidth=dRad-Math.abs(dy);
-          var ry2=by+dCy+dy;
-          if(ry2<0||ry2>=H)continue;
-          // Left and right edges of diamond (2px thick for visibility)
-          for(var t=0;t<Math.min(2,dWidth);t++){
-            var lx=innerX+dCx-dWidth+t;
-            var rrx=innerX+dCx+dWidth-t;
-            if(lx>=0&&lx<W)grid[ry2][lx]=1;
-            if(rrx>=0&&rrx<W)grid[ry2][rrx]=1;
-          }
-          // Top and bottom edges
-          if(Math.abs(dy)>=dRad-1){
-            for(var fx=dCx-dWidth;fx<=dCx+dWidth;fx++){
-              var fxx=innerX+fx;
-              if(fxx>=0&&fxx<W)grid[ry2][fxx]=1;
-            }
-          }
-        }
-        // Stamp letter motif in center of diamond
-        var centerMotif=scaleBitmap(letterBmp,Math.min(dRad,motifSize));
-        var cmx=innerX+dCx-Math.floor(centerMotif[0].length/2);
-        var cmy=by+dCy-Math.floor(centerMotif.length/2);
-        stampBitmap(grid,centerMotif,cmx,cmy,W,H);
-        // Fill corners outside diamond with small repeating motif from next letter
-        var cornerBmp=bmps[(bmpIdx+1)%bmps.length];
-        var cornerMotif=scaleBitmap(cornerBmp,Math.max(3,Math.floor(motifSize*0.5)));
-        var cm=cornerMotif.length;
-        for(var cy2=0;cy2<bh;cy2++){
-          for(var cx2=0;cx2<innerW;cx2++){
-            var distFromCenter=Math.abs(cx2-dCx)+Math.abs(cy2-dCy);
-            if(distFromCenter>dRad+2){
-              var my2=cy2%cm,mx2=cx2%cm;
-              var gy2=by+cy2,gx2=innerX+cx2;
-              if(gy2<H&&gx2<W&&cornerMotif[my2]&&cornerMotif[my2][mx2])grid[gy2][gx2]=1;
-            }
-          }
-        }
-        layoutDesc.push('diamond medallion');
-        break;
-      }
-      case 'zigzag':{
-        // Zigzag band: letter shapes placed at zigzag peaks
-        var zagAmp=Math.floor(bh*0.35);
-        var zagPeriod=Math.max(6,motifSize*2);
-        // Draw zigzag lines
-        for(x=0;x<innerW;x++){
-          var zagPhase=(x%zagPeriod)/zagPeriod;
-          var zagOffset=zagPhase<0.5?Math.floor(zagAmp*2*zagPhase):Math.floor(zagAmp*2*(1-zagPhase));
-          var lineY=by+Math.floor(bh/2)-zagAmp+zagOffset;
-          // Draw thick zigzag line (2 rows)
-          for(var lt=-1;lt<=0;lt++){
-            if(lineY+lt>=0&&lineY+lt<H){
-              var lxx=innerX+x;
-              if(lxx>=0&&lxx<W)grid[lineY+lt][lxx]=1;
-            }
-          }
-          // At peaks, stamp small letter motif
-          if(x%zagPeriod===0||x%zagPeriod===Math.floor(zagPeriod/2)){
-            var peakMotif=scaleBitmap(letterBmp,Math.max(3,Math.min(4,Math.floor(bh*0.4))));
-            stampBitmap(grid,peakMotif,innerX+x-Math.floor(peakMotif[0].length/2),lineY-peakMotif.length,W,H);
-          }
-        }
-        layoutDesc.push('zigzag band');
-        break;
-      }
-      case 'stepped':{
-        // Repeating stepped diamonds with letter centers
-        var stepSize=Math.min(bh-2,Math.floor(innerW/(Math.max(2,Math.floor(innerW/(bh+2))))));
-        var stepRad=Math.floor(stepSize/2);
-        var stepCount=Math.max(1,Math.floor(innerW/(stepSize+2)));
-        var stepSpacing=Math.floor(innerW/stepCount);
-        for(var si=0;si<stepCount;si++){
-          var scx=innerX+Math.floor(stepSpacing/2)+si*stepSpacing;
-          var scy=by+Math.floor(bh/2);
-          // Stepped diamond outline
-          for(var sdy=-stepRad;sdy<=stepRad;sdy++){
-            var sw=stepRad-Math.abs(sdy);
-            var sry=scy+sdy;
-            if(sry<0||sry>=H)continue;
-            // Stepped: only draw at even intervals for staircase effect
-            var steppedW=Math.floor(sw/2)*2;
-            for(var st=-1;st<=0;st++){
-              var slx=scx-steppedW+st,srx=scx+steppedW-st;
-              if(slx>=0&&slx<W)grid[sry][slx]=1;
-              if(srx>=0&&srx<W)grid[sry][srx]=1;
-            }
-          }
-          // Letter in center
-          var sMotif=scaleBitmap(bmps[si%bmps.length],Math.max(3,Math.min(stepRad-1,5)));
-          stampBitmap(grid,sMotif,scx-Math.floor(sMotif[0].length/2),scy-Math.floor(sMotif.length/2),W,H);
-        }
-        layoutDesc.push('stepped diamonds');
-        break;
-      }
-    }
-    // Divider line between bands
-    if(band<bandCount-1){
-      var divY=by+bh-1;
-      if(divY>=0&&divY<H){
-        for(x=innerX;x<innerX+innerW&&x<W;x++)grid[divY][x]=1;
-      }
-    }
-  }
-  // ── SYMMETRY ──
-  var symMode=0;
-  if(symSel==='vertical')symMode=1;
-  else if(symSel==='horizontal')symMode=2;
-  else if(symSel==='both')symMode=3;
-  else if(symSel==='auto')symMode=rng()>0.3?1:3;
-  if(symMode)applySymmetry(grid,innerX,innerY,innerW,innerH,symMode);
-  if(rugSketch)rugSketch.refresh();
-  var uniqueBands=[];
-  for(i=0;i<layoutDesc.length;i++){if(uniqueBands.indexOf(layoutDesc[i])<0)uniqueBands.push(layoutDesc[i]);}
-  document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+bandCount+' bands \u00b7 '+uniqueBands.join(', ')+' \u00b7 seed: '+seed;
-  var body=document.getElementById('taalimBody');
-  var html='<div class="taalim-section"><h3>Script Pattern</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">Solitreo letterforms woven into a traditional rug structure — ';
-  html+='horizontal bands with <strong>'+uniqueBands.join('</strong>, <strong>')+'</strong> patterns. ';
-  html+='Each letter becomes a geometric motif at '+motifSize+'\u00d7'+motifSize+' pixels, ';
-  html+='framed by stepped diamonds and zigzag borders.</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);">'+bandCount+' bands \u00b7 '+W+'\u00d7'+H+' grid';
-  html+='</p></div>';body.innerHTML=html;
-}
-
-// ─── DRAFT MODE (Binary Textile Code) ────────────────────────────
-function generateDraftMode(name){
-  scriptMode=false;
-  var seed=remixCounter>0?name+'_'+remixCounter:name;
-  var rng=createPRNG(seed);
-  var chars=transliterateToChars(name);
-  if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='No transliterable characters found.';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
-  W=parseInt(document.getElementById('rugW').value)||18;
-  H=parseInt(document.getElementById('rugH').value)||30;
-  var complexity=document.getElementById('complexityLevel').value;
-  var symSel=document.getElementById('symmetryMode').value;
-  var borderSel=document.getElementById('borderStyle').value;
-  grid=[];for(var y=0;y<H;y++)grid[y]=new Array(W).fill(0);
-
-  // ── Shaft count from complexity ──
-  var shaftCount=complexity==='simple'?4:complexity==='complex'?16:8;
-
-  // ── Rasterize letters for threading/treadling extraction ──
-  var threadBmpSize=Math.max(4,Math.min(shaftCount,12));
-  var threadBmps=[];
-  for(var i=0;i<chars.length;i++){
-    var tb=rasterizeFromFont(chars[i],threadBmpSize);
-    if(tb)threadBmps.push(tb);
-  }
-  if(!threadBmps.length){W=0;H=0;if(rugSketch)rugSketch.refresh();return;}
-
-  // Also rasterize at larger size for inlay/profile patterns
-  var profileSize=Math.max(8,Math.min(W,20));
-  var profileBmps=[];
-  for(i=0;i<chars.length;i++){
-    var pb=rasterizeFromFont(chars[i],profileSize);
-    if(pb)profileBmps.push(pb);
-  }
-
-  // ── Build threading from letter column densities ──
-  var threading=[];
-  for(i=0;i<threadBmps.length;i++){
-    var bmp=threadBmps[i];
-    for(var col=0;col<bmp[0].length;col++){
-      var filled=0;
-      for(var row=0;row<bmp.length;row++)if(bmp[row][col])filled++;
-      threading.push(Math.floor((filled/bmp.length)*shaftCount)%shaftCount);
-    }
-  }
-  // Point-twill mirror extension
-  var baseThread=threading.slice();
-  while(threading.length<W){
-    for(var mi=baseThread.length-2;mi>=1&&threading.length<W;mi--)threading.push(baseThread[mi]);
-    for(mi=0;mi<baseThread.length&&threading.length<W;mi++)threading.push(baseThread[mi]);
-  }
-
-  // ── Build treadling from letter row patterns ──
-  var treadling=[];
-  for(i=0;i<threadBmps.length;i++){
-    var bmp2=threadBmps[i];
-    for(row=0;row<bmp2.length;row++){
-      var lifts=[];
-      for(col=0;col<bmp2[0].length;col++){
-        if(bmp2[row][col]){
-          var shaft=Math.floor((col/bmp2[0].length)*shaftCount)%shaftCount;
-          if(lifts.indexOf(shaft)<0)lifts.push(shaft);
-        }
-      }
-      if(!lifts.length)lifts.push(row%shaftCount);
-      treadling.push(lifts);
-    }
-  }
-  // Mirror extension
-  var baseTread=treadling.slice();
-  while(treadling.length<H){
-    for(mi=baseTread.length-2;mi>=1&&treadling.length<H;mi--)treadling.push(baseTread[mi]);
-    for(mi=0;mi<baseTread.length&&treadling.length<H;mi++)treadling.push(baseTread[mi]);
-  }
-
-  // ── Build tie-up matrix from letter bitmap intersections ──
-  // Tie-up: shaftCount × shaftCount matrix — which treadle activates which shafts
-  var tieUp=[];
-  for(i=0;i<shaftCount;i++){tieUp[i]=[];for(var j=0;j<shaftCount;j++)tieUp[i][j]=0;}
-  // Derive from first letter bitmap: pixel at (i,j) → tie-up connection
-  var tuBmp=threadBmps[0];
-  for(i=0;i<shaftCount;i++)for(j=0;j<shaftCount;j++){
-    var ti=i%tuBmp.length,tj=j%tuBmp[0].length;
-    tieUp[i][j]=tuBmp[ti][tj];
-  }
-
-  // ── Extract letter edge contour for advancing twill ──
-  var contour=[];// per-row: how far right the letter extends (0 to 1)
-  if(profileBmps.length>0){
-    var pBmp=profileBmps[0];
-    for(row=0;row<pBmp.length;row++){
-      var rightmost=0;
-      for(col=0;col<pBmp[0].length;col++)if(pBmp[row][col])rightmost=col;
-      contour.push(rightmost/pBmp[0].length);
-    }
-    // Extend contour to fill H
-    var baseContour=contour.slice();
-    while(contour.length<H){
-      for(mi=baseContour.length-1;mi>=0&&contour.length<H;mi--)contour.push(baseContour[mi]);
-      for(mi=0;mi<baseContour.length&&contour.length<H;mi++)contour.push(baseContour[mi]);
-    }
-  }
-
-  // ── Weave structure: 7 types ──
-  var weaveType=Math.floor(rng()*7);
-  var weaveNames=['twill','satin','overshot','waffle','rep','advancing twill','supplementary inlay'];
-  var weaveName=weaveNames[weaveType];
-
-  // ── Symmetry ──
-  var symV=false,symH=false;
-  if(symSel==='vertical'||symSel==='both')symV=true;
-  if(symSel==='horizontal'||symSel==='both')symH=true;
-  if(symSel==='auto'){symV=true;symH=rng()>0.4;}
-  var srcW=symV?Math.ceil(W/2):W;
-  var srcH=symH?Math.ceil(H/2):H;
-
-  // ── Generate drawdown ──
-  for(y=0;y<srcH;y++){
-    var lifts2=treadling[y%treadling.length];
-    for(var x=0;x<srcW;x++){
-      var sh=threading[x%threading.length];
-      var isLifted=false;
-
-      switch(weaveType){
-        case 0:{// Twill: diagonal shift per row, with tie-up
-          var shifted=(sh+y)%shaftCount;
-          var treadle=lifts2[0]||0;
-          isLifted=tieUp[treadle%shaftCount][shifted]===1;
-          // Fallback: simple twill if tie-up is sparse
-          if(!isLifted)isLifted=((sh+y)%shaftCount)<Math.ceil(shaftCount/2)&&lifts2.indexOf(sh)>=0;
-          break;
-        }
-        case 1:{// Satin: distributed interlacement, minimal adjacency
-          var satinStep=Math.max(2,Math.floor(shaftCount*0.4));
-          var satinPos=(sh*satinStep+y)%shaftCount;
-          isLifted=satinPos<Math.max(1,Math.floor(shaftCount/4));
-          break;
-        }
-        case 2:{// Overshot: tabby ground alternates with pattern picks
-          if(y%2===0){
-            isLifted=(x%2===0);// tabby ground
-          } else {
-            // Pattern pick: use tie-up to determine lift
-            var patTreadle=lifts2[0]||0;
-            isLifted=tieUp[patTreadle%shaftCount][sh]===1;
-            // If tie-up gives nothing, fall back to direct
-            if(!isLifted&&lifts2.indexOf(sh)>=0)isLifted=true;
-          }
-          break;
-        }
-        case 3:{// Waffle: alternating raised/lowered blocks
-          var blockSz=Math.max(2,Math.floor(shaftCount/3));
-          var bx2=Math.floor(x/blockSz)%3;
-          var by2=Math.floor(y/blockSz)%3;
-          // Center blocks raised, edges lowered, corners intermediate
-          if(bx2===1&&by2===1)isLifted=true;// center: all up
-          else if(bx2===1||by2===1)isLifted=((sh+y)%shaftCount)<2;// edges: mostly down
-          else isLifted=lifts2.indexOf(sh)>=0;// corners: from treadling
-          break;
-        }
-        case 4:{// Rep weave: warp-faced and weft-faced areas alternate
-          // Letter profile determines which areas are warp-faced vs weft-faced
-          var profBmp=profileBmps[0];
-          var profY=y%profBmp.length;
-          var profX=x%profBmp[0].length;
-          var inLetter=profBmp[profY][profX];
-          if(inLetter){
-            // Warp-faced: dense vertical ribs (warp dominates)
-            isLifted=(sh%2===0);
-          } else {
-            // Weft-faced: dense horizontal ribs (weft dominates)
-            isLifted=(y%2===0);
-          }
-          // Add subtle texture from threading
-          if(lifts2.indexOf(sh)>=0&&(x+y)%3===0)isLifted=!isLifted;
-          break;
-        }
-        case 5:{// Advancing twill: twill direction follows letter contour
-          var cIdx=y%contour.length;
-          var advance=Math.floor(contour[cIdx]*shaftCount);
-          var twillPos=(sh+y+advance)%shaftCount;
-          // Twill width varies with contour — wider where letter is wider
-          var twillWidth=Math.max(1,Math.floor(contour[cIdx]*shaftCount*0.6)+1);
-          isLifted=twillPos<twillWidth;
-          break;
-        }
-        case 6:{// Supplementary weft inlay: letter floats over plain ground
-          // Ground weave: tabby
-          var groundVal=(x+y)%2===0;
-          // Check if this cell is inside a letter shape (profile bitmap)
-          var inlayBmp=profileBmps[Math.floor(y/profileSize)%profileBmps.length];
-          var iy=y%inlayBmp.length;
-          var ix=x%inlayBmp[0].length;
-          var inInlay=inlayBmp[iy][ix];
-          if(inInlay){
-            // Supplementary weft: pattern floats over ground
-            // Create texture within the letter using threading
-            isLifted=lifts2.indexOf(sh)>=0||((sh+y)%3===0);
-          } else {
-            isLifted=groundVal;
-          }
-          break;
-        }
-      }
-      grid[y][x]=isLifted?1:0;
-    }
-  }
-
-  // Apply symmetry
-  if(symV){for(y=0;y<H;y++)for(x=0;x<Math.floor(W/2);x++)grid[y][W-1-x]=grid[y][x];}
-  if(symH){for(y=0;y<Math.floor(H/2);y++)for(x=0;x<W;x++)grid[H-1-y][x]=grid[y][x];}
-
-  // ── Border: woven selvedge ──
-  var bCells=0;
-  if(borderSel==='simple'||borderSel==='auto')bCells=1;
-  else if(borderSel==='double'||borderSel==='stepped')bCells=3;
-  if(borderSel!=='none'&&bCells>0){
-    for(y=0;y<H;y++)for(x=0;x<W;x++){
-      var atEdge=y<bCells||y>=H-bCells||x<bCells||x>=W-bCells;
-      if(atEdge){
-        // Twill selvedge border instead of solid line
-        grid[y][x]=(x+y)%2===0?1:0;
-        // Outermost row/col solid
-        if(y===0||y===H-1||x===0||x===W-1)grid[y][x]=1;
-      }
-    }
-  }
-
-  if(rugSketch)rugSketch.refresh();
-  var filledCount=0;for(y=0;y<H;y++)for(x=0;x<W;x++)if(grid[y][x])filledCount++;
-  var density=((filledCount/(W*H))*100).toFixed(1);
-  document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+shaftCount+'-shaft '+weaveName+' \u00b7 '+density+'% density \u00b7 seed: '+seed;
-
-  // ── Taalim description ──
-  var weaveDescs={
-    'twill':'Diagonal twill lines created by shifting the threading through the tie-up matrix each row. The tie-up itself is derived from the first letter\u2019s bitmap.',
-    'satin':'Distributed interlacement points with minimal float adjacency, creating a smooth surface. Float length and spacing come from letter density.',
-    'overshot':'Alternating tabby ground picks with pattern picks \u2014 the classic American coverlet technique. Pattern floats are determined by the tie-up matrix.',
-    'waffle':'Grouped blocks of raised and lowered areas creating a three-dimensional honeycomb texture. Block size scales with shaft count.',
-    'rep':'Warp-faced and weft-faced areas alternate based on the letter\u2019s silhouette \u2014 where the letter is, warp dominates (vertical ribs); where it isn\u2019t, weft dominates (horizontal ribs).',
-    'advancing twill':'The twill diagonal advances and retreats following the letter\u2019s edge contour. Where the letter is wide, the twill shifts more; where narrow, it holds steady.',
-    'supplementary inlay':'A plain tabby ground with the letter shape floating on top as supplementary weft \u2014 the technique used in Anatolian cicim and zili textiles.'
-  };
-  var body=document.getElementById('taalimBody');
-  var html='<div class="taalim-section"><h3>Binary Textile Draft \u2014 '+weaveName.charAt(0).toUpperCase()+weaveName.slice(1)+'</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">'+weaveDescs[weaveName]+'</p>';
-  html+='<p style="font-size:14px;color:var(--text);margin-top:8px;"><strong>'+shaftCount+' shafts</strong> \u00b7 ';
-  html+='threading: '+baseThread.length+' ends (point repeat) \u00b7 ';
-  html+='treadling: '+baseTread.length+' picks (mirrored) \u00b7 ';
-  html+='tie-up: '+shaftCount+'\u00d7'+shaftCount+' matrix from \u201c'+chars[0]+'\u201d</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);">'+(symV&&symH?'Four-way':symV?'Vertical mirror':symH?'Horizontal mirror':'Free')+' symmetry \u00b7 '+density+'% density</p></div>';
-  body.innerHTML=html;
-}
-
-// ─── MOTIF MODE (Letter-as-Symbol) ───────────────────────────────
-// Map Solitreo letters to traditional Anatolian/Sephardic rug motifs
-function safeSet(g,y,x,v){if(y>=0&&y<g.length&&x>=0&&x<g[0].length)g[y][x]=v;}
-const MOTIF_MAP={
-  '\u05D0':{name:'Star',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      var dx=Math.abs(i-c),dy=Math.abs(j-c);
-      if(dx+dy<=c||dx<=1||dy<=1)safeSet(g,y+j,x+i,1);}}},
-  '\u05D1':{name:'Hands-on-hips (Elibelinde)',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      var dx=Math.abs(i-c),dy=Math.abs(j-c);
-      if(dy<=1||(dx<=c-1&&dy<=c-1&&(dx+dy)%2===0)||(j>c&&dx<=2))safeSet(g,y+j,x+i,1);}}},
-  '\u05D2':{name:'Ram\u2019s horn (Ko\u00e7boynuzu)',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      var a=Math.atan2(j-c,i-c),r=Math.sqrt((i-c)*(i-c)+(j-c)*(j-c));
-      if(Math.abs(r-c*0.6-a*1.2)<1.8||Math.abs(r-c*0.6+a*1.2)<1.8)safeSet(g,y+j,x+i,1);}}},
-  '\u05D3':{name:'Chest (Sand\u0131k)',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if(i===0||i===s-1||j===0||j===s-1)safeSet(g,y+j,x+i,1);
-      var dx=Math.abs(i-c),dy=Math.abs(j-c);if(dx+dy<=Math.floor(s/4))safeSet(g,y+j,x+i,1);}}},
-  '\u05D4':{name:'Tree of Life',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if(i===c)safeSet(g,y+j,x+i,1);
-      if(j%3===0&&Math.abs(i-c)<=Math.floor((s-j)/3))safeSet(g,y+j,x+i,1);}}},
-  '\u05D5':{name:'Water (Su)',fn:function(g,x,y,s){
-    for(var j=0;j<s;j++){var wave=Math.round(Math.sin(j*Math.PI*2/s)*s*0.3)+Math.floor(s/2);
-      if(wave>=0&&wave<s)safeSet(g,y+j,x+wave,1);if(wave+1<s)safeSet(g,y+j,x+wave+1,1);}}},
-  '\u05D6':{name:'Hook (\u00c7engel)',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if((j<c&&i===c+Math.min(j,c-1))||(j>=c&&i===c-Math.min(j-c,c-1))||(j===0&&i>=c)||(j===s-1&&i<=c))safeSet(g,y+j,x+i,1);}}},
-  '\u05D7':{name:'Scorpion (Akrep)',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      if(j===c&&i>=1&&i<s-1)safeSet(g,y+j,x+i,1);
-      if(i===c&&j>=c)safeSet(g,y+j,x+i,1);
-      if(j<c&&(i===1||i===s-2)&&j>c-3)safeSet(g,y+j,x+i,1);}}},
-  '\u05D8':{name:'Eye (G\u00f6z)',fn:function(g,x,y,s){
-    var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-      var dx=Math.abs(i-c),dy=Math.abs(j-c);
-      if(dx+dy===c||dx+dy===Math.floor(c/2)||(dx<=1&&dy<=1))safeSet(g,y+j,x+i,1);}}},
-  '\u05D9':{name:'Comb (Tarak)',fn:function(g,x,y,s){
-    for(var j=0;j<s;j++)for(var i=0;i<s;i++){
-      if(j%3===0)safeSet(g,y+j,x+i,1);
-      if(j%3!==0&&i%2===0)safeSet(g,y+j,x+i,1);}}},
+// ─── WEAVE STRUCTURES ──────────────────────────────────────────
+var WEAVE_STRUCTURES={
+  tabby:{name:'Plain Weave',repeat:[[1,0],[0,1]]},
+  twill22:{name:'2/2 Twill',repeat:[[1,1,0,0],[0,1,1,0],[0,0,1,1],[1,0,0,1]]},
+  twill21:{name:'2/1 Twill',repeat:[[1,1,0],[0,1,1],[1,0,1]]},
+  satin5:{name:'5-Shaft Satin',repeat:[[1,0,0,0,0],[0,0,1,0,0],[0,0,0,0,1],[0,1,0,0,0],[0,0,0,1,0]]},
+  basket:{name:'Basket Weave',repeat:[[1,1,0,0],[1,1,0,0],[0,0,1,1],[0,0,1,1]]}
 };
-// Default motif for unmapped letters
-function defaultMotif(g,x,y,s){
-  var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
-    var dx=Math.abs(i-c),dy=Math.abs(j-c);
-    if(dx+dy<=c)safeSet(g,y+j,x+i,1);}
+
+function getStructureCell(structKey,x,y){
+  var s=WEAVE_STRUCTURES[structKey];
+  if(!s)return 0;
+  var r=s.repeat;
+  return r[y%r.length][x%r[0].length];
 }
 
-function generateMotifMode(name){
-  scriptMode=false;
-  const seed=remixCounter>0?name+'_'+remixCounter:name;
-  const rng=createPRNG(seed);
-  const chars=transliterateToChars(name);
-  if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='No transliterable characters found.';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
-  W=parseInt(document.getElementById('rugW').value)||18;
-  H=parseInt(document.getElementById('rugH').value)||30;
-  grid=[];for(let y=0;y<H;y++)grid[y]=new Array(W).fill(0);
-  // Symmetry
-  const symSel=document.getElementById('symmetryMode').value;
-  let symMode=3;// default both
-  if(symSel==='none')symMode=0;else if(symSel==='vertical')symMode=1;
-  else if(symSel==='horizontal')symMode=2;else if(symSel==='both')symMode=3;
-  // Border
-  const bw=Math.max(1,Math.floor(W*0.05));
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-    if(x<bw||x>=W-bw||y<bw||y>=H-bw)grid[y][x]=(x+y)%2;
+// ─── HIGH-RES TEXT RENDERING ──────────────────────────────────
+// Render Solitreo text at high resolution using Canvas 2D, return binary mask
+function renderTextMask(text,targetW,targetH,layout){
+  var hiresScale=8;// 8x supersampling
+  var hiW=targetW*hiresScale;
+  var hiH=targetH*hiresScale;
+
+  var offscreen=document.createElement('canvas');
+  offscreen.width=hiW;offscreen.height=hiH;
+  var ctx=offscreen.getContext('2d');
+
+  // Clear to white (exterior)
+  ctx.fillStyle='#FFFFFF';
+  ctx.fillRect(0,0,hiW,hiH);
+
+  // Transliterate to Solitreo
+  var solitreoStr=transliterate(text);
+  if(!solitreoStr||!solitreoStr.trim())return null;
+
+  // Set up text rendering
+  ctx.fillStyle='#000000';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+
+  var inputLen=solitreoStr.replace(/\s/g,'').length;
+
+  if(layout==='flowing'){
+    // Flowing fill: wrap text to fill canvas, multiple lines
+    var fontSize=Math.floor(hiH/Math.max(2,Math.ceil(Math.sqrt(inputLen*1.5))));
+    fontSize=Math.max(hiresScale*4,Math.min(fontSize,hiH*0.4));
+    ctx.font=fontSize+'px GanchosSans';
+    ctx.direction='rtl';
+
+    // Word/char wrap
+    var chars=solitreoStr.split('');
+    var lineHeight=fontSize*1.3;
+    var maxLines=Math.floor(hiH/lineHeight);
+    var charsPerLine=Math.max(1,Math.floor(hiW/(fontSize*0.7)));
+    var lines=[];
+    for(var ci=0;ci<chars.length;ci+=charsPerLine){
+      lines.push(chars.slice(ci,ci+charsPerLine).join(''));
+    }
+    if(lines.length>maxLines)lines=lines.slice(0,maxLines);
+
+    var totalTextH=lines.length*lineHeight;
+    var startY=(hiH-totalTextH)/2+lineHeight/2;
+    for(var li=0;li<lines.length;li++){
+      ctx.fillText(lines[li],hiW/2,startY+li*lineHeight);
+    }
+  } else if(layout==='tiled'){
+    // Tiled repeat: render text block, then tile it
+    var tileCanvas=document.createElement('canvas');
+    var tileSize=Math.floor(hiW/Math.max(1,Math.ceil(Math.sqrt(inputLen*0.5))));
+    tileSize=Math.max(hiresScale*6,Math.min(tileSize,hiW));
+    tileCanvas.width=tileSize;tileCanvas.height=tileSize;
+    var tCtx=tileCanvas.getContext('2d');
+    tCtx.fillStyle='#FFFFFF';tCtx.fillRect(0,0,tileSize,tileSize);
+    tCtx.fillStyle='#000000';
+    tCtx.font=Math.floor(tileSize*0.6)+'px GanchosSans';
+    tCtx.textAlign='center';tCtx.textBaseline='middle';
+    tCtx.direction='rtl';
+    tCtx.fillText(solitreoStr,tileSize/2,tileSize/2);
+
+    // Tile across canvas with brick offset
+    for(var ty=0;ty<hiH;ty+=tileSize){
+      var rowIdx=Math.floor(ty/tileSize);
+      var xOff=(rowIdx%2)*(tileSize/2);// brick offset
+      for(var tx=-tileSize;tx<hiW+tileSize;tx+=tileSize){
+        ctx.drawImage(tileCanvas,tx+xOff,ty);
+      }
+    }
+  } else {
+    // Centered block (default)
+    var fontSize2=Math.floor(Math.min(hiW*0.7,hiH*0.5)/Math.max(1,inputLen*0.35));
+    fontSize2=Math.max(hiresScale*6,Math.min(fontSize2,hiH*0.6));
+    ctx.font=fontSize2+'px GanchosSans';
+    ctx.direction='rtl';
+    ctx.fillText(solitreoStr,hiW/2,hiH/2);
   }
-  // Place motifs in the field
-  const ix=bw,iy=bw,iw=W-bw*2,ih=H-bw*2;
-  const motifSize=Math.max(5,Math.min(Math.floor(iw/2),Math.floor(ih/3)));
-  const cols=Math.max(1,Math.floor(iw/motifSize));
-  const rows=Math.max(1,Math.floor(ih/motifSize));
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      const ci=Math.floor((r*cols+c)%chars.length);
-      const ch=chars[ci];
-      const mx=ix+c*motifSize;
-      const my=iy+r*motifSize;
-      // Bounds check
-      if(mx+motifSize>W||my+motifSize>H)continue;
-      const motif=MOTIF_MAP[ch];
-      if(motif)motif.fn(grid,mx,my,motifSize);
-      else defaultMotif(grid,mx,my,motifSize);
+
+  // ── Read pixels and threshold to binary ──
+  var imgData=ctx.getImageData(0,0,hiW,hiH);
+  var pixels=imgData.data;
+
+  // Create high-res binary mask
+  var hiresMask=[];
+  for(var hy=0;hy<hiH;hy++){
+    hiresMask[hy]=new Uint8Array(hiW);
+    for(var hx=0;hx<hiW;hx++){
+      var idx=(hy*hiW+hx)*4;
+      var brightness=(pixels[idx]+pixels[idx+1]+pixels[idx+2])/3;
+      hiresMask[hy][hx]=brightness<128?1:0;
     }
   }
-  // Apply symmetry to field
-  if(symMode===1||symMode===3){for(let y=iy;y<iy+ih;y++)for(let x=0;x<Math.floor(iw/2);x++)grid[y][ix+iw-1-x]=grid[y][ix+x];}
-  if(symMode===2||symMode===3){for(let y=0;y<Math.floor(ih/2);y++)for(let x=0;x<iw;x++)grid[iy+ih-1-y][ix+x]=grid[iy+y][ix+x];}
-  if(rugSketch)rugSketch.refresh();
-  let filled=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
-  const density=((filled/(W*H))*100).toFixed(1);
-  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 motif \u00b7 seed: '+seed;
-  // Taalim
-  var body=document.getElementById('taalimBody');
-  var motifNames=chars.map(function(ch){var m=MOTIF_MAP[ch];return m?m.name:'Diamond';});
-  var html='<div class="taalim-section"><h3>Motif Pattern</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">Each Solitreo letter maps to a traditional Anatolian rug motif:</p>';
-  html+='<ul style="font-size:14px;color:var(--text);margin:8px 0;padding-left:20px;">';
-  for(var i=0;i<chars.length;i++){
-    var m=MOTIF_MAP[chars[i]];
-    html+='<li>'+chars[i]+' \u2192 '+(m?m.name:'Diamond')+'</li>';
+
+  // ── Contour smoothing: morphological close (dilate then erode) ──
+  var kernelSize=Math.max(1,Math.floor(hiresScale/2));
+  // Dilate
+  var dilated=[];
+  for(hy=0;hy<hiH;hy++){
+    dilated[hy]=new Uint8Array(hiW);
+    for(hx=0;hx<hiW;hx++){
+      var found=false;
+      for(var ky=-kernelSize;ky<=kernelSize&&!found;ky++){
+        for(var kx=-kernelSize;kx<=kernelSize&&!found;kx++){
+          var ny=hy+ky,nx=hx+kx;
+          if(ny>=0&&ny<hiH&&nx>=0&&nx<hiW&&hiresMask[ny][nx])found=true;
+        }
+      }
+      dilated[hy][hx]=found?1:0;
+    }
   }
-  html+='</ul>';
-  html+='<p style="font-size:14px;color:var(--text-3);">'+filled+' filled \u00b7 '+cols+'\u00d7'+rows+' motif grid</p></div>';
-  body.innerHTML=html;
+  // Erode
+  var smoothed=[];
+  for(hy=0;hy<hiH;hy++){
+    smoothed[hy]=new Uint8Array(hiW);
+    for(hx=0;hx<hiW;hx++){
+      var allFilled=true;
+      for(ky=-kernelSize;ky<=kernelSize&&allFilled;ky++){
+        for(kx=-kernelSize;kx<=kernelSize&&allFilled;kx++){
+          var ny2=hy+ky,nx2=hx+kx;
+          if(ny2>=0&&ny2<hiH&&nx2>=0&&nx2<hiW){
+            if(!dilated[ny2][nx2])allFilled=false;
+          }
+        }
+      }
+      smoothed[hy][hx]=allFilled?1:0;
+    }
+  }
+
+  // ── Downsample to target grid size (area-based sampling) ──
+  var mask=[];
+  for(var my=0;my<targetH;my++){
+    mask[my]=new Uint8Array(targetW);
+    for(var mx=0;mx<targetW;mx++){
+      // Sample the hires region for this cell
+      var sy0=Math.floor(my*hiH/targetH);
+      var sy1=Math.floor((my+1)*hiH/targetH);
+      var sx0=Math.floor(mx*hiW/targetW);
+      var sx1=Math.floor((mx+1)*hiW/targetW);
+      var filled2=0,total=0;
+      for(var sy=sy0;sy<sy1;sy++){
+        for(var sx=sx0;sx<sx1;sx++){
+          if(smoothed[sy][sx])filled2++;
+          total++;
+        }
+      }
+      // >50% coverage = interior
+      mask[my][mx]=(filled2/total>0.5)?1:0;
+    }
+  }
+
+  return mask;
+}
+
+// ─── APPLY WEAVE STRUCTURES TO MASK ──────────────────────────
+function applyStructuralFill(mask,w,h,intKey,extKey,borderW){
+  var result=[];
+  for(var y=0;y<h;y++){
+    result[y]=new Array(w);
+    for(var x=0;x<w;x++){
+      // Border check
+      var inBorder=(y<borderW||y>=h-borderW||x<borderW||x>=w-borderW);
+      if(inBorder){
+        // Border uses exterior structure
+        result[y][x]=getStructureCell(extKey,x,y);
+      } else if(mask[y][x]){
+        // Interior: letter zone
+        result[y][x]=getStructureCell(intKey,x,y);
+      } else {
+        // Exterior: background zone
+        result[y][x]=getStructureCell(extKey,x,y);
+      }
+    }
+  }
+  return result;
 }
 
 // ─── MAIN GENERATE ──────────────────────────────────────────────
 function generatePattern(){
-  const name=document.getElementById('nameInput').value.trim();
-  if(!name){
-    scriptMode=false;grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>';
-    return;
-  }
-  var pVal=document.getElementById('patternStyle').value;
-  if(pVal==='script'){generateScriptMode(name);saveToLibrary(name);return;}
-  if(pVal==='draft'){generateDraftMode(name);saveToLibrary(name);return;}
-  if(pVal==='motif'){generateMotifMode(name);saveToLibrary(name);return;}
   scriptMode=false;
-  const seed=remixCounter>0?name+'_'+remixCounter:name;
-  const rng=createPRNG(seed);
-  const solitreoChars=transliterateToChars(name);
-  if(solitreoChars.length===0){
-    scriptMode=false;grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='No transliterable characters found.';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';
+  var name=document.getElementById('nameInput').value.trim();
+  if(!name){
+    grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter text to generate weaving instructions.</p>';
     return;
   }
-  const features=solitreoChars.map(ch=>{const bmp=rasterizeFromFont(ch,28);return bmp?extractFeatures(bmp):defaultFeatures();});
-  W=parseInt(document.getElementById('rugW').value)||18;
-  H=parseInt(document.getElementById('rugH').value)||30;
-  grid=[];for(let y=0;y<H;y++)grid[y]=new Array(W).fill(0);
-  const comp=computeComposition(features,W,H,rng);
-  const style=document.getElementById('patternStyle').value;
-  generateBorder(grid,W,H,comp.borderWidth,features[0],features[features.length-1],rng,style);
-  generateField(grid,W,H,comp.borderWidth,features,comp,rng);
+
+  var chars=transliterateToChars(name);
+  if(!chars.length){
+    grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='No transliterable characters found.';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter text with Latin letters.</p>';
+    return;
+  }
+
+  W=parseInt(document.getElementById('rugW').value)||128;
+  H=parseInt(document.getElementById('rugH').value)||128;
+  var intKey=document.getElementById('interiorStructure').value;
+  var extKey=document.getElementById('exteriorStructure').value;
+  var layout=document.getElementById('layoutMode').value;
+  var borderW=parseInt(document.getElementById('borderWidth').value)||0;
+
+  // Render text mask
+  var mask=renderTextMask(name,W,H,layout);
+  if(!mask){
+    grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='Could not render text.';
+    return;
+  }
+
+  // Apply weave structures
+  grid=applyStructuralFill(mask,W,H,intKey,extKey,borderW);
+
   if(rugSketch)rugSketch.refresh();
-  let filled=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
-  const density=((filled/(W*H))*100).toFixed(1);
-  const pStyle=document.getElementById('patternStyle').value;
-  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 '+pStyle+' \u00b7 seed: '+seed;
-  generateTaalim();
+
+  // Stats
+  var filled=0,interior=0;
+  for(var y=0;y<H;y++)for(var x=0;x<W;x++){
+    if(grid[y][x])filled++;
+    if(mask[y][x])interior++;
+  }
+  var density=((filled/(W*H))*100).toFixed(1);
+  var intName=WEAVE_STRUCTURES[intKey]?WEAVE_STRUCTURES[intKey].name:intKey;
+  var extName=WEAVE_STRUCTURES[extKey]?WEAVE_STRUCTURES[extKey].name:extKey;
+  document.getElementById('patternStats').textContent=
+    W+'\u00d7'+H+' \u00b7 Interior: '+intName+' \u00b7 Exterior: '+extName+
+    ' \u00b7 '+density+'% density \u00b7 '+chars.length+' letters \u00b7 '+layout+' layout';
+
+  // Taalim
+  generateTaalim(mask,intKey,extKey,borderW,chars);
+
+  // Save to library
   saveToLibrary(name);
 }
 
 // ─── TAALIM ─────────────────────────────────────────────────────
-function generateTaalim(){
-  if(!grid.length)return;
-  const body=document.getElementById('taalimBody');
-  let filled=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
-  const density=((filled/(W*H))*100).toFixed(1);
-  let html='<div class="taalim-section"><h3>Pattern Statistics</h3><div class="taalim-stats">';
+function generateTaalim(mask,intKey,extKey,borderW,chars){
+  if(!grid||!grid.length)return;
+  var body=document.getElementById('taalimBody');
+  var filled=0;for(var y=0;y<H;y++)for(var x=0;x<W;x++)if(grid[y][x])filled++;
+  var density=((filled/(W*H))*100).toFixed(1);
+  var intName=WEAVE_STRUCTURES[intKey]?WEAVE_STRUCTURES[intKey].name:intKey;
+  var extName=WEAVE_STRUCTURES[extKey]?WEAVE_STRUCTURES[extKey].name:extKey;
+
+  var html='<div class="taalim-section"><h3>Weave Structure</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">This pattern uses <strong>texture differentiation</strong> to make ';
+  html+=chars.length+' Solitreo letter'+(chars.length>1?'s':'')+' visible within the cloth.</p>';
+  html+='<p style="font-size:14px;color:var(--text);margin-top:8px;">The letter zones use <strong>'+intName+'</strong> ';
+  html+='while the background uses <strong>'+extName+'</strong>. The contrast between structures ';
+  html+='creates the design \u2014 like damask, brocade, or kilim textiles.</p>';
+  html+='</div>';
+
+  html+='<div class="taalim-section"><h3>Pattern Statistics</h3><div class="taalim-stats">';
   html+='<div class="taalim-stat"><div class="val">'+W+'\u00d7'+H+'</div><div class="lbl">Grid Size</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+filled+'</div><div class="lbl">Filled Cells</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+density+'%</div><div class="lbl">Density</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+chars.length+'</div><div class="lbl">Letters</div></div>';
   html+='</div></div>';
-  html+='<div class="taalim-section"><h3>Visual Pattern</h3><div class="taalim-visual">';
-  for(let y=0;y<H;y++){let row='';for(let x=0;x<W;x++)row+=grid[y][x]?'\u2588':'\u00b7';html+=row+'\n';}
-  html+='</div></div>';
-  html+='<div class="taalim-section"><h3>Row Instructions (RTL)</h3><div class="taalim-rows">';
-  const rowStrings=[];for(let y=0;y<H;y++)rowStrings.push(grid[y].join(''));
-  let y=0;
-  while(y<H){
-    let rc=1;while(y+rc<H&&rowStrings[y+rc]===rowStrings[y])rc++;
-    const row=grid[y];let rle=[];let cx=W-1;
-    while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'\u25a0':'\u25a1')+run);cx-=run;}
-    const prefix=rc>1?'Rows '+(y+1)+'\u2013'+(y+rc):'Row '+(y+1);
-    html+='<div style="margin-bottom:2px;"><span style="color:var(--text-3);min-width:70px;display:inline-block;">'+prefix+'</span> '+rle.join(' ')+'</div>';
-    y+=rc;
+
+  if(borderW>0){
+    html+='<div class="taalim-section"><p style="font-size:14px;color:var(--text-3);">Border: '+borderW+'px using '+extName+' structure.</p></div>';
   }
-  html+='</div></div>';body.innerHTML=html;
+
+  body.innerHTML=html;
 }
 
 // ─── EXPORTS ────────────────────────────────────────────────────
-function downloadFile(n,c,t){const b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
+function downloadFile(n,c,t){var b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
+
 function doExportWIF(){
-  if(scriptMode){alert('WIF export is not available in Script mode. Use PNG export instead.');return;}
-  if(!grid.length)return;const name=document.getElementById('nameInput').value.trim()||'pattern';
-  let wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\nDevelopers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=9.0\n\n';
-  wif+='[CONTENTS]\nCOLOR PALETTE=true\nCOLOR TABLE=true\nWEAVING=true\nWARP=true\nWEFT=true\nTHREADING=true\nTIEUP=true\nLIFTPLAN=true\n\n';
-  wif+='[COLOR PALETTE]\nRange=0,255\nEntries=2\n\n[COLOR TABLE]\n1=0,0,0\n2=255,255,255\n\n';
+  if(!grid||!grid.length)return;
+  var name=document.getElementById('nameInput').value.trim()||'pattern';
+  var fname='ganchos-'+name.replace(/\s+/g,'-')+'.wif';
+
+  var wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\n';
+  wif+='Developers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=10.0\n\n';
+  wif+='[CONTENTS]\nCOLOR PALETTE=true\nCOLOR TABLE=true\nWEAVING=true\nWARP=true\nWEFT=true\nLIFTPLAN=true\n\n';
+  wif+='[COLOR PALETTE]\nRange=0,255\nEntries=2\n\n';
+  wif+='[COLOR TABLE]\n1=0,0,0\n2=255,255,255\n\n';
   wif+='[WEAVING]\nShafts='+W+'\nTreadles='+H+'\nRising Shed=true\n\n';
-  wif+='[WARP]\nThreads='+W+'\nColor=1\n\n[WEFT]\nThreads='+H+'\nColor=2\n\n';
-  wif+='[THREADING]\n';for(let x=0;x<W;x++)wif+=(x+1)+'='+(x+1)+'\n';wif+='\n';
-  wif+='[TIEUP]\n';for(let t=0;t<H;t++){const s=[];for(let x=0;x<W;x++)if(grid[t][x])s.push(x+1);if(s.length)wif+=(t+1)+'='+s.join(',')+'\n';}wif+='\n';
-  wif+='[LIFTPLAN]\n';for(let y=0;y<H;y++){const s=[];for(let x=0;x<W;x++)if(grid[y][x])s.push(x+1);wif+=(y+1)+'='+s.join(',')+'\n';}
-  downloadFile('ganchos-'+name.replace(/\s+/g,'-')+'.wif',wif,'text/plain');
-}
-function doExportPNG(){
-  if(scriptMode){
-    var cvs=document.querySelector('#rugCanvas canvas');if(!cvs)return;
-    var pngName=document.getElementById('nameInput').value.trim()||'pattern';
-    var link=document.createElement('a');link.download='ganchos-'+pngName.replace(/\s+/g,'-')+'.png';link.href=cvs.toDataURL('image/png');link.click();return;
-  }
-  if(!grid.length)return;const name=document.getElementById('nameInput').value.trim()||'pattern';
-  const sc=4,ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;const ectx=ec.getContext('2d');
-  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';ectx.fillRect(x*sc,y*sc,sc,sc);}
-  const a=document.createElement('a');a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';a.href=ec.toDataURL('image/png');a.click();
-}
-function doExportSVG(){
-  const name=document.getElementById('nameInput').value.trim()||'pattern';
-  const fname='ganchos-'+name.replace(/\s+/g,'-')+'.svg';
-  let svg='';
-  if(scriptMode&&scriptPlacements.length>0){
-    const cw=scriptPlacements._cW||480,ch=scriptPlacements._cH||600;
-    svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+cw+'" height="'+ch+'" viewBox="0 0 '+cw+' '+ch+'">';
-    svg+='<rect width="100%" height="100%" fill="#F5F5F0"/>';
-    svg+='<style>@font-face{font-family:GanchosSans;src:url(GanchosSansv8-Regular.ttf);}</style>';
-    for(var i=0;i<scriptPlacements.length;i++){
-      var p=scriptPlacements[i];
-      var t='translate('+p.x+','+p.y+')';
-      if(p.rotation)t+=' rotate('+(p.rotation*180/Math.PI)+')';
-      if(p.flip)t+=' scale(-1,1)';
-      var a=p.alpha!==undefined?p.alpha/255:1;
-      svg+='<text transform="'+t+'" font-family="GanchosSans" font-size="'+p.size+'" fill="rgba(17,17,17,'+a.toFixed(2)+')" text-anchor="middle" dominant-baseline="central">'+p.ch+'</text>';
+  wif+='[WARP]\nThreads='+W+'\nColor=1\n\n';
+  wif+='[WEFT]\nThreads='+H+'\nColor=2\n\n';
+
+  // LIFTPLAN: for each weft pick (row), list which warp threads (columns) are lifted
+  wif+='[LIFTPLAN]\n';
+  for(var y=0;y<H;y++){
+    var lifted=[];
+    for(var x=0;x<W;x++){
+      if(grid[y][x])lifted.push(x+1);
     }
-    svg+='</svg>';
-  }else{
-    if(!grid.length)return;
-    const sc=4;
-    svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(W*sc)+'" height="'+(H*sc)+'" viewBox="0 0 '+(W*sc)+' '+(H*sc)+'">';
-    svg+='<rect width="100%" height="100%" fill="#F5F5F0"/>';
-    for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(grid[y][x])svg+='<rect x="'+(x*sc)+'" y="'+(y*sc)+'" width="'+sc+'" height="'+sc+'" fill="#111"/>';}
-    svg+='</svg>';
+    wif+=(y+1)+'='+lifted.join(',')+'\n';
   }
-  downloadFile(fname,svg,'image/svg+xml');
+
+  downloadFile(fname,wif,'text/plain');
 }
-function doExportTXT(){
-  if(scriptMode){
-    var sn=document.getElementById('nameInput').value.trim()||'pattern';
-    var st='GANCHOS TAALIM \u2014 Script Pattern\nName: '+sn+'\nGlyphs: '+scriptPlacements.length+'\n\nThis pattern uses undistorted Solitreo letterforms.\nNo grid instructions available for Script mode.\n';
-    navigator.clipboard.writeText(st).then(function(){var b=document.querySelector('.gen-export .btn-outline:last-child');if(b){var o=b.textContent;b.textContent='Copied!';setTimeout(function(){b.textContent=o;},1500);}}).catch(function(){alert('Copy failed.');});return;
+
+function doExportPNG(){
+  if(!grid||!grid.length)return;
+  var name=document.getElementById('nameInput').value.trim()||'pattern';
+  var sc=4;
+  var ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;
+  var ectx=ec.getContext('2d');
+  for(var y=0;y<H;y++)for(var x=0;x<W;x++){
+    ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';
+    ectx.fillRect(x*sc,y*sc,sc,sc);
   }
-  if(!grid.length)return;
-  let txt='TAALIM \u2014 Ganchos Taalim Generative Pattern\nName: '+document.getElementById('nameInput').value.trim()+'\nGrid: '+W+'\u00d7'+H+'\n\n';
-  for(let y=0;y<H;y++){const row=grid[y];let rle=[];let cx=W-1;while(cx>=0){const v=row[cx];let run=0;while(cx-run>=0&&row[cx-run]===v)run++;rle.push((v?'\u25a0':'\u25a1')+run);cx-=run;}txt+='Row '+(y+1)+': '+rle.join(' ')+'\n';}
-  navigator.clipboard.writeText(txt).then(()=>{const btn=document.querySelector('.gen-export .btn-outline:last-child');if(btn){const orig=btn.textContent;btn.textContent='Copied!';setTimeout(()=>btn.textContent=orig,1500);}}).catch(()=>alert('Copy failed.'));
+  var a=document.createElement('a');
+  a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';
+  a.href=ec.toDataURL('image/png');a.click();
+}
+
+function doExportSVG(){
+  if(!grid||!grid.length)return;
+  var name=document.getElementById('nameInput').value.trim()||'pattern';
+  var sc=4;
+  var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+(W*sc)+'" height="'+(H*sc)+'" viewBox="0 0 '+(W*sc)+' '+(H*sc)+'">';
+  svg+='<rect width="100%" height="100%" fill="#F5F5F0"/>';
+  for(var y=0;y<H;y++)for(var x=0;x<W;x++){
+    if(grid[y][x])svg+='<rect x="'+(x*sc)+'" y="'+(y*sc)+'" width="'+sc+'" height="'+sc+'" fill="#111"/>';
+  }
+  svg+='</svg>';
+  downloadFile('ganchos-'+name.replace(/\s+/g,'-')+'.svg',svg,'image/svg+xml');
 }
 
 // ─── p5.js RUG SKETCH ──────────────────────────────────────────
 function createRugSketch(containerEl){
   return new p5(function(p){
-    let cellSize=8;
-    p.setup=function(){const c=p.createCanvas(100,100);c.parent(containerEl);p.noLoop();p.pixelDensity(1);};
+    var cellSize=4;
+    p.setup=function(){var c=p.createCanvas(100,100);c.parent(containerEl);p.noLoop();p.pixelDensity(1);};
     p.draw=function(){
-      if(scriptMode&&scriptPlacements.length>0){
-        var cw=scriptPlacements._cW||480,_ch=scriptPlacements._cH||600;
-        p.resizeCanvas(cw,_ch);p.background(245,245,240);
-        p.textFont('GanchosSans');p.textAlign(p.CENTER,p.CENTER);p.noStroke();
-        for(var i=0;i<scriptPlacements.length;i++){var pl=scriptPlacements[i];
-          p.push();p.translate(pl.x,pl.y);
-          if(pl.rotation)p.rotate(pl.rotation);if(pl.flip)p.scale(-1,1);
-          p.fill(17,17,17,pl.alpha||255);p.textSize(pl.size);
-          p.text(pl.ch,0,0);p.pop();}
-        return;}
-      if(!grid||!grid.length){p.resizeCanvas(400,300);p.background(250,250,245);p.fill(180);p.noStroke();p.textFont('Inter, sans-serif');p.textSize(16);p.textAlign(p.CENTER,p.CENTER);p.text('Enter a name to generate a pattern',200,150);return;}
-      const maxW=containerEl.clientWidth||600,maxH=Math.min(window.innerHeight*0.65,700);
-      cellSize=Math.max(2,Math.floor(Math.min(maxW/W,maxH/H)));
-      p.resizeCanvas(W*cellSize,H*cellSize);p.background(245,245,240);p.noStroke();
-      for(let y=0;y<H;y++)for(let x=0;x<W;x++){if(grid[y][x]){p.fill(17,17,17);p.rect(x*cellSize,y*cellSize,cellSize,cellSize);}}
-      if(cellSize>5){p.stroke(0,0,0,12);p.strokeWeight(0.5);for(let x=0;x<=W;x++)p.line(x*cellSize,0,x*cellSize,H*cellSize);for(let y=0;y<=H;y++)p.line(0,y*cellSize,W*cellSize,y*cellSize);}
+      if(!grid||!grid.length){
+        p.resizeCanvas(400,300);p.background(250,250,245);
+        p.fill(180);p.noStroke();p.textFont('Inter, sans-serif');p.textSize(16);
+        p.textAlign(p.CENTER,p.CENTER);
+        p.text('Enter text to generate a pattern',200,150);return;
+      }
+      var maxW=containerEl.clientWidth||600;
+      var maxH=Math.min(window.innerHeight*0.65,700);
+      cellSize=Math.max(1,Math.floor(Math.min(maxW/W,maxH/H)));
+      p.resizeCanvas(W*cellSize,H*cellSize);
+      p.background(245,245,240);p.noStroke();
+      for(var y=0;y<H;y++)for(var x=0;x<W;x++){
+        if(grid[y][x]){p.fill(17,17,17);p.rect(x*cellSize,y*cellSize,cellSize,cellSize);}
+      }
+      // Grid lines only if cells are big enough
+      if(cellSize>5){
+        p.stroke(0,0,0,12);p.strokeWeight(0.5);
+        for(var gx=0;gx<=W;gx++)p.line(gx*cellSize,0,gx*cellSize,H*cellSize);
+        for(var gy=0;gy<=H;gy++)p.line(0,gy*cellSize,W*cellSize,gy*cellSize);
+      }
     };
     p.refresh=function(){p.redraw();};
   });
@@ -2123,20 +1354,20 @@ function saveToLibrary(name){
       thumb:thumb||'',
       timestamp:Date.now(),
       params:{
-        style:document.getElementById('patternStyle').value,
-        w:parseInt(document.getElementById('rugW').value)||18,
-        h:parseInt(document.getElementById('rugH').value)||30,
-        symmetry:document.getElementById('symmetryMode').value,
-        border:document.getElementById('borderStyle').value,
-        complexity:document.getElementById('complexityLevel').value,
+        interior:document.getElementById('interiorStructure').value,
+        exterior:document.getElementById('exteriorStructure').value,
+        layout:document.getElementById('layoutMode').value,
+        w:parseInt(document.getElementById('rugW').value)||128,
+        h:parseInt(document.getElementById('rugH').value)||128,
+        border:parseInt(document.getElementById('borderWidth').value)||0,
         remix:remixCounter
       }
     };
-    // Check for duplicate in current library (same name+style+remix)
+    // Check for duplicate in current library (same name+interior+remix)
     var dupKey=null;
     for(var i=0;i<libAll.length;i++){
       var e=libAll[i];
-      if(e.name===entry.name&&e.params.style===entry.params.style&&(e.params.remix||0)===(entry.params.remix||0)){
+      if(e.name===entry.name&&e.params.interior===entry.params.interior&&(e.params.remix||0)===(entry.params.remix||0)){
         dupKey=e._fbKey;break;
       }
     }
@@ -2184,8 +1415,9 @@ function renderLibrary(){
     var date=new Date(e.timestamp);
     var dateStr=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
     var timeStr=date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    var styleName=e.params.style||'letterform';
-    styleName=styleName.charAt(0).toUpperCase()+styleName.slice(1);
+    var intName=e.params.interior||'twill22';
+    var extName=e.params.exterior||'tabby';
+    var layoutName=e.params.layout||'centered';
     var fbKey=e._fbKey||'';
     html+='<div class="library-card" data-fb-key="'+fbKey+'">';
     if(e.thumb){
@@ -2195,8 +1427,9 @@ function renderLibrary(){
     }
     html+='<div class="lib-info">';
     html+='<div class="lib-name">'+escapeHTML(e.name)+'</div>';
-    html+='<div class="lib-params">'+styleName+' \u00b7 '+e.params.w+'\u00d7'+e.params.h+'<br>';
-    html+=e.params.symmetry+' sym \u00b7 '+e.params.complexity;
+    html+='<div class="lib-params">'+intName+' / '+extName+' \u00b7 '+e.params.w+'\u00d7'+e.params.h+'<br>';
+    html+=layoutName+' layout';
+    if(e.params.border>0)html+=' \u00b7 border '+e.params.border+'px';
     if(e.params.remix>0)html+=' \u00b7 remix #'+e.params.remix;
     html+='<br>'+dateStr+' '+timeStr+'</div>';
     html+='</div>';
@@ -2219,10 +1452,10 @@ function loadFromLibrary(fbKey){
   if(!entry)return;
   document.getElementById('nameInput').value=entry.name;
   document.getElementById('solitreoText').textContent=transliterate(entry.name);
-  document.getElementById('patternStyle').value=entry.params.style;
-  document.getElementById('symmetryMode').value=entry.params.symmetry;
-  document.getElementById('borderStyle').value=entry.params.border;
-  document.getElementById('complexityLevel').value=entry.params.complexity;
+  if(entry.params.interior)document.getElementById('interiorStructure').value=entry.params.interior;
+  if(entry.params.exterior)document.getElementById('exteriorStructure').value=entry.params.exterior;
+  if(entry.params.layout)document.getElementById('layoutMode').value=entry.params.layout;
+  document.getElementById('borderWidth').value=entry.params.border||0;
   document.getElementById('rugW').value=entry.params.w;
   document.getElementById('rugH').value=entry.params.h;
   remixCounter=entry.params.remix||0;
@@ -2243,24 +1476,23 @@ function clearLibrary(){
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
-let debounceTimer=null;
+var debounceTimer=null;
 document.getElementById('nameInput').addEventListener('input',function(){
   document.getElementById('solitreoText').textContent=transliterate(this.value);
   clearTimeout(debounceTimer);
-  debounceTimer=setTimeout(()=>{remixCounter=0;generatePattern();},300);
+  debounceTimer=setTimeout(function(){remixCounter=0;generatePattern();},500);
 });
-document.getElementById('remixBtn').addEventListener('click',()=>{remixCounter++;generatePattern();});
+document.getElementById('remixBtn').addEventListener('click',function(){remixCounter++;generatePattern();});
 document.getElementById('rugPreset').addEventListener('change',function(){
-  const v=this.value;if(v){const[w,h]=v.split(',').map(Number);document.getElementById('rugW').value=w;document.getElementById('rugH').value=h;}
+  var v=this.value;if(v){var parts=v.split(',');document.getElementById('rugW').value=parts[0];document.getElementById('rugH').value=parts[1];}
   generatePattern();
 });
-document.getElementById('rugW').addEventListener('change',()=>{document.getElementById('rugPreset').value='';generatePattern();});
-document.getElementById('rugH').addEventListener('change',()=>{document.getElementById('rugPreset').value='';generatePattern();});
-// Pattern params trigger regenerate
-document.getElementById('patternStyle').addEventListener('change',()=>generatePattern());
-document.getElementById('symmetryMode').addEventListener('change',()=>generatePattern());
-document.getElementById('borderStyle').addEventListener('change',()=>generatePattern());
-document.getElementById('complexityLevel').addEventListener('change',()=>generatePattern());
+document.getElementById('rugW').addEventListener('change',function(){document.getElementById('rugPreset').value='';generatePattern();});
+document.getElementById('rugH').addEventListener('change',function(){document.getElementById('rugPreset').value='';generatePattern();});
+document.getElementById('interiorStructure').addEventListener('change',function(){generatePattern();});
+document.getElementById('exteriorStructure').addEventListener('change',function(){generatePattern();});
+document.getElementById('layoutMode').addEventListener('change',function(){generatePattern();});
+document.getElementById('borderWidth').addEventListener('change',function(){generatePattern();});
 
 // Library: Clear All button & fetch shared library on load
 document.getElementById('libClearAll').addEventListener('click',clearLibrary);
