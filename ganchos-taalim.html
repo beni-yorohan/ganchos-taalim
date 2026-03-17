@@ -507,11 +507,11 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
   <div class="generator-frame">
     <div class="gen-header">
       <h2>Generate Your Pattern</h2>
-      <p>Type a name in Latin letters. Adjust style and parameters below.</p>
+      <p>Type text in Latin letters. Letters become visible through texture differentiation &mdash; like damask or brocade.</p>
     </div>
 
     <div class="name-input-wrap">
-      <input type="text" id="nameInput" placeholder="Enter a name" autocomplete="off" spellcheck="false">
+      <input type="text" id="nameInput" placeholder="Enter text" autocomplete="off" spellcheck="false">
     </div>
 
     <div class="solitreo-display">
@@ -519,59 +519,58 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
     </div>
 
     <div class="gen-controls">
-      <label>Size
+      <label>Canvas
         <select id="rugPreset" autocomplete="off">
-          <option value="18,30" selected>Yastik 18x30</option>
-          <option value="36,60">Seccade 36x60</option>
-          <option value="48,72">Accent 48x72</option>
-          <option value="30,96">Runner 30x96</option>
-          <option value="60,90">Area 60x90</option>
+          <option value="64,64">Sampler 64&times;64</option>
+          <option value="128,128" selected>Pillow 128&times;128</option>
+          <option value="256,256">Wall Hanging 256&times;256</option>
+          <option value="256,128">Runner 256&times;128</option>
+          <option value="128,256">Prayer Rug 128&times;256</option>
           <option value="">Custom</option>
         </select>
       </label>
-      <label>W <input type="number" id="rugW" value="18" min="8" max="256"></label>
-      <label>H <input type="number" id="rugH" value="30" min="8" max="256"></label>
-      <button class="btn" id="remixBtn">Remix</button>
+      <label>W <input type="number" id="rugW" value="128" min="32" max="512"></label>
+      <label>H <input type="number" id="rugH" value="128" min="32" max="512"></label>
     </div>
 
     <div class="gen-params">
-      <label>Style
-        <select id="patternStyle" autocomplete="off">
-          <option value="letterform" selected>Letterform</option>
-          <option value="geometric">Geometric</option>
-          <option value="kilim">Kilim</option>
-          <option value="medallion">Medallion</option>
-          <option value="striped">Striped</option>
-          <option value="script">Script</option>
-          <option value="draft">Draft (Binary Textile)</option>
-          <option value="motif">Motif (Letter-as-Symbol)</option>
+      <label>Interior Structure
+        <select id="interiorStructure" autocomplete="off">
+          <option value="twill22" selected>2/2 Twill</option>
+          <option value="twill21">2/1 Twill</option>
+          <option value="satin5">5-Shaft Satin</option>
+          <option value="basket">Basket Weave</option>
+          <option value="tabby">Plain Weave</option>
         </select>
       </label>
-      <label>Symmetry
-        <select id="symmetryMode" autocomplete="off">
-          <option value="auto" selected>Auto</option>
-          <option value="none">None</option>
-          <option value="vertical">Vertical</option>
-          <option value="horizontal">Horizontal</option>
-          <option value="both">Both</option>
+      <label>Exterior Structure
+        <select id="exteriorStructure" autocomplete="off">
+          <option value="tabby" selected>Plain Weave</option>
+          <option value="twill22">2/2 Twill</option>
+          <option value="twill21">2/1 Twill</option>
+          <option value="satin5">5-Shaft Satin</option>
+          <option value="basket">Basket Weave</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="gen-params">
+      <label>Layout
+        <select id="layoutMode" autocomplete="off">
+          <option value="centered" selected>Centered Block</option>
+          <option value="tiled">Tiled Repeat</option>
+          <option value="flowing">Flowing Fill</option>
         </select>
       </label>
       <label>Border
-        <select id="borderStyle" autocomplete="off">
-          <option value="auto" selected>Auto</option>
-          <option value="none">None</option>
-          <option value="simple">Simple</option>
-          <option value="double">Double</option>
-          <option value="stepped">Stepped</option>
+        <select id="borderWidth" autocomplete="off">
+          <option value="0">None</option>
+          <option value="4" selected>Thin</option>
+          <option value="8">Medium</option>
+          <option value="16">Wide</option>
         </select>
       </label>
-      <label>Complexity
-        <select id="complexityLevel" autocomplete="off">
-          <option value="simple">Simple</option>
-          <option value="medium" selected>Medium</option>
-          <option value="complex">Complex</option>
-        </select>
-      </label>
+      <button class="btn" id="remixBtn">Remix</button>
     </div>
 
     <div class="canvas-wrap">
@@ -584,13 +583,12 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
       <button class="btn-outline" onclick="doExportWIF()">Export WIF</button>
       <button class="btn-outline" onclick="doExportPNG()">Export PNG</button>
       <button class="btn-outline" onclick="doExportSVG()">Export SVG</button>
-      <button class="btn-outline" onclick="doExportTXT()">Copy Taalim</button>
     </div>
 
     <details class="gen-taalim">
       <summary>Weaving Instructions (Taalim)</summary>
       <div class="taalim-content" id="taalimBody">
-        <p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>
+        <p style="color:var(--text-3);font-size:14px;">Enter text to generate weaving instructions.</p>
       </div>
     </details>
   </div>
