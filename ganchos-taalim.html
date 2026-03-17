@@ -2065,49 +2065,28 @@ function buildSpecimen(){
   })();
 }
 
-// ─── LIBRARY (shared community + local) ─────────────────────────
-// Patterns are deterministic: same name + params = same pattern.
-// So we only store params (tiny JSON), and regenerate thumbnails on the fly.
-var LIBRARY_LOCAL_KEY='ganchos_library';
+// ─── LIBRARY (shared via Firebase Realtime Database) ────────────
+var FIREBASE_DB='https://ganchos-taalim-default-rtdb.firebaseio.com';
 var libSaveTimer=null;
-var libLocal=[];
-var libShared=[];
-var libMerged=[];
+var libAll=[];// all patterns from Firebase
 
-function getLocalLib(){
-  try{var d=localStorage.getItem(LIBRARY_LOCAL_KEY);return d?JSON.parse(d):[];}catch(e){return [];}
-}
-function setLocalLib(arr){
-  try{localStorage.setItem(LIBRARY_LOCAL_KEY,JSON.stringify(arr));}catch(e){}
-}
-
-// Fetch community library from same-origin JSON file (no CORS issues)
 function fetchSharedLibrary(cb){
-  fetch('library.json?t='+Date.now())
+  fetch(FIREBASE_DB+'/patterns.json')
     .then(function(r){return r.json();})
     .then(function(data){
-      libShared=Array.isArray(data.patterns)?data.patterns:[];
-      mergeLibraries();
+      if(data&&typeof data==='object'&&!Array.isArray(data)){
+        // Firebase stores as object with push keys
+        libAll=Object.keys(data).map(function(k){var e=data[k];e._fbKey=k;return e;});
+        // Sort newest first
+        libAll.sort(function(a,b){return(b.timestamp||0)-(a.timestamp||0);});
+      } else {
+        libAll=[];
+      }
       if(cb)cb();
     }).catch(function(){
-      libShared=[];
-      mergeLibraries();
+      libAll=[];
       if(cb)cb();
     });
-}
-
-function mergeLibraries(){
-  libLocal=getLocalLib();
-  var seen={};
-  libMerged=[];
-  for(var i=0;i<libLocal.length;i++){
-    var k=libLocal[i].name+'|'+libLocal[i].params.style+'|'+(libLocal[i].params.remix||0);
-    if(!seen[k]){seen[k]=1;libMerged.push(libLocal[i]);}
-  }
-  for(i=0;i<libShared.length;i++){
-    var k2=libShared[i].name+'|'+libShared[i].params.style+'|'+(libShared[i].params.remix||0);
-    if(!seen[k2]){seen[k2]=1;var e=Object.assign({},libShared[i]);e.shared=true;libMerged.push(e);}
-  }
 }
 
 // Generate a tiny thumbnail from params (no stored images needed)
