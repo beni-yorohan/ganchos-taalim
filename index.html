@@ -1067,157 +1067,270 @@ function generateField(g,w,h,bw,features,comp,rng){
   applySymmetry(g,ix,iy,iw,ih,comp.symmetryMode);
 }
 
-// ─── SCRIPT MODE (compound letterform shapes on grid) ───────────
-function rotateBitmap(bmp,angle){
-  // Rotate a square bitmap by angle (radians). Returns new bitmap same size.
-  const n=bmp.length;const out=[];
-  for(let y=0;y<n;y++){out[y]=[];for(let x=0;x<n;x++)out[y][x]=0;}
-  const cx=n/2,cy=n/2;const cos=Math.cos(angle),sin=Math.sin(angle);
-  for(let y=0;y<n;y++)for(let x=0;x<n;x++){
-    const sx=Math.round(cx+(x-cx)*cos+(y-cy)*sin);
-    const sy=Math.round(cy-(x-cx)*sin+(y-cy)*cos);
-    if(sx>=0&&sx<n&&sy>=0&&sy<n)out[y][x]=bmp[sy][sx];
-  }
-  return out;
-}
+// ─── SCRIPT MODE (letterforms as rug motifs) ────────────────────
+// Helpers for bitmap manipulation
 function scaleBitmap(bmp,newSize){
-  const n=bmp.length;const out=[];
-  for(let y=0;y<newSize;y++){out[y]=[];for(let x=0;x<newSize;x++){
-    const sy=Math.floor(y*n/newSize),sx=Math.floor(x*n/newSize);
-    out[y][x]=bmp[sy]&&bmp[sy][sx]?1:0;
+  var n=bmp.length;var out=[];
+  for(var y=0;y<newSize;y++){out[y]=[];for(var x=0;x<newSize;x++){
+    var sy=Math.floor(y*n/newSize),sx=Math.floor(x*n/newSize);
+    out[y][x]=(bmp[sy]&&bmp[sy][sx])?1:0;
   }}
   return out;
 }
-function combineBitmaps(a,b,op){
-  const n=a.length;const out=[];
-  for(let y=0;y<n;y++){out[y]=[];for(let x=0;x<n;x++){
-    if(op==='xor')out[y][x]=(a[y][x]!==b[y][x])?1:0;
-    else if(op==='and')out[y][x]=(a[y][x]&&b[y][x])?1:0;
-    else out[y][x]=(a[y][x]||b[y][x])?1:0; // or
-  }}
+function mirrorBitmapH(bmp){
+  var n=bmp.length;var out=[];
+  for(var y=0;y<n;y++){out[y]=[];for(var x=0;x<n;x++)out[y][x]=bmp[y][n-1-x];}
   return out;
+}
+function mirrorBitmapV(bmp){
+  var n=bmp.length;var out=[];
+  for(var y=0;y<n;y++){out[y]=[];for(var x=0;x<n;x++)out[y][x]=bmp[n-1-y][x];}
+  return out;
+}
+function stampBitmap(g,bmp,gx,gy,W,H){
+  var n=bmp.length;
+  for(var y=0;y<n;y++)for(var x=0;x<n;x++){
+    var ry=gy+y,rx=gx+x;
+    if(ry>=0&&ry<H&&rx>=0&&rx<W&&bmp[y][x])g[ry][rx]=1;
+  }
 }
 function generateScriptMode(name){
   scriptMode=false;scriptPlacements=[];
-  const seed=remixCounter>0?name+'_'+remixCounter:name;
-  const rng=createPRNG(seed);
-  const chars=transliterateToChars(name);
+  var seed=remixCounter>0?name+'_'+remixCounter:name;
+  var rng=createPRNG(seed);
+  var chars=transliterateToChars(name);
   if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='No transliterable characters found.';
     document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
   W=parseInt(document.getElementById('rugW').value)||18;
   H=parseInt(document.getElementById('rugH').value)||30;
   document.getElementById('solitreoText').textContent=transliterate(name);
-  const complexity=document.getElementById('complexityLevel').value;
-  const symSel=document.getElementById('symmetryMode').value;
-  const borderSel=document.getElementById('borderStyle').value;
-  // Tile size based on complexity
-  const tileSize=complexity==='simple'?16:complexity==='complex'?24:20;
-  // Rasterize all letters as bitmaps at tile size
-  const bmps=chars.map(function(ch){return rasterizeFromFont(ch,tileSize);}).filter(Boolean);
-  if(!bmps.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();return;}
-  // Create compound tiles by combining pairs of letter bitmaps
-  const ops=['xor','or','and'];
-  const compounds=[];
-  const compoundDescs=[];
-  // Strategy: pick from 4 combination approaches based on seed
-  const strategy=Math.floor(rng()*4);
-  // 0: overlay pairs at different rotations
-  // 1: nest one letter inside another (scale + OR)
-  // 2: rotate same letter by increments and XOR
-  // 3: combine 3 letters with mixed ops
-  for(let i=0;i<bmps.length;i++){
-    const a=bmps[i];
-    const b=bmps[(i+1)%bmps.length];
-    const c=bmps[(i+2)%bmps.length];
-    let tile;
-    switch(strategy){
-      case 0:{ // Rotated overlay — XOR two letters at different angles
-        const angle=(Math.PI/6)+(rng()*Math.PI/3);
-        const rotB=rotateBitmap(b,angle);
-        const op=ops[Math.floor(rng()*2)]; // xor or or
-        tile=combineBitmaps(a,rotB,op);
-        break;
-      }
-      case 1:{ // Nested — shrink one letter, center inside another
-        const inner=scaleBitmap(b,Math.floor(tileSize*0.5));
-        const padded=[];
-        for(let y=0;y<tileSize;y++){padded[y]=[];for(let x=0;x<tileSize;x++)padded[y][x]=0;}
-        const off=Math.floor((tileSize-inner.length)/2);
-        for(let y=0;y<inner.length;y++)for(let x=0;x<inner[0].length;x++){
-          padded[off+y][off+x]=inner[y][x];
-        }
-        tile=combineBitmaps(a,padded,rng()>0.5?'xor':'or');
-        break;
-      }
-      case 2:{ // Self-rotation — same letter XORed with rotated copies
-        const r1=rotateBitmap(a,Math.PI/4);
-        const r2=rotateBitmap(a,Math.PI/2);
-        tile=combineBitmaps(combineBitmaps(a,r1,'xor'),r2,'or');
-        break;
-      }
-      default:{ // Triple merge — three letters combined
-        const rotA=rotateBitmap(a,rng()*Math.PI*0.5);
-        const rotC=rotateBitmap(c,Math.PI/2+rng()*Math.PI*0.5);
-        tile=combineBitmaps(combineBitmaps(rotA,b,'xor'),rotC,'or');
-        break;
-      }
-    }
-    compounds.push(tile);
-    compoundDescs.push(chars[i]+'+'+chars[(i+1)%chars.length]);
-  }
-  // Build rug grid by tiling compound shapes
+  var complexity=document.getElementById('complexityLevel').value;
+  var symSel=document.getElementById('symmetryMode').value;
+  var borderSel=document.getElementById('borderStyle').value;
+  // Initialize empty grid
   grid=[];
-  for(let y=0;y<H;y++){grid[y]=[];for(let x=0;x<W;x++)grid[y][x]=0;}
-  // Determine how many tiles fit, tile with alternation
-  const tilesX=Math.ceil(W/tileSize);
-  const tilesY=Math.ceil(H/tileSize);
-  // Border
-  let bCells=0;
-  if(borderSel==='simple'||borderSel==='auto')bCells=1;
-  else if(borderSel==='double'||borderSel==='stepped')bCells=2;
-  for(let ty=0;ty<tilesY;ty++){
-    for(let tx=0;tx<tilesX;tx++){
-      const tileIdx=(ty*tilesX+tx)%compounds.length;
-      const tile=compounds[tileIdx];
-      // Optionally flip tile for variety
-      const flipH=(ty%2===1);
-      const flipV=(tx%2===1);
-      for(let py=0;py<tileSize;py++){
-        for(let px=0;px<tileSize;px++){
-          const gy=ty*tileSize+py;
-          const gx=tx*tileSize+px;
-          if(gy>=H||gx>=W)continue;
-          const sy=flipV?(tileSize-1-py):py;
-          const sx=flipH?(tileSize-1-px):px;
-          if(tile[sy]&&tile[sy][sx])grid[gy][gx]=1;
-        }
+  for(var y=0;y<H;y++){grid[y]=[];for(var x=0;x<W;x++)grid[y][x]=0;}
+  // Rasterize letters at a small size so they become geometric/pixelated
+  var motifSize=complexity==='simple'?6:complexity==='complex'?10:8;
+  var bmps=[];
+  for(var i=0;i<chars.length;i++){
+    var b=rasterizeFromFont(chars[i],motifSize);
+    if(b)bmps.push(b);
+  }
+  if(!bmps.length){W=0;H=0;if(rugSketch)rugSketch.refresh();return;}
+  // ── OUTER BORDER: stepped frame ──
+  var borderW=complexity==='simple'?1:complexity==='complex'?3:2;
+  if(borderSel==='none')borderW=0;
+  else if(borderSel==='double'||borderSel==='stepped')borderW=Math.min(borderW+1,4);
+  // Solid outer line
+  for(y=0;y<H;y++)for(x=0;x<W;x++){
+    if(y<borderW||y>=H-borderW||x<borderW||x>=W-borderW)grid[y][x]=1;
+  }
+  // Inner zigzag border band using first letter motif
+  var zigW=borderW>0?Math.max(1,Math.floor(borderW*0.7)+1):0;
+  if(zigW>0&&borderW>1){
+    var zigY1=borderW,zigY2=borderW+zigW;
+    for(y=zigY1;y<Math.min(zigY2,H-borderW);y++){
+      for(x=borderW;x<W-borderW;x++){
+        var phase=(x+y)%4;
+        if(phase===0||phase===1)grid[y][x]=1;
+      }
+    }
+    // Mirror at bottom
+    for(y=H-borderW-zigW;y<H-borderW;y++){
+      for(x=borderW;x<W-borderW;x++){
+        var phase2=(x+y)%4;
+        if(phase2===0||phase2===1)grid[y][x]=1;
+      }
+    }
+    // Left/right zigzag borders
+    for(y=borderW;y<H-borderW;y++){
+      for(x=borderW;x<Math.min(borderW+zigW,W-borderW);x++){
+        var phase3=(x+y)%4;
+        if(phase3===0||phase3===1)grid[y][x]=1;
+      }
+      for(x=W-borderW-zigW;x<W-borderW;x++){
+        var phase4=(x+y)%4;
+        if(phase4===0||phase4===1)grid[y][x]=1;
       }
     }
   }
-  // Border frame
-  if(bCells>0){
-    for(let y=0;y<H;y++)for(let x=0;x<W;x++){
-      if(y<bCells||y>=H-bCells||x<bCells||x>=W-bCells)grid[y][x]=1;
+  // ── INTERIOR: divide into horizontal bands ──
+  var innerX=borderW+zigW;
+  var innerY=borderW+zigW;
+  var innerW=W-2*(borderW+zigW);
+  var innerH=H-2*(borderW+zigW);
+  if(innerW<4||innerH<4){if(rugSketch)rugSketch.refresh();return;}
+  // Number of bands based on name length and complexity
+  var bandCount=Math.max(3,Math.min(chars.length+2,complexity==='simple'?5:complexity==='complex'?9:7));
+  var bandH=Math.floor(innerH/bandCount);
+  var layoutDesc=[];
+  for(var band=0;band<bandCount;band++){
+    var by=innerY+band*bandH;
+    var bh=(band===bandCount-1)?innerH-band*bandH:bandH;
+    var bmpIdx=band%bmps.length;
+    var letterBmp=bmps[bmpIdx];
+    // Alternate between band types
+    var bandType;
+    if(band===0||band===bandCount-1){
+      bandType='repeat'; // top/bottom: repeating letter border
+    } else if(band===Math.floor(bandCount/2)){
+      bandType='diamond'; // center: diamond medallion with letter
+    } else if(band%3===1){
+      bandType='zigzag'; // zigzag fill derived from letter
+    } else if(band%3===2){
+      bandType='stepped'; // stepped diamonds with letter motifs
+    } else {
+      bandType='repeat';
+    }
+    switch(bandType){
+      case 'repeat':{
+        // Tile the letter motif horizontally, mirrored alternately
+        var motif=scaleBitmap(letterBmp,Math.min(bh,motifSize));
+        var mw=motif[0].length,mh=motif.length;
+        for(var tx=0;tx<Math.ceil(innerW/mw);tx++){
+          var useMirror=(tx%2===1);
+          var src=useMirror?mirrorBitmapH(motif):motif;
+          for(var py=0;py<mh&&py<bh;py++)for(var px=0;px<mw;px++){
+            var ry=by+py,rx=innerX+tx*mw+px;
+            if(ry<H&&rx<W&&rx>=innerX&&rx<innerX+innerW&&src[py]&&src[py][px])grid[ry][rx]=1;
+          }
+        }
+        layoutDesc.push('repeat band');
+        break;
+      }
+      case 'diamond':{
+        // Stepped diamond frame centered in band, letter motif inside
+        var dSize=Math.min(bh,innerW,Math.floor(Math.max(bh,innerW)*0.8));
+        var dCx=Math.floor(innerW/2);
+        var dCy=Math.floor(bh/2);
+        var dRad=Math.floor(dSize/2)-1;
+        // Draw stepped diamond outline
+        for(var dy=-dRad;dy<=dRad;dy++){
+          var dWidth=dRad-Math.abs(dy);
+          var ry2=by+dCy+dy;
+          if(ry2<0||ry2>=H)continue;
+          // Left and right edges of diamond (2px thick for visibility)
+          for(var t=0;t<Math.min(2,dWidth);t++){
+            var lx=innerX+dCx-dWidth+t;
+            var rrx=innerX+dCx+dWidth-t;
+            if(lx>=0&&lx<W)grid[ry2][lx]=1;
+            if(rrx>=0&&rrx<W)grid[ry2][rrx]=1;
+          }
+          // Top and bottom edges
+          if(Math.abs(dy)>=dRad-1){
+            for(var fx=dCx-dWidth;fx<=dCx+dWidth;fx++){
+              var fxx=innerX+fx;
+              if(fxx>=0&&fxx<W)grid[ry2][fxx]=1;
+            }
+          }
+        }
+        // Stamp letter motif in center of diamond
+        var centerMotif=scaleBitmap(letterBmp,Math.min(dRad,motifSize));
+        var cmx=innerX+dCx-Math.floor(centerMotif[0].length/2);
+        var cmy=by+dCy-Math.floor(centerMotif.length/2);
+        stampBitmap(grid,centerMotif,cmx,cmy,W,H);
+        // Fill corners outside diamond with small repeating motif from next letter
+        var cornerBmp=bmps[(bmpIdx+1)%bmps.length];
+        var cornerMotif=scaleBitmap(cornerBmp,Math.max(3,Math.floor(motifSize*0.5)));
+        var cm=cornerMotif.length;
+        for(var cy2=0;cy2<bh;cy2++){
+          for(var cx2=0;cx2<innerW;cx2++){
+            var distFromCenter=Math.abs(cx2-dCx)+Math.abs(cy2-dCy);
+            if(distFromCenter>dRad+2){
+              var my2=cy2%cm,mx2=cx2%cm;
+              var gy2=by+cy2,gx2=innerX+cx2;
+              if(gy2<H&&gx2<W&&cornerMotif[my2]&&cornerMotif[my2][mx2])grid[gy2][gx2]=1;
+            }
+          }
+        }
+        layoutDesc.push('diamond medallion');
+        break;
+      }
+      case 'zigzag':{
+        // Zigzag band: letter shapes placed at zigzag peaks
+        var zagAmp=Math.floor(bh*0.35);
+        var zagPeriod=Math.max(6,motifSize*2);
+        // Draw zigzag lines
+        for(x=0;x<innerW;x++){
+          var zagPhase=(x%zagPeriod)/zagPeriod;
+          var zagOffset=zagPhase<0.5?Math.floor(zagAmp*2*zagPhase):Math.floor(zagAmp*2*(1-zagPhase));
+          var lineY=by+Math.floor(bh/2)-zagAmp+zagOffset;
+          // Draw thick zigzag line (2 rows)
+          for(var lt=-1;lt<=0;lt++){
+            if(lineY+lt>=0&&lineY+lt<H){
+              var lxx=innerX+x;
+              if(lxx>=0&&lxx<W)grid[lineY+lt][lxx]=1;
+            }
+          }
+          // At peaks, stamp small letter motif
+          if(x%zagPeriod===0||x%zagPeriod===Math.floor(zagPeriod/2)){
+            var peakMotif=scaleBitmap(letterBmp,Math.max(3,Math.min(4,Math.floor(bh*0.4))));
+            stampBitmap(grid,peakMotif,innerX+x-Math.floor(peakMotif[0].length/2),lineY-peakMotif.length,W,H);
+          }
+        }
+        layoutDesc.push('zigzag band');
+        break;
+      }
+      case 'stepped':{
+        // Repeating stepped diamonds with letter centers
+        var stepSize=Math.min(bh-2,Math.floor(innerW/(Math.max(2,Math.floor(innerW/(bh+2))))));
+        var stepRad=Math.floor(stepSize/2);
+        var stepCount=Math.max(1,Math.floor(innerW/(stepSize+2)));
+        var stepSpacing=Math.floor(innerW/stepCount);
+        for(var si=0;si<stepCount;si++){
+          var scx=innerX+Math.floor(stepSpacing/2)+si*stepSpacing;
+          var scy=by+Math.floor(bh/2);
+          // Stepped diamond outline
+          for(var sdy=-stepRad;sdy<=stepRad;sdy++){
+            var sw=stepRad-Math.abs(sdy);
+            var sry=scy+sdy;
+            if(sry<0||sry>=H)continue;
+            // Stepped: only draw at even intervals for staircase effect
+            var steppedW=Math.floor(sw/2)*2;
+            for(var st=-1;st<=0;st++){
+              var slx=scx-steppedW+st,srx=scx+steppedW-st;
+              if(slx>=0&&slx<W)grid[sry][slx]=1;
+              if(srx>=0&&srx<W)grid[sry][srx]=1;
+            }
+          }
+          // Letter in center
+          var sMotif=scaleBitmap(bmps[si%bmps.length],Math.max(3,Math.min(stepRad-1,5)));
+          stampBitmap(grid,sMotif,scx-Math.floor(sMotif[0].length/2),scy-Math.floor(sMotif.length/2),W,H);
+        }
+        layoutDesc.push('stepped diamonds');
+        break;
+      }
+    }
+    // Divider line between bands
+    if(band<bandCount-1){
+      var divY=by+bh-1;
+      if(divY>=0&&divY<H){
+        for(x=innerX;x<innerX+innerW&&x<W;x++)grid[divY][x]=1;
+      }
     }
   }
-  // Apply symmetry
-  let symMode=0;
+  // ── SYMMETRY ──
+  var symMode=0;
   if(symSel==='vertical')symMode=1;
   else if(symSel==='horizontal')symMode=2;
   else if(symSel==='both')symMode=3;
-  else if(symSel==='auto')symMode=rng()>0.4?3:1;
-  if(symMode)applySymmetry(grid,0,0,W,H,symMode);
+  else if(symSel==='auto')symMode=rng()>0.3?1:3;
+  if(symMode)applySymmetry(grid,innerX,innerY,innerW,innerH,symMode);
   if(rugSketch)rugSketch.refresh();
-  var stratNames=['rotated overlay','nested letters','self-rotation','triple merge'];
+  var uniqueBands=[];
+  for(i=0;i<layoutDesc.length;i++){if(uniqueBands.indexOf(layoutDesc[i])<0)uniqueBands.push(layoutDesc[i]);}
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+compounds.length+' compound shapes \u00b7 '+stratNames[strategy]+' \u00b7 seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+bandCount+' bands \u00b7 '+uniqueBands.join(', ')+' \u00b7 seed: '+seed;
   var body=document.getElementById('taalimBody');
-  var html='<div class="taalim-section"><h3>Script Pattern — Compound Shapes</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">Letters are merged into compound forms using <strong>'+stratNames[strategy]+'</strong> — ';
-  html+='each letter\u2019s bitmap is combined with its neighbor through boolean operations (XOR, OR, AND) to create new shapes.</p>';
+  var html='<div class="taalim-section"><h3>Script Pattern</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">Solitreo letterforms woven into a traditional rug structure — ';
+  html+='horizontal bands with <strong>'+uniqueBands.join('</strong>, <strong>')+'</strong> patterns. ';
+  html+='Each letter becomes a geometric motif at '+motifSize+'\u00d7'+motifSize+' pixels, ';
+  html+='framed by stepped diamonds and zigzag borders.</p>';
   html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);">'+compounds.length+' tiles \u00b7 '+tileSize+'\u00d7'+tileSize+'px each';
+  html+='<p style="font-size:14px;color:var(--text-3);">'+bandCount+' bands \u00b7 '+W+'\u00d7'+H+' grid';
   html+='</p></div>';body.innerHTML=html;
 }
 
