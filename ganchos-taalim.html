@@ -1256,7 +1256,7 @@ const MOTIF_MAP={
 function defaultMotif(g,x,y,s){
   var c=Math.floor(s/2);for(var i=0;i<s;i++)for(var j=0;j<s;j++){
     var dx=Math.abs(i-c),dy=Math.abs(j-c);
-    if(dx+dy<=c)g[y+j][x+i]=1;} // diamond
+    if(dx+dy<=c)safeSet(g,y+j,x+i,1);}
 }
 
 function generateMotifMode(name){
