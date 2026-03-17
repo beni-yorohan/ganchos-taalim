@@ -2065,6 +2065,166 @@ function buildSpecimen(){
   })();
 }
 
+// ─── LIBRARY ────────────────────────────────────────────────────
+var LIBRARY_KEY='ganchos_library';
+var libSaveTimer=null;
+
+function getLibrary(){
+  try{var d=localStorage.getItem(LIBRARY_KEY);return d?JSON.parse(d):[];}
+  catch(e){return [];}
+}
+function setLibrary(arr){
+  try{localStorage.setItem(LIBRARY_KEY,JSON.stringify(arr));}catch(e){}
+}
+
+function captureThumb(){
+  // Capture current canvas as a small thumbnail dataURL
+  try{
+    var cvs=document.querySelector('#rugCanvas canvas');
+    if(cvs){
+      var tc=document.createElement('canvas');
+      var tw=200,th=Math.round(200*(cvs.height/cvs.width));
+      tc.width=tw;tc.height=th;
+      tc.getContext('2d').drawImage(cvs,0,0,tw,th);
+      return tc.toDataURL('image/jpeg',0.7);
+    }
+    // Fallback for grid-based (non-script) modes: render grid to small canvas
+    if(grid&&grid.length&&W&&H){
+      var sc=Math.max(1,Math.min(Math.floor(200/W),Math.floor(260/H)));
+      var fc=document.createElement('canvas');fc.width=W*sc;fc.height=H*sc;
+      var fx=fc.getContext('2d');
+      for(var y=0;y<H;y++)for(var x=0;x<W;x++){
+        fx.fillStyle=grid[y][x]?'#111':'#F5F5F0';fx.fillRect(x*sc,y*sc,sc,sc);
+      }
+      return fc.toDataURL('image/jpeg',0.7);
+    }
+  }catch(e){}
+  return null;
+}
+
+function saveToLibrary(name){
+  // Debounce: don't save on every keystroke, wait 800ms after last generation
+  clearTimeout(libSaveTimer);
+  libSaveTimer=setTimeout(function(){
+    if(!name)return;
+    var thumb=captureThumb();
+    if(!thumb)return;
+    var entry={
+      id:Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      name:name,
+      thumb:thumb,
+      timestamp:Date.now(),
+      params:{
+        style:document.getElementById('patternStyle').value,
+        w:parseInt(document.getElementById('rugW').value)||18,
+        h:parseInt(document.getElementById('rugH').value)||30,
+        symmetry:document.getElementById('symmetryMode').value,
+        border:document.getElementById('borderStyle').value,
+        complexity:document.getElementById('complexityLevel').value,
+        remix:remixCounter
+      }
+    };
+    var lib=getLibrary();
+    // Avoid duplicate: if same name+style+remix exists, update it
+    var dupIdx=-1;
+    for(var i=0;i<lib.length;i++){
+      if(lib[i].name===entry.name&&lib[i].params.style===entry.params.style&&lib[i].params.remix===entry.params.remix){
+        dupIdx=i;break;
+      }
+    }
+    if(dupIdx>=0)lib[dupIdx]=entry;
+    else lib.unshift(entry);
+    // Cap at 50 entries to avoid localStorage limits
+    if(lib.length>50)lib=lib.slice(0,50);
+    setLibrary(lib);
+    renderLibrary();
+  },800);
+}
+
+function renderLibrary(){
+  var lib=getLibrary();
+  var gridEl=document.getElementById('libraryGrid');
+  var emptyEl=document.getElementById('libraryEmpty');
+  var countEl=document.getElementById('libCount');
+  var clearBtn=document.getElementById('libClearAll');
+  if(!gridEl)return;
+
+  if(lib.length===0){
+    gridEl.innerHTML='';
+    emptyEl.style.display='block';
+    countEl.textContent='';
+    clearBtn.style.display='none';
+    return;
+  }
+
+  emptyEl.style.display='none';
+  countEl.textContent=lib.length+' pattern'+(lib.length===1?'':'s');
+  clearBtn.style.display='inline-block';
+
+  var html='';
+  for(var i=0;i<lib.length;i++){
+    var e=lib[i];
+    var date=new Date(e.timestamp);
+    var dateStr=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    var timeStr=date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    var styleName=e.params.style||'letterform';
+    styleName=styleName.charAt(0).toUpperCase()+styleName.slice(1);
+    html+='<div class="library-card" data-lib-id="'+e.id+'">';
+    html+='<img class="lib-thumb" src="'+e.thumb+'" alt="'+e.name+' pattern" loading="lazy">';
+    html+='<div class="lib-info">';
+    html+='<div class="lib-name">'+escapeHTML(e.name)+'</div>';
+    html+='<div class="lib-params">'+styleName+' \u00b7 '+e.params.w+'\u00d7'+e.params.h+'<br>';
+    html+=e.params.symmetry+' sym \u00b7 '+e.params.complexity;
+    if(e.params.remix>0)html+=' \u00b7 remix #'+e.params.remix;
+    html+='<br>'+dateStr+' '+timeStr+'</div>';
+    html+='</div>';
+    html+='<div class="lib-actions">';
+    html+='<button onclick="loadFromLibrary(\''+e.id+'\')">Load</button>';
+    html+='<button class="lib-del" onclick="deleteFromLibrary(\''+e.id+'\')">Delete</button>';
+    html+='</div>';
+    html+='</div>';
+  }
+  gridEl.innerHTML=html;
+}
+
+function escapeHTML(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadFromLibrary(id){
+  var lib=getLibrary();
+  var entry=null;
+  for(var i=0;i<lib.length;i++){if(lib[i].id===id){entry=lib[i];break;}}
+  if(!entry)return;
+  // Set all params
+  document.getElementById('nameInput').value=entry.name;
+  document.getElementById('solitreoText').textContent=transliterate(entry.name);
+  document.getElementById('patternStyle').value=entry.params.style;
+  document.getElementById('symmetryMode').value=entry.params.symmetry;
+  document.getElementById('borderStyle').value=entry.params.border;
+  document.getElementById('complexityLevel').value=entry.params.complexity;
+  document.getElementById('rugW').value=entry.params.w;
+  document.getElementById('rugH').value=entry.params.h;
+  remixCounter=entry.params.remix||0;
+  // Scroll to generator
+  document.getElementById('generator').scrollIntoView({behavior:'smooth'});
+  // Regenerate
+  setTimeout(function(){generatePattern();},300);
+}
+
+function deleteFromLibrary(id){
+  var lib=getLibrary();
+  lib=lib.filter(function(e){return e.id!==id;});
+  setLibrary(lib);
+  renderLibrary();
+}
+
+function clearLibrary(){
+  if(!confirm('Clear all saved patterns?'))return;
+  setLibrary([]);
+  renderLibrary();
+}
+
 // ─── EVENT WIRING ───────────────────────────────────────────────
 let debounceTimer=null;
 document.getElementById('nameInput').addEventListener('input',function(){
