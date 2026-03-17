@@ -2271,9 +2271,9 @@ document.getElementById('symmetryMode').addEventListener('change',()=>generatePa
 document.getElementById('borderStyle').addEventListener('change',()=>generatePattern());
 document.getElementById('complexityLevel').addEventListener('change',()=>generatePattern());
 
-// Library: Clear All button & render on load
+// Library: Clear All button & fetch shared library on load
 document.getElementById('libClearAll').addEventListener('click',clearLibrary);
-renderLibrary();
+fetchSharedLibrary(function(){renderLibrary();});
 
 // ─── SCROLL ANIMATIONS ─────────────────────────────────────────
 const observer=new IntersectionObserver((entries)=>{
