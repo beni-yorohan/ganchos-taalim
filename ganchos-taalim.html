@@ -1474,24 +1474,23 @@ function clearLibrary(){
 }
 
 // ─── EVENT WIRING ───────────────────────────────────────────────
-let debounceTimer=null;
+var debounceTimer=null;
 document.getElementById('nameInput').addEventListener('input',function(){
   document.getElementById('solitreoText').textContent=transliterate(this.value);
   clearTimeout(debounceTimer);
-  debounceTimer=setTimeout(()=>{remixCounter=0;generatePattern();},300);
+  debounceTimer=setTimeout(function(){remixCounter=0;generatePattern();},500);
 });
-document.getElementById('remixBtn').addEventListener('click',()=>{remixCounter++;generatePattern();});
+document.getElementById('remixBtn').addEventListener('click',function(){remixCounter++;generatePattern();});
 document.getElementById('rugPreset').addEventListener('change',function(){
-  const v=this.value;if(v){const[w,h]=v.split(',').map(Number);document.getElementById('rugW').value=w;document.getElementById('rugH').value=h;}
+  var v=this.value;if(v){var parts=v.split(',');document.getElementById('rugW').value=parts[0];document.getElementById('rugH').value=parts[1];}
   generatePattern();
 });
-document.getElementById('rugW').addEventListener('change',()=>{document.getElementById('rugPreset').value='';generatePattern();});
-document.getElementById('rugH').addEventListener('change',()=>{document.getElementById('rugPreset').value='';generatePattern();});
-// Pattern params trigger regenerate
-document.getElementById('patternStyle').addEventListener('change',()=>generatePattern());
-document.getElementById('symmetryMode').addEventListener('change',()=>generatePattern());
-document.getElementById('borderStyle').addEventListener('change',()=>generatePattern());
-document.getElementById('complexityLevel').addEventListener('change',()=>generatePattern());
+document.getElementById('rugW').addEventListener('change',function(){document.getElementById('rugPreset').value='';generatePattern();});
+document.getElementById('rugH').addEventListener('change',function(){document.getElementById('rugPreset').value='';generatePattern();});
+document.getElementById('interiorStructure').addEventListener('change',function(){generatePattern();});
+document.getElementById('exteriorStructure').addEventListener('change',function(){generatePattern();});
+document.getElementById('layoutMode').addEventListener('change',function(){generatePattern();});
+document.getElementById('borderWidth').addEventListener('change',function(){generatePattern();});
 
 // Library: Clear All button & fetch shared library on load
 document.getElementById('libClearAll').addEventListener('click',clearLibrary);
