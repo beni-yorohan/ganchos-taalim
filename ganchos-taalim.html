@@ -1415,8 +1415,9 @@ function renderLibrary(){
     var date=new Date(e.timestamp);
     var dateStr=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
     var timeStr=date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
-    var styleName=e.params.style||'letterform';
-    styleName=styleName.charAt(0).toUpperCase()+styleName.slice(1);
+    var intName=e.params.interior||'twill22';
+    var extName=e.params.exterior||'tabby';
+    var layoutName=e.params.layout||'centered';
     var fbKey=e._fbKey||'';
     html+='<div class="library-card" data-fb-key="'+fbKey+'">';
     if(e.thumb){
@@ -1426,8 +1427,9 @@ function renderLibrary(){
     }
     html+='<div class="lib-info">';
     html+='<div class="lib-name">'+escapeHTML(e.name)+'</div>';
-    html+='<div class="lib-params">'+styleName+' \u00b7 '+e.params.w+'\u00d7'+e.params.h+'<br>';
-    html+=e.params.symmetry+' sym \u00b7 '+e.params.complexity;
+    html+='<div class="lib-params">'+intName+' / '+extName+' \u00b7 '+e.params.w+'\u00d7'+e.params.h+'<br>';
+    html+=layoutName+' layout';
+    if(e.params.border>0)html+=' \u00b7 border '+e.params.border+'px';
     if(e.params.remix>0)html+=' \u00b7 remix #'+e.params.remix;
     html+='<br>'+dateStr+' '+timeStr+'</div>';
     html+='</div>';
