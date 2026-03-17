@@ -1452,10 +1452,10 @@ function loadFromLibrary(fbKey){
   if(!entry)return;
   document.getElementById('nameInput').value=entry.name;
   document.getElementById('solitreoText').textContent=transliterate(entry.name);
-  document.getElementById('patternStyle').value=entry.params.style;
-  document.getElementById('symmetryMode').value=entry.params.symmetry;
-  document.getElementById('borderStyle').value=entry.params.border;
-  document.getElementById('complexityLevel').value=entry.params.complexity;
+  if(entry.params.interior)document.getElementById('interiorStructure').value=entry.params.interior;
+  if(entry.params.exterior)document.getElementById('exteriorStructure').value=entry.params.exterior;
+  if(entry.params.layout)document.getElementById('layoutMode').value=entry.params.layout;
+  document.getElementById('borderWidth').value=entry.params.border||0;
   document.getElementById('rugW').value=entry.params.w;
   document.getElementById('rugH').value=entry.params.h;
   remixCounter=entry.params.remix||0;
