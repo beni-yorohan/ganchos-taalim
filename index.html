@@ -257,6 +257,34 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 .gen-taalim summary::before{content:'+';font-size:16px;font-weight:400;
   width:20px;text-align:center;transition:transform 0.2s;}
 .gen-taalim[open] summary::before{content:'\2212';}
+
+/* ─── LIBRARY ─────────────────────────────────────────────── */
+.library-section{padding:80px 0 60px;}
+.library-section .col{max-width:var(--col);margin:0 auto;padding:0 24px;}
+.library-section h2{font-size:clamp(22px,2.4vw,32px);margin-bottom:6px;}
+.library-section .library-sub{font-size:14px;color:var(--text-3);margin-bottom:28px;}
+.library-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;}
+.library-card{border:1px solid var(--border);border-radius:var(--radius);
+  background:var(--surface);overflow:hidden;transition:box-shadow 0.2s,transform 0.15s;}
+.library-card:hover{box-shadow:0 4px 20px rgba(0,0,0,0.08);transform:translateY(-2px);}
+.library-card .lib-thumb{width:100%;aspect-ratio:3/4;object-fit:cover;display:block;
+  background:var(--grid-off);border-bottom:1px solid var(--border);}
+.library-card .lib-info{padding:12px 14px;}
+.library-card .lib-name{font-size:14px;font-weight:600;margin-bottom:4px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.library-card .lib-params{font-family:var(--mono);font-size:10px;color:var(--text-3);
+  line-height:1.5;}
+.library-card .lib-actions{display:flex;gap:6px;padding:0 14px 12px;}
+.library-card .lib-actions button{font-size:11px;padding:4px 10px;border-radius:4px;
+  border:1px solid var(--border);background:transparent;color:var(--text);
+  font-family:var(--font);transition:all 0.15s;}
+.library-card .lib-actions button:hover{background:var(--text);color:#fff;border-color:var(--text);}
+.library-card .lib-actions .lib-del{color:#c44;}
+.library-card .lib-actions .lib-del:hover{background:#c44;color:#fff;border-color:#c44;}
+.library-empty{text-align:center;padding:40px 20px;color:var(--text-3);font-size:14px;
+  border:1px dashed var(--border);border-radius:var(--radius);}
+.library-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.library-toolbar .lib-count{font-family:var(--mono);font-size:11px;color:var(--text-3);}
 .gen-taalim .taalim-content{padding-top:16px;}
 .taalim-section{margin-bottom:24px;}
 .taalim-section h3{font-size:11px;font-weight:600;text-transform:uppercase;
@@ -565,6 +593,20 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
         <p style="color:var(--text-3);font-size:14px;">Enter a name to generate weaving instructions.</p>
       </div>
     </details>
+  </div>
+</section>
+
+<!-- ═══════════════════════════ LIBRARY ══════════════════════ -->
+<section id="library" class="library-section">
+  <div class="col">
+    <h2>Library</h2>
+    <p class="library-sub">Every pattern you generate is saved here.</p>
+    <div class="library-toolbar">
+      <span class="lib-count" id="libCount"></span>
+      <button class="btn-outline" id="libClearAll" style="font-size:11px;padding:6px 14px;display:none;">Clear All</button>
+    </div>
+    <div id="libraryGrid" class="library-grid"></div>
+    <div id="libraryEmpty" class="library-empty">No saved patterns yet. Generate one above.</div>
   </div>
 </section>
 
@@ -1713,9 +1755,9 @@ function generatePattern(){
     return;
   }
   var pVal=document.getElementById('patternStyle').value;
-  if(pVal==='script'){generateScriptMode(name);return;}
-  if(pVal==='draft'){generateDraftMode(name);return;}
-  if(pVal==='motif'){generateMotifMode(name);return;}
+  if(pVal==='script'){generateScriptMode(name);saveToLibrary(name);return;}
+  if(pVal==='draft'){generateDraftMode(name);saveToLibrary(name);return;}
+  if(pVal==='motif'){generateMotifMode(name);saveToLibrary(name);return;}
   scriptMode=false;
   const seed=remixCounter>0?name+'_'+remixCounter:name;
   const rng=createPRNG(seed);
@@ -1740,6 +1782,7 @@ function generatePattern(){
   const pStyle=document.getElementById('patternStyle').value;
   document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 '+pStyle+' \u00b7 seed: '+seed;
   generateTaalim();
+  saveToLibrary(name);
 }
 
 // ─── TAALIM ─────────────────────────────────────────────────────
@@ -2022,6 +2065,192 @@ function buildSpecimen(){
   })();
 }
 
+// ─── LIBRARY (shared via jsonblob.com) ──────────────────────────
+var LIBRARY_ENDPOINT='https://jsonblob.com/api/jsonBlob/019cf989-4fc3-7952-9df3-a0dba3befee4';
+var LIBRARY_LOCAL_KEY='ganchos_library';
+var libSaveTimer=null;
+var libCache=[];
+
+// ── Local fallback ──
+function getLocalLib(){
+  try{var d=localStorage.getItem(LIBRARY_LOCAL_KEY);return d?JSON.parse(d):[];}catch(e){return [];}
+}
+function setLocalLib(arr){
+  try{localStorage.setItem(LIBRARY_LOCAL_KEY,JSON.stringify(arr));}catch(e){}
+}
+
+// ── Fetch shared library from cloud ──
+function fetchSharedLibrary(cb){
+  fetch(LIBRARY_ENDPOINT,{headers:{'Accept':'application/json'}})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      var entries=Array.isArray(data.patterns)?data.patterns:[];
+      libCache=entries;
+      setLocalLib(entries);
+      if(cb)cb(entries);
+    }).catch(function(){
+      libCache=getLocalLib();
+      if(cb)cb(libCache);
+    });
+}
+
+// ── Push library to cloud ──
+function pushToSharedLibrary(entries){
+  setLocalLib(entries);
+  fetch(LIBRARY_ENDPOINT,{
+    method:'PUT',
+    headers:{'Content-Type':'application/json','Accept':'application/json'},
+    body:JSON.stringify({patterns:entries})
+  }).catch(function(e){console.warn('Cloud sync failed, saved locally.',e);});
+}
+
+function captureThumb(){
+  try{
+    var cvs=document.querySelector('#rugCanvas canvas');
+    if(cvs){
+      var tc=document.createElement('canvas');
+      var tw=150,th=Math.round(150*(cvs.height/cvs.width));
+      tc.width=tw;tc.height=th;
+      tc.getContext('2d').drawImage(cvs,0,0,tw,th);
+      return tc.toDataURL('image/jpeg',0.5);
+    }
+    if(grid&&grid.length&&W&&H){
+      var sc=Math.max(1,Math.min(Math.floor(150/W),Math.floor(200/H)));
+      var fc=document.createElement('canvas');fc.width=W*sc;fc.height=H*sc;
+      var fx=fc.getContext('2d');
+      for(var y=0;y<H;y++)for(var x=0;x<W;x++){
+        fx.fillStyle=grid[y][x]?'#111':'#F5F5F0';fx.fillRect(x*sc,y*sc,sc,sc);
+      }
+      return fc.toDataURL('image/jpeg',0.5);
+    }
+  }catch(e){}
+  return null;
+}
+
+function saveToLibrary(name){
+  // Automatically saves — no button needed. Debounced 800ms.
+  clearTimeout(libSaveTimer);
+  libSaveTimer=setTimeout(function(){
+    if(!name)return;
+    var thumb=captureThumb();
+    if(!thumb)return;
+    var entry={
+      id:Date.now()+'_'+Math.random().toString(36).slice(2,8),
+      name:name,
+      thumb:thumb,
+      timestamp:Date.now(),
+      params:{
+        style:document.getElementById('patternStyle').value,
+        w:parseInt(document.getElementById('rugW').value)||18,
+        h:parseInt(document.getElementById('rugH').value)||30,
+        symmetry:document.getElementById('symmetryMode').value,
+        border:document.getElementById('borderStyle').value,
+        complexity:document.getElementById('complexityLevel').value,
+        remix:remixCounter
+      }
+    };
+    // Merge into current library
+    var lib=libCache.length?libCache:getLocalLib();
+    // Avoid duplicate: same name+style+remix → update
+    var dupIdx=-1;
+    for(var i=0;i<lib.length;i++){
+      if(lib[i].name===entry.name&&lib[i].params.style===entry.params.style&&lib[i].params.remix===entry.params.remix){
+        dupIdx=i;break;
+      }
+    }
+    if(dupIdx>=0)lib[dupIdx]=entry;
+    else lib.unshift(entry);
+    // Cap at 200 entries
+    if(lib.length>200)lib=lib.slice(0,200);
+    libCache=lib;
+    pushToSharedLibrary(lib);
+    renderLibrary();
+  },800);
+}
+
+function renderLibrary(){
+  var lib=libCache.length?libCache:getLocalLib();
+  var gridEl=document.getElementById('libraryGrid');
+  var emptyEl=document.getElementById('libraryEmpty');
+  var countEl=document.getElementById('libCount');
+  var clearBtn=document.getElementById('libClearAll');
+  if(!gridEl)return;
+
+  if(lib.length===0){
+    gridEl.innerHTML='';
+    emptyEl.style.display='block';
+    countEl.textContent='';
+    clearBtn.style.display='none';
+    return;
+  }
+
+  emptyEl.style.display='none';
+  countEl.textContent=lib.length+' pattern'+(lib.length===1?'':'s')+' in the community library';
+  clearBtn.style.display='inline-block';
+
+  var html='';
+  for(var i=0;i<lib.length;i++){
+    var e=lib[i];
+    var date=new Date(e.timestamp);
+    var dateStr=date.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    var timeStr=date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+    var styleName=e.params.style||'letterform';
+    styleName=styleName.charAt(0).toUpperCase()+styleName.slice(1);
+    html+='<div class="library-card" data-lib-id="'+e.id+'">';
+    html+='<img class="lib-thumb" src="'+e.thumb+'" alt="'+e.name+' pattern" loading="lazy">';
+    html+='<div class="lib-info">';
+    html+='<div class="lib-name">'+escapeHTML(e.name)+'</div>';
+    html+='<div class="lib-params">'+styleName+' \u00b7 '+e.params.w+'\u00d7'+e.params.h+'<br>';
+    html+=e.params.symmetry+' sym \u00b7 '+e.params.complexity;
+    if(e.params.remix>0)html+=' \u00b7 remix #'+e.params.remix;
+    html+='<br>'+dateStr+' '+timeStr+'</div>';
+    html+='</div>';
+    html+='<div class="lib-actions">';
+    html+='<button onclick="loadFromLibrary(\''+e.id+'\')">Load</button>';
+    html+='<button class="lib-del" onclick="deleteFromLibrary(\''+e.id+'\')">Delete</button>';
+    html+='</div>';
+    html+='</div>';
+  }
+  gridEl.innerHTML=html;
+}
+
+function escapeHTML(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadFromLibrary(id){
+  var lib=libCache.length?libCache:getLocalLib();
+  var entry=null;
+  for(var i=0;i<lib.length;i++){if(lib[i].id===id){entry=lib[i];break;}}
+  if(!entry)return;
+  document.getElementById('nameInput').value=entry.name;
+  document.getElementById('solitreoText').textContent=transliterate(entry.name);
+  document.getElementById('patternStyle').value=entry.params.style;
+  document.getElementById('symmetryMode').value=entry.params.symmetry;
+  document.getElementById('borderStyle').value=entry.params.border;
+  document.getElementById('complexityLevel').value=entry.params.complexity;
+  document.getElementById('rugW').value=entry.params.w;
+  document.getElementById('rugH').value=entry.params.h;
+  remixCounter=entry.params.remix||0;
+  document.getElementById('generator').scrollIntoView({behavior:'smooth'});
+  setTimeout(function(){generatePattern();},300);
+}
+
+function deleteFromLibrary(id){
+  var lib=libCache.length?libCache:getLocalLib();
+  lib=lib.filter(function(e){return e.id!==id;});
+  libCache=lib;
+  pushToSharedLibrary(lib);
+  renderLibrary();
+}
+
+function clearLibrary(){
+  if(!confirm('Clear all saved patterns?'))return;
+  libCache=[];
+  pushToSharedLibrary([]);
+  renderLibrary();
+}
+
 // ─── EVENT WIRING ───────────────────────────────────────────────
 let debounceTimer=null;
 document.getElementById('nameInput').addEventListener('input',function(){
@@ -2041,6 +2270,10 @@ document.getElementById('patternStyle').addEventListener('change',()=>generatePa
 document.getElementById('symmetryMode').addEventListener('change',()=>generatePattern());
 document.getElementById('borderStyle').addEventListener('change',()=>generatePattern());
 document.getElementById('complexityLevel').addEventListener('change',()=>generatePattern());
+
+// Library: Clear All button & fetch shared library on load
+document.getElementById('libClearAll').addEventListener('click',clearLibrary);
+fetchSharedLibrary(function(){renderLibrary();});
 
 // ─── SCROLL ANIMATIONS ─────────────────────────────────────────
 const observer=new IntersectionObserver((entries)=>{
