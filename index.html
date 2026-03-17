@@ -1337,61 +1337,150 @@ function generateScriptMode(name){
 // ─── DRAFT MODE (Binary Textile Code) ────────────────────────────
 function generateDraftMode(name){
   scriptMode=false;
-  const seed=remixCounter>0?name+'_'+remixCounter:name;
-  const rng=createPRNG(seed);
-  const chars=transliterateToChars(name);
+  var seed=remixCounter>0?name+'_'+remixCounter:name;
+  var rng=createPRNG(seed);
+  var chars=transliterateToChars(name);
   if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='No transliterable characters found.';
     document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name with Latin letters.</p>';return;}
   W=parseInt(document.getElementById('rugW').value)||18;
   H=parseInt(document.getElementById('rugH').value)||30;
-  grid=[];for(let y=0;y<H;y++)grid[y]=new Array(W).fill(0);
-  // Rasterize each letter to a bitmap sized to fit inside the rug
-  const letterH=Math.max(5,Math.floor(H/Math.max(1,chars.length)));
-  const letterW=Math.min(W,Math.max(5,Math.floor(W*0.8)));
-  const bitmaps=chars.map(ch=>rasterizeFromFont(ch,Math.max(letterW,letterH)));
-  // Symmetry from UI
-  const symSel=document.getElementById('symmetryMode').value;
-  let symV=false,symH=false;
-  if(symSel==='vertical'||symSel==='both')symV=true;
-  if(symSel==='horizontal'||symSel==='both')symH=true;
-  if(symSel==='auto'){symV=true;symH=rng()>0.5;}
-  // Glide reflection option
-  const useGlide=rng()>0.5;
-  // Fill grid: tile letter bitmaps as weaving picks
-  const srcW=symV?Math.ceil(W/2):W;
-  const srcH=symH?Math.ceil(H/2):H;
-  for(let y=0;y<srcH;y++){
-    const charIdx=Math.floor((y/srcH)*chars.length)%chars.length;
-    const bmp=bitmaps[charIdx];
-    if(!bmp)continue;
-    const bmpH=bmp.length,bmpW=bmp[0].length;
-    for(let x=0;x<srcW;x++){
-      // Map rug cell to bitmap pixel with tiling
-      const bx=x%bmpW,by=y%bmpH;
-      // Glide reflection: flip every other tile
-      const tileX=Math.floor(x/bmpW),tileY=Math.floor(y/bmpH);
-      let sx=bx,sy=by;
-      if(useGlide&&tileX%2===1)sx=bmpW-1-bx;
-      if(useGlide&&tileY%2===1)sy=bmpH-1-by;
-      if(sy<bmpH&&sx<bmpW) grid[y][x]=bmp[sy][sx];
+  var complexity=document.getElementById('complexityLevel').value;
+  var symSel=document.getElementById('symmetryMode').value;
+  var borderSel=document.getElementById('borderStyle').value;
+  grid=[];for(var y=0;y<H;y++)grid[y]=new Array(W).fill(0);
+
+  // ── Derive shaft count from complexity ──
+  var shaftCount=complexity==='simple'?4:complexity==='complex'?12:8;
+
+  // ── Extract threading sequence from letter bitmaps ──
+  // Rasterize letters small so each column becomes a shaft assignment
+  var threadBmpSize=Math.max(4,Math.min(shaftCount,10));
+  var threadBmps=[];
+  for(var i=0;i<chars.length;i++){
+    var tb=rasterizeFromFont(chars[i],threadBmpSize);
+    if(tb)threadBmps.push(tb);
+  }
+  if(!threadBmps.length){W=0;H=0;if(rugSketch)rugSketch.refresh();return;}
+
+  // Build threading: scan each letter bitmap column, count filled pixels → shaft assignment
+  var threading=[];// array of shaft numbers (0 to shaftCount-1) for each warp end
+  for(i=0;i<threadBmps.length;i++){
+    var bmp=threadBmps[i];
+    var bmpW2=bmp[0].length;
+    for(var col=0;col<bmpW2;col++){
+      var filled=0;
+      for(var row=0;row<bmp.length;row++)if(bmp[row][col])filled++;
+      // Map fill density to shaft number
+      threading.push(Math.floor((filled/bmp.length)*shaftCount)%shaftCount);
     }
   }
+  // Extend threading to fill warp width by mirroring (point twill style)
+  var baseThread=threading.slice();
+  while(threading.length<W){
+    // Mirror: go back through the sequence (skip first and last to avoid doubles)
+    for(var mi=baseThread.length-2;mi>=1&&threading.length<W;mi--)threading.push(baseThread[mi]);
+    for(mi=0;mi<baseThread.length&&threading.length<W;mi++)threading.push(baseThread[mi]);
+  }
+
+  // ── Build treadling sequence from letter bitmaps ──
+  // Scan rows of bitmaps → each row's fill pattern determines which shafts lift
+  var treadling=[];// array of arrays: which shafts are lifted per pick
+  for(i=0;i<threadBmps.length;i++){
+    var bmp2=threadBmps[i];
+    for(row=0;row<bmp2.length;row++){
+      var lifts=[];
+      for(col=0;col<bmp2[0].length;col++){
+        if(bmp2[row][col]){
+          var shaft=Math.floor((col/bmp2[0].length)*shaftCount)%shaftCount;
+          if(lifts.indexOf(shaft)<0)lifts.push(shaft);
+        }
+      }
+      if(!lifts.length)lifts.push(row%shaftCount);// at least one shaft lifts
+      treadling.push(lifts);
+    }
+  }
+  // Extend treadling to fill weft height by mirroring
+  var baseTread=treadling.slice();
+  while(treadling.length<H){
+    for(mi=baseTread.length-2;mi>=1&&treadling.length<H;mi--)treadling.push(baseTread[mi]);
+    for(mi=0;mi<baseTread.length&&treadling.length<H;mi++)treadling.push(baseTread[mi]);
+  }
+
+  // ── Weave structure: pick from real weave types ──
+  var weaveType=Math.floor(rng()*4);
+  // 0=twill, 1=satin, 2=overshot, 3=waffle
+  var weaveName=['twill','satin','overshot','waffle'][weaveType];
+
+  // ── Generate drawdown: threading × treadling × weave structure ──
+  var symV=false,symH=false;
+  if(symSel==='vertical'||symSel==='both')symV=true;
+  if(symSel==='horizontal'||symSel==='both')symH=true;
+  if(symSel==='auto'){symV=true;symH=rng()>0.4;}
+  var srcW=symV?Math.ceil(W/2):W;
+  var srcH=symH?Math.ceil(H/2):H;
+
+  for(y=0;y<srcH;y++){
+    var lifts2=treadling[y%treadling.length];
+    for(var x=0;x<srcW;x++){
+      var shaft=threading[x%threading.length];
+      var isLifted=lifts2.indexOf(shaft)>=0;
+      // Apply weave structure modifier
+      switch(weaveType){
+        case 0:// Twill: shift lift by row for diagonal
+          isLifted=lifts2.indexOf((shaft+Math.floor(y/1))%shaftCount)>=0;
+          break;
+        case 1:// Satin: irregular spacing, skip pattern
+          var satinStep=Math.max(2,Math.floor(shaftCount/2)-1);
+          isLifted=lifts2.indexOf((shaft*satinStep)%shaftCount)>=0;
+          break;
+        case 2:// Overshot: tabby ground + pattern weft alternation
+          if(y%2===0){// tabby ground row
+            isLifted=(x%2===0);
+          } else {// pattern row uses threading/treadling
+            isLifted=lifts2.indexOf(shaft)>=0;
+          }
+          break;
+        case 3:// Waffle: grouped blocks that create 3D texture
+          var blockX=Math.floor(x/(Math.max(2,Math.floor(shaftCount/2))));
+          var blockY=Math.floor(y/(Math.max(2,Math.floor(shaftCount/2))));
+          var inBlock=(blockX+blockY)%2===0;
+          isLifted=inBlock?lifts2.indexOf(shaft)>=0:!isLifted;
+          break;
+      }
+      grid[y][x]=isLifted?1:0;
+    }
+  }
+
   // Apply symmetry
-  if(symV){for(let y=0;y<H;y++)for(let x=0;x<Math.floor(W/2);x++)grid[y][W-1-x]=grid[y][x];}
-  if(symH){for(let y=0;y<Math.floor(H/2);y++)for(let x=0;x<W;x++)grid[H-1-y][x]=grid[y][x];}
+  if(symV){for(y=0;y<H;y++)for(x=0;x<Math.floor(W/2);x++)grid[y][W-1-x]=grid[y][x];}
+  if(symH){for(y=0;y<Math.floor(H/2);y++)for(x=0;x<W;x++)grid[H-1-y][x]=grid[y][x];}
+
+  // ── Border ──
+  var bCells=0;
+  if(borderSel==='simple'||borderSel==='auto')bCells=1;
+  else if(borderSel==='double'||borderSel==='stepped')bCells=2;
+  if(bCells>0){
+    for(y=0;y<H;y++)for(x=0;x<W;x++){
+      if(y<bCells||y>=H-bCells||x<bCells||x>=W-bCells)grid[y][x]=1;
+    }
+  }
+
   if(rugSketch)rugSketch.refresh();
-  let filled=0;for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(grid[y][x])filled++;
-  const density=((filled/(W*H))*100).toFixed(1);
-  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 draft \u00b7 seed: '+seed;
+  var filledCount=0;for(y=0;y<H;y++)for(x=0;x<W;x++)if(grid[y][x])filledCount++;
+  var density=((filledCount/(W*H))*100).toFixed(1);
+  document.getElementById('patternStats').textContent=
+    W+'\u00d7'+H+' \u00b7 '+shaftCount+'-shaft '+weaveName+' \u00b7 '+density+'% \u00b7 seed: '+seed;
   // Taalim
   var body=document.getElementById('taalimBody');
   var html='<div class="taalim-section"><h3>Binary Textile Draft</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">Each letter\u2019s rasterized bitmap is used directly as a weaving draft. ';
-  html+='Pixel rows = weft picks, pixel columns = warp threads. ';
-  html+='Letters are tiled across the rug with '+(useGlide?'glide reflection':'simple repeat')+' and ';
-  html+=(symV&&symH?'four-way':symV?'vertical':'horizontal')+' symmetry.</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+'</p></div>';
+  html+='<p style="font-size:14px;color:var(--text);">A real weaving draft derived from Solitreo letterforms. ';
+  html+='Each letter\u2019s bitmap columns set the <strong>threading</strong> (shaft assignments), ';
+  html+='and its rows set the <strong>treadling</strong> (lift sequence). ';
+  html+='The drawdown is computed as a <strong>'+shaftCount+'-shaft '+weaveName+'</strong> structure ';
+  html+='with '+(symV&&symH?'four-way':symV?'vertical mirror':symH?'horizontal mirror':'free')+' symmetry.</p>';
+  html+='<p style="font-size:14px;color:var(--text-3);margin-top:8px;">Letters: '+chars.join(' ')+' \u2192 '+threading.length+' warp ends, '+treadling.length+' picks</p>';
+  html+='<p style="font-size:14px;color:var(--text-3);">Threading derived from '+threadBmps.length+' letter bitmaps \u00b7 point-twill repeat</p></div>';
   body.innerHTML=html;
 }
 
