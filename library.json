@@ -1,1 +1,60 @@
-{"patterns":[]}
+{
+  "patterns": [
+    {
+      "id": "community_1",
+      "name": "Avraham",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "letterform", "w": 18, "h": 30, "symmetry": "auto", "border": "auto", "complexity": "medium", "remix": 0}
+    },
+    {
+      "id": "community_2",
+      "name": "Miriam",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "kilim", "w": 36, "h": 60, "symmetry": "both", "border": "stepped", "complexity": "complex", "remix": 0}
+    },
+    {
+      "id": "community_3",
+      "name": "Shlomo",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "draft", "w": 36, "h": 60, "symmetry": "auto", "border": "auto", "complexity": "medium", "remix": 0}
+    },
+    {
+      "id": "community_4",
+      "name": "Esther",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "geometric", "w": 18, "h": 30, "symmetry": "vertical", "border": "double", "complexity": "medium", "remix": 0}
+    },
+    {
+      "id": "community_5",
+      "name": "Yosef",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "medallion", "w": 48, "h": 72, "symmetry": "both", "border": "auto", "complexity": "complex", "remix": 0}
+    },
+    {
+      "id": "community_6",
+      "name": "Rivka",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "motif", "w": 36, "h": 60, "symmetry": "auto", "border": "simple", "complexity": "medium", "remix": 0}
+    },
+    {
+      "id": "community_7",
+      "name": "Moshe",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "draft", "w": 48, "h": 72, "symmetry": "vertical", "border": "auto", "complexity": "complex", "remix": 0}
+    },
+    {
+      "id": "community_8",
+      "name": "Sarah",
+      "timestamp": 1710633600000,
+      "shared": true,
+      "params": {"style": "striped", "w": 30, "h": 96, "symmetry": "horizontal", "border": "simple", "complexity": "simple", "remix": 0}
+    }
+  ]
+}
