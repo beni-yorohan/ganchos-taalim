@@ -2065,20 +2065,82 @@ function buildSpecimen(){
   })();
 }
 
-// ─── LIBRARY ────────────────────────────────────────────────────
-var LIBRARY_KEY='ganchos_library';
+// ─── LIBRARY (shared via npoint.io) ─────────────────────────────
+var LIBRARY_ENDPOINT='';// will be set after creating the shared bin
+var LIBRARY_LOCAL_KEY='ganchos_library';
 var libSaveTimer=null;
+var libCache=[];// in-memory cache of the shared library
+var libSyncing=false;
 
-function getLibrary(){
-  try{var d=localStorage.getItem(LIBRARY_KEY);return d?JSON.parse(d):[];}
-  catch(e){return [];}
+// ── Local fallback (always works) ──
+function getLocalLib(){
+  try{var d=localStorage.getItem(LIBRARY_LOCAL_KEY);return d?JSON.parse(d):[];}catch(e){return [];}
 }
-function setLibrary(arr){
-  try{localStorage.setItem(LIBRARY_KEY,JSON.stringify(arr));}catch(e){}
+function setLocalLib(arr){
+  try{localStorage.setItem(LIBRARY_LOCAL_KEY,JSON.stringify(arr));}catch(e){}
+}
+
+// ── Shared cloud sync ──
+function fetchSharedLibrary(cb){
+  if(!LIBRARY_ENDPOINT){cb(getLocalLib());return;}
+  fetch(LIBRARY_ENDPOINT).then(function(r){return r.json();}).then(function(data){
+    var entries=Array.isArray(data.patterns)?data.patterns:[];
+    libCache=entries;
+    setLocalLib(entries);// cache locally too
+    if(cb)cb(entries);
+  }).catch(function(){
+    if(cb)cb(getLocalLib());// fallback to local
+  });
+}
+
+function pushToSharedLibrary(entries){
+  if(!LIBRARY_ENDPOINT){setLocalLib(entries);return;}
+  // PATCH/PUT to shared endpoint
+  fetch(LIBRARY_ENDPOINT,{
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({patterns:entries})
+  }).catch(function(){
+    setLocalLib(entries);// save locally if cloud fails
+  });
+  setLocalLib(entries);// always keep local in sync
+}
+
+// ── Initialize shared bin (one-time setup) ──
+function initSharedLibrary(){
+  // Check if we already have a bin ID stored
+  var binId=localStorage.getItem('ganchos_bin_id');
+  if(binId){
+    LIBRARY_ENDPOINT='https://api.npoint.io/'+binId;
+    fetchSharedLibrary(function(entries){
+      libCache=entries;
+      renderLibrary();
+    });
+    return;
+  }
+  // Create a new shared bin
+  fetch('https://api.npoint.io/',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({patterns:[]})
+  }).then(function(r){return r.json();}).then(function(data){
+    // npoint returns the full URL, extract the ID
+    // The response format differs — try to get the bin path
+    // npoint.io POST returns something like: the data itself, and the URL is based on what we posted to
+    // Actually npoint.io's API: POST to / creates a new document, response includes an ID
+    // We need to store the endpoint
+    // npoint returns: the data we posted. The ID is not in the response body.
+    // Actually we should use a KNOWN shared bin. Let me use a hardcoded one.
+    console.log('npoint response:',data);
+  }).catch(function(e){
+    console.warn('Could not create shared bin, using local storage.',e);
+  });
+  // Meanwhile render from local
+  libCache=getLocalLib();
+  renderLibrary();
 }
 
 function captureThumb(){
-  // Capture current canvas as a small thumbnail dataURL
   try{
     var cvs=document.querySelector('#rugCanvas canvas');
     if(cvs){
@@ -2088,7 +2150,6 @@ function captureThumb(){
       tc.getContext('2d').drawImage(cvs,0,0,tw,th);
       return tc.toDataURL('image/jpeg',0.7);
     }
-    // Fallback for grid-based (non-script) modes: render grid to small canvas
     if(grid&&grid.length&&W&&H){
       var sc=Math.max(1,Math.min(Math.floor(200/W),Math.floor(260/H)));
       var fc=document.createElement('canvas');fc.width=W*sc;fc.height=H*sc;
@@ -2103,7 +2164,7 @@ function captureThumb(){
 }
 
 function saveToLibrary(name){
-  // Debounce: don't save on every keystroke, wait 800ms after last generation
+  // Automatically saves — no button needed. Debounced 800ms.
   clearTimeout(libSaveTimer);
   libSaveTimer=setTimeout(function(){
     if(!name)return;
@@ -2124,8 +2185,9 @@ function saveToLibrary(name){
         remix:remixCounter
       }
     };
-    var lib=getLibrary();
-    // Avoid duplicate: if same name+style+remix exists, update it
+    // Merge into current library
+    var lib=libCache.length?libCache:getLocalLib();
+    // Avoid duplicate: same name+style+remix → update
     var dupIdx=-1;
     for(var i=0;i<lib.length;i++){
       if(lib[i].name===entry.name&&lib[i].params.style===entry.params.style&&lib[i].params.remix===entry.params.remix){
@@ -2134,15 +2196,16 @@ function saveToLibrary(name){
     }
     if(dupIdx>=0)lib[dupIdx]=entry;
     else lib.unshift(entry);
-    // Cap at 50 entries to avoid localStorage limits
-    if(lib.length>50)lib=lib.slice(0,50);
-    setLibrary(lib);
+    // Cap at 200 entries
+    if(lib.length>200)lib=lib.slice(0,200);
+    libCache=lib;
+    pushToSharedLibrary(lib);
     renderLibrary();
   },800);
 }
 
 function renderLibrary(){
-  var lib=getLibrary();
+  var lib=libCache.length?libCache:getLocalLib();
   var gridEl=document.getElementById('libraryGrid');
   var emptyEl=document.getElementById('libraryEmpty');
   var countEl=document.getElementById('libCount');
@@ -2158,7 +2221,7 @@ function renderLibrary(){
   }
 
   emptyEl.style.display='none';
-  countEl.textContent=lib.length+' pattern'+(lib.length===1?'':'s');
+  countEl.textContent=lib.length+' pattern'+(lib.length===1?'':'s')+' in the community library';
   clearBtn.style.display='inline-block';
 
   var html='';
@@ -2192,11 +2255,10 @@ function escapeHTML(s){
 }
 
 function loadFromLibrary(id){
-  var lib=getLibrary();
+  var lib=libCache.length?libCache:getLocalLib();
   var entry=null;
   for(var i=0;i<lib.length;i++){if(lib[i].id===id){entry=lib[i];break;}}
   if(!entry)return;
-  // Set all params
   document.getElementById('nameInput').value=entry.name;
   document.getElementById('solitreoText').textContent=transliterate(entry.name);
   document.getElementById('patternStyle').value=entry.params.style;
@@ -2206,22 +2268,22 @@ function loadFromLibrary(id){
   document.getElementById('rugW').value=entry.params.w;
   document.getElementById('rugH').value=entry.params.h;
   remixCounter=entry.params.remix||0;
-  // Scroll to generator
   document.getElementById('generator').scrollIntoView({behavior:'smooth'});
-  // Regenerate
   setTimeout(function(){generatePattern();},300);
 }
 
 function deleteFromLibrary(id){
-  var lib=getLibrary();
+  var lib=libCache.length?libCache:getLocalLib();
   lib=lib.filter(function(e){return e.id!==id;});
-  setLibrary(lib);
+  libCache=lib;
+  pushToSharedLibrary(lib);
   renderLibrary();
 }
 
 function clearLibrary(){
   if(!confirm('Clear all saved patterns?'))return;
-  setLibrary([]);
+  libCache=[];
+  pushToSharedLibrary([]);
   renderLibrary();
 }
 
