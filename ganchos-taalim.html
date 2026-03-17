@@ -1782,6 +1782,7 @@ function generatePattern(){
   const pStyle=document.getElementById('patternStyle').value;
   document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+filled+' filled \u00b7 '+density+'% \u00b7 '+pStyle+' \u00b7 seed: '+seed;
   generateTaalim();
+  saveToLibrary(name);
 }
 
 // ─── TAALIM ─────────────────────────────────────────────────────
