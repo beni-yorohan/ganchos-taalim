@@ -2065,13 +2065,15 @@ function buildSpecimen(){
   })();
 }
 
-// ─── LIBRARY (shared via jsonblob.com) ──────────────────────────
-var LIBRARY_ENDPOINT='https://jsonblob.com/api/jsonBlob/019cf989-4fc3-7952-9df3-a0dba3befee4';
+// ─── LIBRARY (shared community + local) ─────────────────────────
+// Patterns are deterministic: same name + params = same pattern.
+// So we only store params (tiny JSON), and regenerate thumbnails on the fly.
 var LIBRARY_LOCAL_KEY='ganchos_library';
 var libSaveTimer=null;
-var libCache=[];
+var libLocal=[];
+var libShared=[];
+var libMerged=[];
 
-// ── Local fallback ──
 function getLocalLib(){
   try{var d=localStorage.getItem(LIBRARY_LOCAL_KEY);return d?JSON.parse(d):[];}catch(e){return [];}
 }
@@ -2079,31 +2081,77 @@ function setLocalLib(arr){
   try{localStorage.setItem(LIBRARY_LOCAL_KEY,JSON.stringify(arr));}catch(e){}
 }
 
-// ── Fetch shared library from cloud ──
+// Fetch community library from same-origin JSON file (no CORS issues)
 function fetchSharedLibrary(cb){
-  fetch(LIBRARY_ENDPOINT,{headers:{'Accept':'application/json'}})
+  fetch('library.json?t='+Date.now())
     .then(function(r){return r.json();})
     .then(function(data){
-      var entries=Array.isArray(data.patterns)?data.patterns:[];
-      libCache=entries;
-      setLocalLib(entries);
-      if(cb)cb(entries);
+      libShared=Array.isArray(data.patterns)?data.patterns:[];
+      mergeLibraries();
+      if(cb)cb();
     }).catch(function(){
-      libCache=getLocalLib();
-      if(cb)cb(libCache);
+      libShared=[];
+      mergeLibraries();
+      if(cb)cb();
     });
 }
 
-// ── Push library to cloud ──
-function pushToSharedLibrary(entries){
-  setLocalLib(entries);
-  fetch(LIBRARY_ENDPOINT,{
-    method:'PUT',
-    headers:{'Content-Type':'application/json','Accept':'application/json'},
-    body:JSON.stringify({patterns:entries})
-  }).catch(function(e){console.warn('Cloud sync failed, saved locally.',e);});
+function mergeLibraries(){
+  libLocal=getLocalLib();
+  var seen={};
+  libMerged=[];
+  for(var i=0;i<libLocal.length;i++){
+    var k=libLocal[i].name+'|'+libLocal[i].params.style+'|'+(libLocal[i].params.remix||0);
+    if(!seen[k]){seen[k]=1;libMerged.push(libLocal[i]);}
+  }
+  for(i=0;i<libShared.length;i++){
+    var k2=libShared[i].name+'|'+libShared[i].params.style+'|'+(libShared[i].params.remix||0);
+    if(!seen[k2]){seen[k2]=1;var e=Object.assign({},libShared[i]);e.shared=true;libMerged.push(e);}
+  }
 }
 
+// Generate a tiny thumbnail from params (no stored images needed)
+function genThumbFromParams(p,callback){
+  // Temporarily set params, generate into a hidden grid, render thumbnail
+  var oldName=document.getElementById('nameInput').value;
+  var oldStyle=document.getElementById('patternStyle').value;
+  var oldW=document.getElementById('rugW').value;
+  var oldH=document.getElementById('rugH').value;
+  var oldSym=document.getElementById('symmetryMode').value;
+  var oldBorder=document.getElementById('borderStyle').value;
+  var oldComp=document.getElementById('complexityLevel').value;
+  var oldRemix=remixCounter;
+  var oldGrid=grid?grid.slice():[];var oldW2=W;var oldH2=H;
+
+  // We can generate a mini grid directly using the PRNG
+  var seed=p.remix>0?p.name+'_'+p.remix:p.name;
+  var rng=createPRNG(seed);
+  var tw=p.w||18,th=p.h||30;
+  var miniGrid=[];for(var y=0;y<th;y++)miniGrid[y]=new Array(tw).fill(0);
+
+  // Quick generation: use extractFeatures approach for a simple pattern
+  var chars=transliterateToChars(p.name);
+  if(chars.length>0){
+    var features=chars.map(function(ch){var bmp=rasterizeFromFont(ch,12);return bmp?extractFeatures(bmp):defaultFeatures();});
+    for(y=0;y<th;y++)for(var x=0;x<tw;x++){
+      // Simple deterministic fill based on features + position
+      var fi=features[(x+y)%features.length];
+      var v=(fi.density*10+fi.verticalBalance*5+x*0.3+y*0.7+rng()*2)%2;
+      miniGrid[y][x]=v>1?1:0;
+    }
+  }
+
+  // Render to tiny canvas
+  var sc=Math.max(1,Math.min(Math.floor(150/tw),Math.floor(200/th)));
+  var fc=document.createElement('canvas');fc.width=tw*sc;fc.height=th*sc;
+  var fx=fc.getContext('2d');
+  for(y=0;y<th;y++)for(var x2=0;x2<tw;x2++){
+    fx.fillStyle=miniGrid[y][x2]?'#111':'#F5F5F0';fx.fillRect(x2*sc,y*sc,sc,sc);
+  }
+  return fc.toDataURL('image/jpeg',0.5);
+}
+
+// Capture actual canvas thumbnail
 function captureThumb(){
   try{
     var cvs=document.querySelector('#rugCanvas canvas');
@@ -2128,12 +2176,10 @@ function captureThumb(){
 }
 
 function saveToLibrary(name){
-  // Automatically saves — no button needed. Debounced 800ms.
   clearTimeout(libSaveTimer);
   libSaveTimer=setTimeout(function(){
     if(!name)return;
     var thumb=captureThumb();
-    if(!thumb)return;
     var entry={
       id:Date.now()+'_'+Math.random().toString(36).slice(2,8),
       name:name,
@@ -2149,9 +2195,7 @@ function saveToLibrary(name){
         remix:remixCounter
       }
     };
-    // Merge into current library
-    var lib=libCache.length?libCache:getLocalLib();
-    // Avoid duplicate: same name+style+remix → update
+    var lib=getLocalLib();
     var dupIdx=-1;
     for(var i=0;i<lib.length;i++){
       if(lib[i].name===entry.name&&lib[i].params.style===entry.params.style&&lib[i].params.remix===entry.params.remix){
@@ -2160,16 +2204,16 @@ function saveToLibrary(name){
     }
     if(dupIdx>=0)lib[dupIdx]=entry;
     else lib.unshift(entry);
-    // Cap at 200 entries
-    if(lib.length>200)lib=lib.slice(0,200);
-    libCache=lib;
-    pushToSharedLibrary(lib);
+    if(lib.length>100)lib=lib.slice(0,100);
+    setLocalLib(lib);
+    mergeLibraries();
     renderLibrary();
   },800);
 }
 
 function renderLibrary(){
-  var lib=libCache.length?libCache:getLocalLib();
+  mergeLibraries();
+  var lib=libMerged;
   var gridEl=document.getElementById('libraryGrid');
   var emptyEl=document.getElementById('libraryEmpty');
   var countEl=document.getElementById('libCount');
@@ -2185,8 +2229,10 @@ function renderLibrary(){
   }
 
   emptyEl.style.display='none';
-  countEl.textContent=lib.length+' pattern'+(lib.length===1?'':'s')+' in the community library';
-  clearBtn.style.display='inline-block';
+  var localCount=libLocal.length;
+  var sharedCount=libShared.length;
+  countEl.textContent=lib.length+' pattern'+(lib.length===1?'':'s')+(sharedCount?' ('+sharedCount+' community)':'');
+  clearBtn.style.display=localCount?'inline-block':'none';
 
   var html='';
   for(var i=0;i<lib.length;i++){
@@ -2196,10 +2242,16 @@ function renderLibrary(){
     var timeStr=date.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
     var styleName=e.params.style||'letterform';
     styleName=styleName.charAt(0).toUpperCase()+styleName.slice(1);
+    var badge=e.shared?'<span style="font-size:9px;background:var(--accent);color:#fff;padding:2px 6px;border-radius:3px;margin-left:6px;">Community</span>':'';
     html+='<div class="library-card" data-lib-id="'+e.id+'">';
-    html+='<img class="lib-thumb" src="'+e.thumb+'" alt="'+e.name+' pattern" loading="lazy">';
+    // Use stored thumb if available, otherwise show placeholder
+    if(e.thumb){
+      html+='<img class="lib-thumb" src="'+e.thumb+'" alt="'+escapeHTML(e.name)+' pattern" loading="lazy">';
+    } else {
+      html+='<div class="lib-thumb" style="display:flex;align-items:center;justify-content:center;font-family:var(--solitreo);font-size:48px;color:var(--text-3);">'+escapeHTML(transliterateToChars(e.name).join(''))+'</div>';
+    }
     html+='<div class="lib-info">';
-    html+='<div class="lib-name">'+escapeHTML(e.name)+'</div>';
+    html+='<div class="lib-name">'+escapeHTML(e.name)+badge+'</div>';
     html+='<div class="lib-params">'+styleName+' \u00b7 '+e.params.w+'\u00d7'+e.params.h+'<br>';
     html+=e.params.symmetry+' sym \u00b7 '+e.params.complexity;
     if(e.params.remix>0)html+=' \u00b7 remix #'+e.params.remix;
@@ -2207,7 +2259,7 @@ function renderLibrary(){
     html+='</div>';
     html+='<div class="lib-actions">';
     html+='<button onclick="loadFromLibrary(\''+e.id+'\')">Load</button>';
-    html+='<button class="lib-del" onclick="deleteFromLibrary(\''+e.id+'\')">Delete</button>';
+    if(!e.shared)html+='<button class="lib-del" onclick="deleteFromLibrary(\''+e.id+'\')">Delete</button>';
     html+='</div>';
     html+='</div>';
   }
@@ -2219,9 +2271,8 @@ function escapeHTML(s){
 }
 
 function loadFromLibrary(id){
-  var lib=libCache.length?libCache:getLocalLib();
   var entry=null;
-  for(var i=0;i<lib.length;i++){if(lib[i].id===id){entry=lib[i];break;}}
+  for(var i=0;i<libMerged.length;i++){if(libMerged[i].id===id){entry=libMerged[i];break;}}
   if(!entry)return;
   document.getElementById('nameInput').value=entry.name;
   document.getElementById('solitreoText').textContent=transliterate(entry.name);
@@ -2237,17 +2288,17 @@ function loadFromLibrary(id){
 }
 
 function deleteFromLibrary(id){
-  var lib=libCache.length?libCache:getLocalLib();
+  var lib=getLocalLib();
   lib=lib.filter(function(e){return e.id!==id;});
-  libCache=lib;
-  pushToSharedLibrary(lib);
+  setLocalLib(lib);
+  mergeLibraries();
   renderLibrary();
 }
 
 function clearLibrary(){
-  if(!confirm('Clear all saved patterns?'))return;
-  libCache=[];
-  pushToSharedLibrary([]);
+  if(!confirm('Clear all your saved patterns?'))return;
+  setLocalLib([]);
+  mergeLibraries();
   renderLibrary();
 }
 
