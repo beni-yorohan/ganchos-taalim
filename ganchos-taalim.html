@@ -724,208 +724,207 @@ function transliterate(input){
   return transliterateToChars(input).join('');
 }
 
-// ─── WEAVE STRUCTURES ──────────────────────────────────────────
-var WEAVE_STRUCTURES={
-  tabby:{name:'Plain Weave',repeat:[[1,0],[0,1]]},
-  twill22:{name:'2/2 Twill',repeat:[[1,1,0,0],[0,1,1,0],[0,0,1,1],[1,0,0,1]]},
-  twill21:{name:'2/1 Twill',repeat:[[1,1,0],[0,1,1],[1,0,1]]},
-  satin5:{name:'5-Shaft Satin',repeat:[[1,0,0,0,0],[0,0,1,0,0],[0,0,0,0,1],[0,1,0,0,0],[0,0,0,1,0]]},
-  basket:{name:'Basket Weave',repeat:[[1,1,0,0],[1,1,0,0],[0,0,1,1],[0,0,1,1]]}
-};
+// ─── BITMAP TRANSFORMATION TOOLKIT ─────────────────────────────
 
-function getStructureCell(structKey,x,y){
-  var s=WEAVE_STRUCTURES[structKey];
-  if(!s)return 0;
-  var r=s.repeat;
-  return r[y%r.length][x%r[0].length];
+// Rasterize a Solitreo char to a clean square bitmap at given size
+function rasterLetterBitmap(ch,size){
+  var bmp=rasterizeFromFont(ch,size);
+  if(!bmp)return null;
+  // Ensure square — pad shorter dimension
+  var h=bmp.length,w=bmp[0]?bmp[0].length:0;
+  if(!w||!h)return null;
+  var s=Math.max(w,h);
+  var sq=[];
+  var ox=Math.floor((s-w)/2),oy=Math.floor((s-h)/2);
+  for(var y=0;y<s;y++){
+    sq[y]=new Uint8Array(s);
+    for(var x=0;x<s;x++){
+      var sy=y-oy,sx=x-ox;
+      if(sy>=0&&sy<h&&sx>=0&&sx<w)sq[y][x]=bmp[sy][sx];
+    }
+  }
+  return sq;
 }
 
-// ─── HIGH-RES TEXT RENDERING ──────────────────────────────────
-// Render Solitreo text at high resolution using Canvas 2D, return binary mask
-function renderTextMask(text,targetW,targetH,layout){
-  var hiresScale=8;// 8x supersampling
-  var hiW=targetW*hiresScale;
-  var hiH=targetH*hiresScale;
-
-  var offscreen=document.createElement('canvas');
-  offscreen.width=hiW;offscreen.height=hiH;
-  var ctx=offscreen.getContext('2d');
-
-  // Clear to white (exterior)
-  ctx.fillStyle='#FFFFFF';
-  ctx.fillRect(0,0,hiW,hiH);
-
-  // Transliterate to Solitreo
-  var solitreoStr=transliterate(text);
-  if(!solitreoStr||!solitreoStr.trim())return null;
-
-  // Set up text rendering
-  ctx.fillStyle='#000000';
-  ctx.textAlign='center';
-  ctx.textBaseline='middle';
-
-  var inputLen=solitreoStr.replace(/\s/g,'').length;
-
-  if(layout==='flowing'){
-    // Flowing fill: wrap text to fill canvas, multiple lines
-    var fontSize=Math.floor(hiH/Math.max(2,Math.ceil(Math.sqrt(inputLen*1.5))));
-    fontSize=Math.max(hiresScale*4,Math.min(fontSize,hiH*0.4));
-    ctx.font=fontSize+'px GanchosSans';
-    ctx.direction='rtl';
-
-    // Word/char wrap
-    var chars=solitreoStr.split('');
-    var lineHeight=fontSize*1.3;
-    var maxLines=Math.floor(hiH/lineHeight);
-    var charsPerLine=Math.max(1,Math.floor(hiW/(fontSize*0.7)));
-    var lines=[];
-    for(var ci=0;ci<chars.length;ci+=charsPerLine){
-      lines.push(chars.slice(ci,ci+charsPerLine).join(''));
-    }
-    if(lines.length>maxLines)lines=lines.slice(0,maxLines);
-
-    var totalTextH=lines.length*lineHeight;
-    var startY=(hiH-totalTextH)/2+lineHeight/2;
-    for(var li=0;li<lines.length;li++){
-      ctx.fillText(lines[li],hiW/2,startY+li*lineHeight);
-    }
-  } else if(layout==='tiled'){
-    // Tiled repeat: render text block, then tile it
-    var tileCanvas=document.createElement('canvas');
-    var tileSize=Math.floor(hiW/Math.max(1,Math.ceil(Math.sqrt(inputLen*0.5))));
-    tileSize=Math.max(hiresScale*6,Math.min(tileSize,hiW));
-    tileCanvas.width=tileSize;tileCanvas.height=tileSize;
-    var tCtx=tileCanvas.getContext('2d');
-    tCtx.fillStyle='#FFFFFF';tCtx.fillRect(0,0,tileSize,tileSize);
-    tCtx.fillStyle='#000000';
-    tCtx.font=Math.floor(tileSize*0.6)+'px GanchosSans';
-    tCtx.textAlign='center';tCtx.textBaseline='middle';
-    tCtx.direction='rtl';
-    tCtx.fillText(solitreoStr,tileSize/2,tileSize/2);
-
-    // Tile across canvas with brick offset
-    for(var ty=0;ty<hiH;ty+=tileSize){
-      var rowIdx=Math.floor(ty/tileSize);
-      var xOff=(rowIdx%2)*(tileSize/2);// brick offset
-      for(var tx=-tileSize;tx<hiW+tileSize;tx+=tileSize){
-        ctx.drawImage(tileCanvas,tx+xOff,ty);
-      }
-    }
-  } else {
-    // Centered block (default)
-    var fontSize2=Math.floor(Math.min(hiW*0.7,hiH*0.5)/Math.max(1,inputLen*0.35));
-    fontSize2=Math.max(hiresScale*6,Math.min(fontSize2,hiH*0.6));
-    ctx.font=fontSize2+'px GanchosSans';
-    ctx.direction='rtl';
-    ctx.fillText(solitreoStr,hiW/2,hiH/2);
+// Rotate bitmap 90° clockwise
+function rotateBmp90(bmp){
+  var h=bmp.length,w=bmp[0].length;
+  var r=[];
+  for(var y=0;y<w;y++){
+    r[y]=new Uint8Array(h);
+    for(var x=0;x<h;x++) r[y][x]=bmp[h-1-x][y];
   }
-
-  // ── Read pixels and threshold to binary ──
-  var imgData=ctx.getImageData(0,0,hiW,hiH);
-  var pixels=imgData.data;
-
-  // Create high-res binary mask
-  var hiresMask=[];
-  for(var hy=0;hy<hiH;hy++){
-    hiresMask[hy]=new Uint8Array(hiW);
-    for(var hx=0;hx<hiW;hx++){
-      var idx=(hy*hiW+hx)*4;
-      var brightness=(pixels[idx]+pixels[idx+1]+pixels[idx+2])/3;
-      hiresMask[hy][hx]=brightness<128?1:0;
-    }
-  }
-
-  // ── Contour smoothing: morphological close (dilate then erode) ──
-  var kernelSize=Math.max(1,Math.floor(hiresScale/2));
-  // Dilate
-  var dilated=[];
-  for(hy=0;hy<hiH;hy++){
-    dilated[hy]=new Uint8Array(hiW);
-    for(hx=0;hx<hiW;hx++){
-      var found=false;
-      for(var ky=-kernelSize;ky<=kernelSize&&!found;ky++){
-        for(var kx=-kernelSize;kx<=kernelSize&&!found;kx++){
-          var ny=hy+ky,nx=hx+kx;
-          if(ny>=0&&ny<hiH&&nx>=0&&nx<hiW&&hiresMask[ny][nx])found=true;
-        }
-      }
-      dilated[hy][hx]=found?1:0;
-    }
-  }
-  // Erode
-  var smoothed=[];
-  for(hy=0;hy<hiH;hy++){
-    smoothed[hy]=new Uint8Array(hiW);
-    for(hx=0;hx<hiW;hx++){
-      var allFilled=true;
-      for(ky=-kernelSize;ky<=kernelSize&&allFilled;ky++){
-        for(kx=-kernelSize;kx<=kernelSize&&allFilled;kx++){
-          var ny2=hy+ky,nx2=hx+kx;
-          if(ny2>=0&&ny2<hiH&&nx2>=0&&nx2<hiW){
-            if(!dilated[ny2][nx2])allFilled=false;
-          }
-        }
-      }
-      smoothed[hy][hx]=allFilled?1:0;
-    }
-  }
-
-  // ── Downsample to target grid size (area-based sampling) ──
-  var mask=[];
-  for(var my=0;my<targetH;my++){
-    mask[my]=new Uint8Array(targetW);
-    for(var mx=0;mx<targetW;mx++){
-      // Sample the hires region for this cell
-      var sy0=Math.floor(my*hiH/targetH);
-      var sy1=Math.floor((my+1)*hiH/targetH);
-      var sx0=Math.floor(mx*hiW/targetW);
-      var sx1=Math.floor((mx+1)*hiW/targetW);
-      var filled2=0,total=0;
-      for(var sy=sy0;sy<sy1;sy++){
-        for(var sx=sx0;sx<sx1;sx++){
-          if(smoothed[sy][sx])filled2++;
-          total++;
-        }
-      }
-      // >50% coverage = interior
-      mask[my][mx]=(filled2/total>0.5)?1:0;
-    }
-  }
-
-  return mask;
+  return r;
 }
 
-// ─── APPLY WEAVE STRUCTURES TO MASK ──────────────────────────
-function applyStructuralFill(mask,w,h,intKey,extKey,borderW){
-  var result=[];
+// Mirror horizontally
+function mirrorH(bmp){
+  var h=bmp.length,w=bmp[0].length;
+  var r=[];
   for(var y=0;y<h;y++){
-    result[y]=new Array(w);
-    for(var x=0;x<w;x++){
-      // Border check
-      var inBorder=(y<borderW||y>=h-borderW||x<borderW||x>=w-borderW);
-      if(inBorder){
-        // Border uses exterior structure
-        result[y][x]=getStructureCell(extKey,x,y);
-      } else if(mask[y][x]){
-        // Interior: letter zone
-        result[y][x]=getStructureCell(intKey,x,y);
-      } else {
-        // Exterior: background zone
-        result[y][x]=getStructureCell(extKey,x,y);
-      }
-    }
+    r[y]=new Uint8Array(w);
+    for(var x=0;x<w;x++) r[y][x]=bmp[y][w-1-x];
   }
-  return result;
+  return r;
 }
 
-// ─── MAIN GENERATE ──────────────────────────────────────────────
+// Mirror vertically
+function mirrorV(bmp){
+  var h=bmp.length,w=bmp[0].length;
+  var r=[];
+  for(var y=0;y<h;y++){
+    r[y]=new Uint8Array(w);
+    for(var x=0;x<w;x++) r[y][x]=bmp[h-1-y][x];
+  }
+  return r;
+}
+
+// Scale bitmap to new size (nearest-neighbor)
+function scaleBmp(bmp,newS){
+  var h=bmp.length,w=bmp[0].length;
+  var r=[];
+  for(var y=0;y<newS;y++){
+    r[y]=new Uint8Array(newS);
+    for(var x=0;x<newS;x++){
+      var sy=Math.floor(y*h/newS),sx=Math.floor(x*w/newS);
+      r[y][x]=bmp[sy][sx];
+    }
+  }
+  return r;
+}
+
+// XOR two same-size bitmaps
+function xorBmp(a,b){
+  var h=a.length,w=a[0].length;
+  var r=[];
+  for(var y=0;y<h;y++){
+    r[y]=new Uint8Array(w);
+    for(var x=0;x<w;x++) r[y][x]=(a[y][x]!==b[y][x])?1:0;
+  }
+  return r;
+}
+
+// OR two same-size bitmaps
+function orBmp(a,b){
+  var h=a.length,w=a[0].length;
+  var r=[];
+  for(var y=0;y<h;y++){
+    r[y]=new Uint8Array(w);
+    for(var x=0;x<w;x++) r[y][x]=(a[y][x]||b[y][x])?1:0;
+  }
+  return r;
+}
+
+// Make 4-way pinwheel (rotational symmetry) from a bitmap
+function makePinwheel(bmp){
+  var s=bmp.length;// must be square
+  var s2=s*2;
+  var r=[];
+  for(var y=0;y<s2;y++) r[y]=new Uint8Array(s2);
+  var r90=rotateBmp90(bmp);
+  var r180=rotateBmp90(r90);
+  var r270=rotateBmp90(r180);
+  // Top-left: original, Top-right: 90°, Bottom-right: 180°, Bottom-left: 270°
+  for(var y=0;y<s;y++)for(var x=0;x<s;x++){
+    r[y][x]=bmp[y][x];
+    r[y][s+x]=r90[y][x];
+    r[s+y][s+x]=r180[y][x];
+    r[s+y][x]=r270[y][x];
+  }
+  return r;
+}
+
+// Make 4-way mirror tile from a bitmap
+function makeMirrorTile(bmp){
+  var s=bmp.length;
+  var s2=s*2;
+  var r=[];
+  for(var y=0;y<s2;y++) r[y]=new Uint8Array(s2);
+  var mh=mirrorH(bmp);
+  var mv=mirrorV(bmp);
+  var mhv=mirrorH(mv);
+  // TL: orig, TR: mirrorH, BL: mirrorV, BR: mirrorHV
+  for(var y=0;y<s;y++)for(var x=0;x<s;x++){
+    r[y][x]=bmp[y][x];
+    r[y][s+x]=mh[y][x];
+    r[s+y][x]=mv[y][x];
+    r[s+y][s+x]=mhv[y][x];
+  }
+  return r;
+}
+
+// Stamp a bitmap onto a grid at position (gx,gy), wrapping with XOR
+function stampXOR(g,bmp,gx,gy){
+  var gh=g.length,gw=g[0].length;
+  var bh=bmp.length,bw=bmp[0].length;
+  for(var y=0;y<bh;y++){
+    var ty=gy+y;
+    if(ty<0||ty>=gh)continue;
+    for(var x=0;x<bw;x++){
+      var tx=gx+x;
+      if(tx<0||tx>=gw)continue;
+      if(bmp[y][x]) g[ty][tx]=g[ty][tx]?0:1;// XOR
+    }
+  }
+}
+
+// Stamp with OR
+function stampOR(g,bmp,gx,gy){
+  var gh=g.length,gw=g[0].length;
+  var bh=bmp.length,bw=bmp[0].length;
+  for(var y=0;y<bh;y++){
+    var ty=gy+y;
+    if(ty<0||ty>=gh)continue;
+    for(var x=0;x<bw;x++){
+      var tx=gx+x;
+      if(tx<0||tx>=gw)continue;
+      if(bmp[y][x]) g[ty][tx]=1;
+    }
+  }
+}
+
+// Tile a motif bitmap across a rectangular region with optional brick offset
+function tileFill(g,motif,x0,y0,w,h,brick){
+  var mh=motif.length,mw=motif[0].length;
+  for(var y=y0;y<y0+h;y++){
+    if(y<0||y>=g.length)continue;
+    var rowIdx=Math.floor((y-y0)/mh);
+    var xOff=brick?(rowIdx%2)*Math.floor(mw/2):0;
+    for(var x=x0;x<x0+w;x++){
+      if(x<0||x>=g[0].length)continue;
+      var mx=((x-x0+xOff)%mw+mw)%mw;
+      var my=((y-y0)%mh+mh)%mh;
+      if(motif[my][mx]) g[y][x]=g[y][x]?0:1;// XOR for layering
+    }
+  }
+}
+
+// Slice a letter bitmap into horizontal bands, return array of single-row patterns
+function sliceToBands(bmp,numBands){
+  var h=bmp.length,w=bmp[0].length;
+  var bands=[];
+  var bandH=Math.max(1,Math.floor(h/numBands));
+  for(var b=0;b<numBands;b++){
+    var row=new Uint8Array(w);
+    var y0=b*bandH,y1=Math.min(y0+bandH,h);
+    // OR all rows in this band slice
+    for(var y=y0;y<y1;y++){
+      for(var x=0;x<w;x++) if(bmp[y][x]) row[x]=1;
+    }
+    bands.push([row]);// wrap in 2D array for tileFill compatibility
+  }
+  return bands;
+}
+
+// ─── COMPOSITION ENGINE ────────────────────────────────────────
+
 function generatePattern(){
   scriptMode=false;
   var name=document.getElementById('nameInput').value.trim();
   if(!name){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter text to generate weaving instructions.</p>';
+    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name to generate a pattern.</p>';
     return;
   }
 
@@ -933,79 +932,226 @@ function generatePattern(){
   if(!chars.length){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='No transliterable characters found.';
-    document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter text with Latin letters.</p>';
     return;
   }
 
-  W=parseInt(document.getElementById('rugW').value)||128;
+  var seed=remixCounter>0?name+'_'+remixCounter:name;
+  var rng=createPRNG(seed);
+
+  W=parseInt(document.getElementById('rugW').value)||96;
   H=parseInt(document.getElementById('rugH').value)||128;
-  var intKey=document.getElementById('interiorStructure').value;
-  var extKey=document.getElementById('exteriorStructure').value;
-  var layout=document.getElementById('layoutMode').value;
-  var borderW=parseInt(document.getElementById('borderWidth').value)||0;
+  grid=[];
+  for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
-  // Render text mask
-  var mask=renderTextMask(name,W,H,layout);
-  if(!mask){
+  // ── Rasterize all letters at multiple scales ──
+  var motifSize=Math.max(8,Math.min(Math.floor(Math.min(W,H)/4),24));
+  var bmps=[];
+  for(var i=0;i<chars.length;i++){
+    var b=rasterLetterBitmap(chars[i],motifSize);
+    if(b)bmps.push({ch:chars[i],bmp:b});
+  }
+  if(!bmps.length){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='Could not render text.';
+    document.getElementById('patternStats').textContent='Could not rasterize letters.';
     return;
   }
 
-  // Apply weave structures
-  grid=applyStructuralFill(mask,W,H,intKey,extKey,borderW);
+  // ── Assign roles based on position ──
+  var borderLetter=bmps[0];// first letter → border
+  var medallionLetter=bmps[bmps.length-1];// last letter → medallion
+  var fieldLetters=bmps.length>2?bmps.slice(1,bmps.length-1):[bmps[0]];
+  // For 2-letter names: first=border+field, last=medallion
+  // For 1-letter names: same letter does everything
+
+  // ── Determine border width from name length ──
+  var borderW=Math.max(4,Math.floor(Math.min(W,H)*0.08));
+  // Adjust motif to fit border width
+  var borderMotifSize=Math.max(4,Math.min(borderW,motifSize));
+
+  // ── Remix variations: rotate base letters ──
+  var remixRotations=Math.floor(rng()*4);// 0-3 base rotations
+  for(var ri=0;ri<remixRotations;ri++){
+    borderLetter={ch:borderLetter.ch,bmp:rotateBmp90(borderLetter.bmp)};
+  }
+  var fieldRotations=Math.floor(rng()*4);
+  for(ri=0;ri<fieldRotations;ri++){
+    for(var fi=0;fi<fieldLetters.length;fi++){
+      fieldLetters[fi]={ch:fieldLetters[fi].ch,bmp:rotateBmp90(fieldLetters[fi].bmp)};
+    }
+  }
+  // Remix: pick transformation mode for field
+  var fieldMode=Math.floor(rng()*4);// 0=pinwheel, 1=mirror, 2=brick, 3=bands
+  // Remix: pick overlap mode for corners
+  var overlapMode=rng()>0.5;// true=XOR, false=OR
+
+  // ════════════════════════════════════════════════════
+  // 1. BORDER: first letter, mirror-tiled along all edges
+  // ════════════════════════════════════════════════════
+  var borderBmp=scaleBmp(borderLetter.bmp,borderMotifSize);
+  var borderTile=makeMirrorTile(borderBmp);
+
+  // Top border
+  tileFill(grid,borderTile,0,0,W,borderW,false);
+  // Bottom border
+  tileFill(grid,borderTile,0,H-borderW,W,borderW,false);
+  // Left border
+  tileFill(grid,borderTile,0,borderW,borderW,H-borderW*2,false);
+  // Right border
+  tileFill(grid,borderTile,W-borderW,borderW,borderW,H-borderW*2,false);
+
+  // Solid outer frame (1px)
+  for(y=0;y<H;y++){grid[y][0]=1;grid[y][W-1]=1;}
+  for(var x=0;x<W;x++){grid[0][x]=1;grid[H-1][x]=1;}
+
+  // ════════════════════════════════════════════════════
+  // 2. FIELD: middle letters, transformed and tiled in interior
+  // ════════════════════════════════════════════════════
+  var fieldX0=borderW,fieldY0=borderW;
+  var fieldW=W-borderW*2,fieldH=H-borderW*2;
+
+  if(fieldMode===0){
+    // Pinwheel: rotational symmetry tiling
+    for(fi=0;fi<fieldLetters.length;fi++){
+      var pw=makePinwheel(fieldLetters[fi].bmp);
+      tileFill(grid,pw,fieldX0,fieldY0,fieldW,fieldH,false);
+    }
+  } else if(fieldMode===1){
+    // Mirror tile
+    for(fi=0;fi<fieldLetters.length;fi++){
+      var mt=makeMirrorTile(fieldLetters[fi].bmp);
+      tileFill(grid,mt,fieldX0,fieldY0,fieldW,fieldH,false);
+    }
+  } else if(fieldMode===2){
+    // Brick repeat with overlap
+    for(fi=0;fi<fieldLetters.length;fi++){
+      var fl=fieldLetters[fi].bmp;
+      // For multiple field letters, use different rotations
+      if(fi%2===1) fl=rotateBmp90(rotateBmp90(fl));
+      var mt2=makeMirrorTile(fl);
+      tileFill(grid,mt2,fieldX0,fieldY0,fieldW,fieldH,true);// brick=true
+    }
+  } else {
+    // Band composition: slice letters into horizontal strips, stack them
+    var bandCount=Math.max(2,Math.min(6,fieldLetters.length*3));
+    var allBands=[];
+    for(fi=0;fi<fieldLetters.length;fi++){
+      var bands=sliceToBands(fieldLetters[fi].bmp,bandCount);
+      for(var bi=0;bi<bands.length;bi++) allBands.push(bands[bi]);
+    }
+    // Stack bands as repeating horizontal strips
+    var bandH2=Math.max(2,Math.floor(fieldH/allBands.length));
+    for(bi=0;bi<allBands.length&&bi*bandH2<fieldH;bi++){
+      var band=allBands[bi%allBands.length];
+      tileFill(grid,band,fieldX0,fieldY0+bi*bandH2,fieldW,bandH2,false);
+    }
+  }
+
+  // ════════════════════════════════════════════════════
+  // 3. MEDALLION: last letter, nested at multiple scales in center
+  // ════════════════════════════════════════════════════
+  var medBmp=medallionLetter.bmp;
+  var centerX=Math.floor(W/2),centerY=Math.floor(H/2);
+
+  // Determine medallion sizes (3 nested scales)
+  var medLarge=Math.floor(Math.min(fieldW,fieldH)*0.45);
+  var medMed=Math.floor(medLarge*0.55);
+  var medSmall=Math.floor(medLarge*0.3);
+
+  // Clear a diamond/rectangle zone in center for the medallion
+  var clearR=Math.floor(medLarge/2)+2;
+  for(y=centerY-clearR;y<centerY+clearR;y++){
+    for(x=centerX-clearR;x<centerX+clearR;x++){
+      if(y>=borderW&&y<H-borderW&&x>=borderW&&x<W-borderW){
+        // Diamond shape clear
+        var dy=Math.abs(y-centerY),dx=Math.abs(x-centerX);
+        if(dy+dx<=clearR) grid[y][x]=0;
+      }
+    }
+  }
+
+  // Large: mirror tile of letter
+  var medL=scaleBmp(medBmp,medLarge);
+  var medLTile=makeMirrorTile(medL);
+  stampXOR(grid,medLTile,centerX-medLarge,centerY-medLarge);
+
+  // Medium: pinwheel, XOR on top
+  var medM=scaleBmp(medBmp,medMed);
+  var medMPin=makePinwheel(medM);
+  stampXOR(grid,medMPin,centerX-medMed,centerY-medMed);
+
+  // Small: just the letter mirrored
+  var medS=scaleBmp(medBmp,medSmall);
+  var medSMir=makeMirrorTile(medS);
+  stampXOR(grid,medSMir,centerX-medSmall,centerY-medSmall);
+
+  // ════════════════════════════════════════════════════
+  // 4. CORNERS: first and last letters combined
+  // ════════════════════════════════════════════════════
+  if(bmps.length>=2){
+    var cornerSize=Math.max(4,Math.floor(borderW*1.5));
+    var c1=scaleBmp(borderLetter.bmp,cornerSize);
+    var c2=scaleBmp(medallionLetter.bmp,cornerSize);
+    var corner=overlapMode?xorBmp(c1,c2):orBmp(c1,c2);
+    var cornerTile=makeMirrorTile(corner);
+
+    // Stamp in all 4 corners
+    stampOR(grid,cornerTile,0,0);
+    stampOR(grid,cornerTile,W-cornerSize*2,0);
+    stampOR(grid,cornerTile,0,H-cornerSize*2);
+    stampOR(grid,cornerTile,W-cornerSize*2,H-cornerSize*2);
+  }
+
+  // ════════════════════════════════════════════════════
+  // 5. SYMMETRY: enforce vertical mirror for rug-like look
+  // ════════════════════════════════════════════════════
+  for(y=0;y<H;y++){
+    for(x=0;x<Math.floor(W/2);x++){
+      grid[y][W-1-x]=grid[y][x];
+    }
+  }
+
+  // ════════════════════════════════════════════════════
 
   if(rugSketch)rugSketch.refresh();
 
   // Stats
-  var filled=0,interior=0;
-  for(var y=0;y<H;y++)for(var x=0;x<W;x++){
-    if(grid[y][x])filled++;
-    if(mask[y][x])interior++;
-  }
+  var filled=0;
+  for(y=0;y<H;y++)for(x=0;x<W;x++)if(grid[y][x])filled++;
   var density=((filled/(W*H))*100).toFixed(1);
-  var intName=WEAVE_STRUCTURES[intKey]?WEAVE_STRUCTURES[intKey].name:intKey;
-  var extName=WEAVE_STRUCTURES[extKey]?WEAVE_STRUCTURES[extKey].name:extKey;
+  var modeNames=['pinwheel','mirror tile','brick repeat','band composition'];
+
+  var roleDesc=[];
+  roleDesc.push(borderLetter.ch+' \u2192 border');
+  for(fi=0;fi<fieldLetters.length;fi++) roleDesc.push(fieldLetters[fi].ch+' \u2192 field ('+modeNames[fieldMode]+')');
+  roleDesc.push(medallionLetter.ch+' \u2192 medallion');
+
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 Interior: '+intName+' \u00b7 Exterior: '+extName+
-    ' \u00b7 '+density+'% density \u00b7 '+chars.length+' letters \u00b7 '+layout+' layout';
+    W+'\u00d7'+H+' \u00b7 '+density+'% density \u00b7 '+chars.length+' letters \u00b7 '+roleDesc.join(' \u00b7 ')+' \u00b7 seed: '+seed;
 
-  // Taalim
-  generateTaalim(mask,intKey,extKey,borderW,chars);
-
-  // Save to library
-  saveToLibrary(name);
-}
-
-// ─── TAALIM ─────────────────────────────────────────────────────
-function generateTaalim(mask,intKey,extKey,borderW,chars){
-  if(!grid||!grid.length)return;
+  // Taalim breakdown
   var body=document.getElementById('taalimBody');
-  var filled=0;for(var y=0;y<H;y++)for(var x=0;x<W;x++)if(grid[y][x])filled++;
-  var density=((filled/(W*H))*100).toFixed(1);
-  var intName=WEAVE_STRUCTURES[intKey]?WEAVE_STRUCTURES[intKey].name:intKey;
-  var extName=WEAVE_STRUCTURES[extKey]?WEAVE_STRUCTURES[extKey].name:extKey;
-
-  var html='<div class="taalim-section"><h3>Weave Structure</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">This pattern uses <strong>texture differentiation</strong> to make ';
-  html+=chars.length+' Solitreo letter'+(chars.length>1?'s':'')+' visible within the cloth.</p>';
-  html+='<p style="font-size:14px;color:var(--text);margin-top:8px;">The letter zones use <strong>'+intName+'</strong> ';
-  html+='while the background uses <strong>'+extName+'</strong>. The contrast between structures ';
-  html+='creates the design \u2014 like damask, brocade, or kilim textiles.</p>';
-  html+='</div>';
+  var html='<div class="taalim-section"><h3>Letter Roles</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">Each letter in the name is assigned a structural role:</p>';
+  html+='<ul style="font-size:14px;color:var(--text);list-style:none;padding:0;margin-top:8px;">';
+  html+='<li><strong>'+borderLetter.ch+'</strong> (first) \u2192 Border motif \u2014 mirror-tiled along all 4 edges</li>';
+  for(fi=0;fi<fieldLetters.length;fi++){
+    html+='<li><strong>'+fieldLetters[fi].ch+'</strong> (middle) \u2192 Field pattern \u2014 '+modeNames[fieldMode]+'</li>';
+  }
+  html+='<li><strong>'+medallionLetter.ch+'</strong> (last) \u2192 Center medallion \u2014 nested at 3 scales</li>';
+  if(bmps.length>=2) html+='<li><strong>'+borderLetter.ch+' + '+medallionLetter.ch+'</strong> \u2192 Corner accents \u2014 '+(overlapMode?'XOR':'OR')+' overlap</li>';
+  html+='</ul></div>';
 
   html+='<div class="taalim-section"><h3>Pattern Statistics</h3><div class="taalim-stats">';
-  html+='<div class="taalim-stat"><div class="val">'+W+'\u00d7'+H+'</div><div class="lbl">Grid Size</div></div>';
-  html+='<div class="taalim-stat"><div class="val">'+filled+'</div><div class="lbl">Filled Cells</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+W+'\u00d7'+H+'</div><div class="lbl">Grid</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+filled+'</div><div class="lbl">Filled</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+density+'%</div><div class="lbl">Density</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+chars.length+'</div><div class="lbl">Letters</div></div>';
   html+='</div></div>';
 
-  if(borderW>0){
-    html+='<div class="taalim-section"><p style="font-size:14px;color:var(--text-3);">Border: '+borderW+'px using '+extName+' structure.</p></div>';
-  }
-
+  html+='<div class="taalim-section"><p style="font-size:13px;color:var(--text-3);">Remix #'+remixCounter+': base rotation '+remixRotations+'&times;90\u00b0, field mode: '+modeNames[fieldMode]+', corners: '+(overlapMode?'XOR':'OR')+'</p></div>';
   body.innerHTML=html;
+
+  saveToLibrary(name);
 }
 
 // ─── EXPORTS ────────────────────────────────────────────────────
@@ -1015,42 +1161,30 @@ function doExportWIF(){
   if(!grid||!grid.length)return;
   var name=document.getElementById('nameInput').value.trim()||'pattern';
   var fname='ganchos-'+name.replace(/\s+/g,'-')+'.wif';
-
   var wif='[WIF]\nVersion=1.1\nDate='+new Date().toISOString().split('T')[0]+'\n';
-  wif+='Developers=Ganchos Taalim\nSource Program=Ganchos Taalim Generative\nSource Version=10.0\n\n';
+  wif+='Developers=Ganchos Taalim\nSource Program=Ganchos Taalim\nSource Version=11.0\n\n';
   wif+='[CONTENTS]\nCOLOR PALETTE=true\nCOLOR TABLE=true\nWEAVING=true\nWARP=true\nWEFT=true\nLIFTPLAN=true\n\n';
-  wif+='[COLOR PALETTE]\nRange=0,255\nEntries=2\n\n';
-  wif+='[COLOR TABLE]\n1=0,0,0\n2=255,255,255\n\n';
+  wif+='[COLOR PALETTE]\nRange=0,255\nEntries=2\n\n[COLOR TABLE]\n1=0,0,0\n2=255,255,255\n\n';
   wif+='[WEAVING]\nShafts='+W+'\nTreadles='+H+'\nRising Shed=true\n\n';
-  wif+='[WARP]\nThreads='+W+'\nColor=1\n\n';
-  wif+='[WEFT]\nThreads='+H+'\nColor=2\n\n';
-
-  // LIFTPLAN: for each weft pick (row), list which warp threads (columns) are lifted
+  wif+='[WARP]\nThreads='+W+'\nColor=1\n\n[WEFT]\nThreads='+H+'\nColor=2\n\n';
   wif+='[LIFTPLAN]\n';
   for(var y=0;y<H;y++){
     var lifted=[];
-    for(var x=0;x<W;x++){
-      if(grid[y][x])lifted.push(x+1);
-    }
+    for(var x=0;x<W;x++) if(grid[y][x])lifted.push(x+1);
     wif+=(y+1)+'='+lifted.join(',')+'\n';
   }
-
   downloadFile(fname,wif,'text/plain');
 }
 
 function doExportPNG(){
   if(!grid||!grid.length)return;
   var name=document.getElementById('nameInput').value.trim()||'pattern';
-  var sc=4;
-  var ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;
+  var sc=4,ec=document.createElement('canvas');ec.width=W*sc;ec.height=H*sc;
   var ectx=ec.getContext('2d');
   for(var y=0;y<H;y++)for(var x=0;x<W;x++){
-    ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';
-    ectx.fillRect(x*sc,y*sc,sc,sc);
+    ectx.fillStyle=grid[y][x]?'#111111':'#F5F5F0';ectx.fillRect(x*sc,y*sc,sc,sc);
   }
-  var a=document.createElement('a');
-  a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';
-  a.href=ec.toDataURL('image/png');a.click();
+  var a=document.createElement('a');a.download='ganchos-'+name.replace(/\s+/g,'-')+'.png';a.href=ec.toDataURL('image/png');a.click();
 }
 
 function doExportSVG(){
@@ -1076,7 +1210,7 @@ function createRugSketch(containerEl){
         p.resizeCanvas(400,300);p.background(250,250,245);
         p.fill(180);p.noStroke();p.textFont('Inter, sans-serif');p.textSize(16);
         p.textAlign(p.CENTER,p.CENTER);
-        p.text('Enter text to generate a pattern',200,150);return;
+        p.text('Enter a name to generate a pattern',200,150);return;
       }
       var maxW=containerEl.clientWidth||600;
       var maxH=Math.min(window.innerHeight*0.65,700);
@@ -1086,7 +1220,6 @@ function createRugSketch(containerEl){
       for(var y=0;y<H;y++)for(var x=0;x<W;x++){
         if(grid[y][x]){p.fill(17,17,17);p.rect(x*cellSize,y*cellSize,cellSize,cellSize);}
       }
-      // Grid lines only if cells are big enough
       if(cellSize>5){
         p.stroke(0,0,0,12);p.strokeWeight(0.5);
         for(var gx=0;gx<=W;gx++)p.line(gx*cellSize,0,gx*cellSize,H*cellSize);
