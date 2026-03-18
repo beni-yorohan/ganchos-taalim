@@ -930,6 +930,45 @@ function sliceToBands(bmp,numBands){
   return bands;
 }
 
+// ─── RENDER NAME AS BITMAP ─────────────────────────────────────
+// Render the Solitreo name into a binary bitmap using Canvas 2D
+function renderNameBitmap(solitreoStr,maxW,maxH,fontSize){
+  var c=document.createElement('canvas');
+  c.width=maxW;c.height=maxH;
+  var ctx=c.getContext('2d');
+  ctx.fillStyle='#FFF';ctx.fillRect(0,0,maxW,maxH);
+  ctx.fillStyle='#000';
+  ctx.font=fontSize+'px GanchosSans';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.direction='rtl';
+  ctx.fillText(solitreoStr,maxW/2,maxH/2);
+  var img=ctx.getImageData(0,0,maxW,maxH);
+  var bmp=[];
+  for(var y=0;y<maxH;y++){
+    bmp[y]=new Uint8Array(maxW);
+    for(var x=0;x<maxW;x++){
+      var idx=(y*maxW+x)*4;
+      bmp[y][x]=(img.data[idx]+img.data[idx+1]+img.data[idx+2])/3<128?1:0;
+    }
+  }
+  // Crop to bounding box with padding
+  var top=maxH,bot=0,left=maxW,right=0;
+  for(y=0;y<maxH;y++)for(x=0;x<maxW;x++){
+    if(bmp[y][x]){if(y<top)top=y;if(y>bot)bot=y;if(x<left)left=x;if(x>right)right=x;}
+  }
+  if(top>bot)return null;// nothing rendered
+  var pad=4;
+  top=Math.max(0,top-pad);bot=Math.min(maxH-1,bot+pad);
+  left=Math.max(0,left-pad);right=Math.min(maxW-1,right+pad);
+  var cropped=[];
+  for(y=top;y<=bot;y++){
+    var row=new Uint8Array(right-left+1);
+    for(x=left;x<=right;x++) row[x-left]=bmp[y][x];
+    cropped.push(row);
+  }
+  return cropped;
+}
+
 // ─── COMPOSITION ENGINE ────────────────────────────────────────
 
 function generatePattern(){
