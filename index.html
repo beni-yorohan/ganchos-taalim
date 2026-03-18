@@ -930,6 +930,45 @@ function sliceToBands(bmp,numBands){
   return bands;
 }
 
+// ─── RENDER NAME AS BITMAP ─────────────────────────────────────
+// Render the Solitreo name into a binary bitmap using Canvas 2D
+function renderNameBitmap(solitreoStr,maxW,maxH,fontSize){
+  var c=document.createElement('canvas');
+  c.width=maxW;c.height=maxH;
+  var ctx=c.getContext('2d');
+  ctx.fillStyle='#FFF';ctx.fillRect(0,0,maxW,maxH);
+  ctx.fillStyle='#000';
+  ctx.font=fontSize+'px GanchosSans';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.direction='rtl';
+  ctx.fillText(solitreoStr,maxW/2,maxH/2);
+  var img=ctx.getImageData(0,0,maxW,maxH);
+  var bmp=[];
+  for(var y=0;y<maxH;y++){
+    bmp[y]=new Uint8Array(maxW);
+    for(var x=0;x<maxW;x++){
+      var idx=(y*maxW+x)*4;
+      bmp[y][x]=(img.data[idx]+img.data[idx+1]+img.data[idx+2])/3<128?1:0;
+    }
+  }
+  // Crop to bounding box with padding
+  var top=maxH,bot=0,left=maxW,right=0;
+  for(y=0;y<maxH;y++)for(x=0;x<maxW;x++){
+    if(bmp[y][x]){if(y<top)top=y;if(y>bot)bot=y;if(x<left)left=x;if(x>right)right=x;}
+  }
+  if(top>bot)return null;// nothing rendered
+  var pad=4;
+  top=Math.max(0,top-pad);bot=Math.min(maxH-1,bot+pad);
+  left=Math.max(0,left-pad);right=Math.min(maxW-1,right+pad);
+  var cropped=[];
+  for(y=top;y<=bot;y++){
+    var row=new Uint8Array(right-left+1);
+    for(x=left;x<=right;x++) row[x-left]=bmp[y][x];
+    cropped.push(row);
+  }
+  return cropped;
+}
+
 // ─── COMPOSITION ENGINE ────────────────────────────────────────
 
 function generatePattern(){
@@ -957,17 +996,15 @@ function generatePattern(){
   grid=[];
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
-  // ── Rasterize letters at MULTIPLE scales for hierarchy ──
-  var sSmall=Math.max(8,Math.floor(Math.min(W,H)/20));// ~15px: border motifs
-  var sMed=Math.max(16,Math.floor(Math.min(W,H)/10));// ~30px: field motifs
-  var sLarge=Math.max(30,Math.floor(Math.min(W,H)/5));// ~60px: medallion
+  // ── Rasterize individual letters for motifs ──
+  var sSmall=Math.max(8,Math.floor(Math.min(W,H)/20));
+  var sMed=Math.max(14,Math.floor(Math.min(W,H)/12));
 
   var bmps=[];
   for(var i=0;i<chars.length;i++){
     var bs=rasterLetterBitmap(chars[i],sSmall);
     var bm=rasterLetterBitmap(chars[i],sMed);
-    var bl=rasterLetterBitmap(chars[i],sLarge);
-    if(bs&&bm&&bl)bmps.push({ch:chars[i],small:bs,med:bm,large:bl});
+    if(bs&&bm)bmps.push({ch:chars[i],small:bs,med:bm});
   }
   if(!bmps.length){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
@@ -975,28 +1012,33 @@ function generatePattern(){
     return;
   }
 
+  // ── Render the FULL NAME as a readable bitmap for the medallion ──
+  var solitreoStr=transliterate(name);
+  var nameLen=solitreoStr.replace(/\s/g,'').length;
+  var medFontSize=Math.max(20,Math.floor(Math.min(W*0.6,H*0.15)/Math.max(1,nameLen*0.15)));
+  medFontSize=Math.min(medFontSize,Math.floor(H*0.12));
+  var nameBmp=renderNameBitmap(solitreoStr,Math.floor(W*0.6),Math.floor(H*0.15),medFontSize);
+
   // ── Assign roles ──
   var borderLetter=bmps[0];
-  var medallionLetter=bmps[bmps.length-1];
-  var fieldLetters=bmps.length>2?bmps.slice(1,bmps.length-1):[bmps[Math.floor(bmps.length/2)]];
+  var fieldLetters=bmps.length>1?bmps.slice(1):[bmps[0]];
 
-  // ── Remix: rotate, pick modes ──
+  // ── Remix ──
   var remixRot=Math.floor(rng()*4);
-  var fieldMode=Math.floor(rng()*3);// 0=pinwheel, 1=mirror, 2=brick
-  var medMode=Math.floor(rng()*2);// 0=pinwheel, 1=mirror
+  var fieldMode=Math.floor(rng()*3);
+  var medMode=Math.floor(rng()*2);
 
-  // Apply remix rotations to border letter
   var borderSmall=borderLetter.small;
   for(var ri=0;ri<remixRot;ri++) borderSmall=rotateBmp90(borderSmall);
 
   // ── Zone dimensions ──
-  var outerBorderW=2;// solid outer frame
-  var guardW=Math.max(3,Math.floor(Math.min(W,H)*0.04));// guard stripe
-  var innerBorderW=Math.max(4,Math.floor(Math.min(W,H)*0.06));// main border
+  var outerBorderW=2;
+  var guardW=Math.max(3,Math.floor(Math.min(W,H)*0.03));
+  var innerBorderW=Math.max(5,Math.floor(Math.min(W,H)*0.05));
   var totalBorder=outerBorderW+guardW+innerBorderW;
 
   // ════════════════════════════════════════════════════
-  // 1. OUTER FRAME: solid lines
+  // 1. OUTER FRAME
   // ════════════════════════════════════════════════════
   for(y=0;y<H;y++)for(var x=0;x<W;x++){
     if(y<outerBorderW||y>=H-outerBorderW||x<outerBorderW||x>=W-outerBorderW)
@@ -1004,44 +1046,35 @@ function generatePattern(){
   }
 
   // ════════════════════════════════════════════════════
-  // 2. GUARD STRIPE: alternating checkerboard from first letter
+  // 2. GUARD STRIPE
   // ════════════════════════════════════════════════════
   var guardTile=makeMirrorTile(borderSmall);
   var gx0=outerBorderW,gy0=outerBorderW;
   var gw=W-outerBorderW*2,gh=H-outerBorderW*2;
-  // Top guard
   tileFill(grid,guardTile,gx0,gy0,gw,guardW,false,'set');
-  // Bottom guard
   tileFill(grid,guardTile,gx0,gy0+gh-guardW,gw,guardW,false,'set');
-  // Left guard
   tileFill(grid,guardTile,gx0,gy0+guardW,guardW,gh-guardW*2,false,'set');
-  // Right guard
   tileFill(grid,guardTile,gx0+gw-guardW,gy0+guardW,guardW,gh-guardW*2,false,'set');
 
   // ════════════════════════════════════════════════════
-  // 3. MAIN BORDER: second letter (or first rotated) at medium scale
+  // 3. MAIN BORDER
   // ════════════════════════════════════════════════════
   var borderMed=bmps.length>1?bmps[1].small:rotateBmp90(borderSmall);
   for(ri=0;ri<(remixRot+1)%4;ri++) borderMed=rotateBmp90(borderMed);
   var borderPW=makePinwheel(borderMed);
   var bx0=outerBorderW+guardW,by0=outerBorderW+guardW;
   var bw=W-(outerBorderW+guardW)*2,bh=H-(outerBorderW+guardW)*2;
-  // Top
   tileFill(grid,borderPW,bx0,by0,bw,innerBorderW,false,'set');
-  // Bottom
   tileFill(grid,borderPW,bx0,by0+bh-innerBorderW,bw,innerBorderW,false,'set');
-  // Left
   tileFill(grid,borderPW,bx0,by0+innerBorderW,innerBorderW,bh-innerBorderW*2,false,'set');
-  // Right
   tileFill(grid,borderPW,bx0+bw-innerBorderW,by0+innerBorderW,innerBorderW,bh-innerBorderW*2,false,'set');
 
   // ════════════════════════════════════════════════════
-  // 4. FIELD: fill interior with medium-scale transformed letters
+  // 4. FIELD: decorative motifs filling the interior
   // ════════════════════════════════════════════════════
   var fx0=totalBorder,fy0=totalBorder;
   var fw=W-totalBorder*2,fh=H-totalBorder*2;
 
-  // Primary field tile from first field letter
   var fBmp=fieldLetters[0].med;
   var fieldRot2=Math.floor(rng()*4);
   for(ri=0;ri<fieldRot2;ri++) fBmp=rotateBmp90(fBmp);
@@ -1050,73 +1083,83 @@ function generatePattern(){
   else fTile=makeMirrorTile(fBmp);
   tileFill(grid,fTile,fx0,fy0,fw,fh,fieldMode===2,'set');
 
-  // Layer second field letter for richness (XOR creates interference pattern)
   if(fieldLetters.length>1){
-    var fBmp2=fieldLetters[1].med;
+    var fBmp2=fieldLetters[Math.min(1,fieldLetters.length-1)].med;
     var fTile2=makePinwheel(rotateBmp90(fBmp2));
     tileFill(grid,fTile2,fx0,fy0,fw,fh,false,'xor');
   }
 
   // ════════════════════════════════════════════════════
-  // 5. MEDALLION: large-scale centered motif — the focal point
+  // 5. MEDALLION: the NAME itself, readable, centered
   // ════════════════════════════════════════════════════
-  var medBmp=medallionLetter.large;
-  var medRot=Math.floor(rng()*4);
-  for(ri=0;ri<medRot;ri++) medBmp=rotateBmp90(medBmp);
-  var medTile=medMode===0?makePinwheel(medBmp):makeMirrorTile(medBmp);
-  var mTW=medTile[0].length,mTH=medTile.length;
   var cx=Math.floor(W/2),cy=Math.floor(H/2);
 
-  // Clear a stepped diamond zone
-  var clearR=Math.floor(Math.max(mTW,mTH)/2)+3;
-  for(y=cy-clearR;y<=cy+clearR;y++){
-    for(x=cx-clearR;x<=cx+clearR;x++){
-      if(y>=totalBorder&&y<H-totalBorder&&x>=totalBorder&&x<W-totalBorder){
-        var dy=Math.abs(y-cy),dx=Math.abs(x-cx);
-        // Stepped diamond (step size = 2 for organic feel)
-        if(Math.floor(dy/2)*2+Math.floor(dx/2)*2<=clearR) grid[y][x]=0;
+  if(nameBmp&&nameBmp.length>0){
+    var nW=nameBmp[0].length,nH=nameBmp.length;
+    var padX=Math.floor(nW*0.2),padY=Math.floor(nH*0.5);
+    var clearW=nW+padX*2,clearH=nH+padY*2;
+
+    // Clear rectangle for the medallion
+    for(y=cy-Math.floor(clearH/2);y<cy+Math.floor(clearH/2);y++){
+      for(x=cx-Math.floor(clearW/2);x<cx+Math.floor(clearW/2);x++){
+        if(y>=totalBorder&&y<H-totalBorder&&x>=totalBorder&&x<W-totalBorder)
+          grid[y][x]=0;
       }
     }
-  }
 
-  // Diamond outline (1px frame around the clear zone)
-  for(y=cy-clearR-1;y<=cy+clearR+1;y++){
-    for(x=cx-clearR-1;x<=cx+clearR+1;x++){
-      if(y>=totalBorder&&y<H-totalBorder&&x>=totalBorder&&x<W-totalBorder){
-        var dy2=Math.abs(y-cy),dx2=Math.abs(x-cx);
-        var dist=Math.floor(dy2/2)*2+Math.floor(dx2/2)*2;
-        if(dist===clearR||dist===clearR+1) grid[y][x]=1;
+    // Draw medallion frame (stepped rectangle)
+    var fTop=cy-Math.floor(clearH/2),fBot=cy+Math.floor(clearH/2)-1;
+    var fLeft=cx-Math.floor(clearW/2),fRight=cx+Math.floor(clearW/2)-1;
+    // Outer frame of medallion (2px)
+    for(y=fTop;y<=fBot;y++){
+      for(x=fLeft;x<=fRight;x++){
+        if(y>=0&&y<H&&x>=0&&x<W){
+          if(y<=fTop+1||y>=fBot-1||x<=fLeft+1||x>=fRight-1) grid[y][x]=1;
+        }
       }
     }
-  }
+    // Inner decorative border of medallion (letter-derived)
+    var medBorderBmp=bmps[bmps.length-1].small;
+    var medBorderTile=makeMirrorTile(medBorderBmp);
+    var mbW=3;// medallion inner border width
+    // Top inner border
+    tileFill(grid,medBorderTile,fLeft+2,fTop+2,clearW-4,mbW,false,'set');
+    // Bottom inner border
+    tileFill(grid,medBorderTile,fLeft+2,fBot-1-mbW,clearW-4,mbW,false,'set');
+    // Left inner border
+    tileFill(grid,medBorderTile,fLeft+2,fTop+2+mbW,mbW,clearH-4-mbW*2,false,'set');
+    // Right inner border
+    tileFill(grid,medBorderTile,fRight-1-mbW,fTop+2+mbW,mbW,clearH-4-mbW*2,false,'set');
 
-  // Stamp medallion
-  stampOR(grid,medTile,cx-Math.floor(mTW/2),cy-Math.floor(mTH/2));
+    // Stamp the actual name text
+    var nameX=cx-Math.floor(nW/2);
+    var nameY=cy-Math.floor(nH/2);
+    stampOR(grid,nameBmp,nameX,nameY);
+  }
 
   // ════════════════════════════════════════════════════
-  // 6. QUARTER MEDALLIONS: smaller versions at 1/4 and 3/4 height
+  // 6. SECONDARY MOTIFS: at 1/4 and 3/4 height
   // ════════════════════════════════════════════════════
   if(bmps.length>=2){
-    var qMedBmp=bmps[Math.floor(bmps.length/2)].med;
-    var qTile=makeMirrorTile(qMedBmp);
-    var qW=qTile[0].length,qH=qTile.length;
-    var qy1=Math.floor(H*0.25),qy2=Math.floor(H*0.75);
-    // Only stamp if they don't overlap the main medallion
-    if(qy1+qH<cy-clearR){
-      stampXOR(grid,qTile,cx-Math.floor(qW/2),qy1-Math.floor(qH/2));
-    }
-    if(qy2-qH>cy+clearR){
-      stampXOR(grid,qTile,cx-Math.floor(qW/2),qy2-Math.floor(qH/2));
-    }
+    var qBmp=bmps[Math.floor(bmps.length/2)].med;
+    var qTile=medMode===0?makePinwheel(qBmp):makeMirrorTile(qBmp);
+    var qTW=qTile[0].length,qTH=qTile.length;
+    var qy1=Math.floor(H*0.22),qy2=Math.floor(H*0.78);
+    var medTop=cy-Math.floor((nameBmp?nameBmp.length*1.5:20)/2);
+    var medBot=cy+Math.floor((nameBmp?nameBmp.length*1.5:20)/2);
+    if(qy1+qTH<medTop)
+      stampXOR(grid,qTile,cx-Math.floor(qTW/2),qy1-Math.floor(qTH/2));
+    if(qy2-qTH>medBot)
+      stampXOR(grid,qTile,cx-Math.floor(qTW/2),qy2-Math.floor(qTH/2));
   }
 
   // ════════════════════════════════════════════════════
-  // 7. CORNERS: combined motif in border corners
+  // 7. CORNERS
   // ════════════════════════════════════════════════════
   if(bmps.length>=2){
     var cS=Math.max(4,innerBorderW);
-    var c1b=scaleBmp(borderLetter.small,cS);
-    var c2b=scaleBmp(medallionLetter.small,cS);
+    var c1b=scaleBmp(bmps[0].small,cS);
+    var c2b=scaleBmp(bmps[bmps.length-1].small,cS);
     var cornerM=makeMirrorTile(orBmp(c1b,c2b));
     var csW=cornerM[0].length,csH=cornerM.length;
     stampOR(grid,cornerM,outerBorderW+guardW,outerBorderW+guardW);
@@ -1126,7 +1169,7 @@ function generatePattern(){
   }
 
   // ════════════════════════════════════════════════════
-  // 8. SYMMETRY: vertical mirror for rug feel
+  // 8. SYMMETRY: vertical mirror
   // ════════════════════════════════════════════════════
   for(y=0;y<H;y++){
     for(x=0;x<Math.floor(W/2);x++){
@@ -1145,35 +1188,31 @@ function generatePattern(){
   var modeNames=['pinwheel','mirror tile','brick repeat'];
   var medNames=['pinwheel','mirror tile'];
 
-  var roleDesc=[];
-  roleDesc.push(borderLetter.ch+' \u2192 border');
-  for(fi=0;fi<fieldLetters.length;fi++) roleDesc.push(fieldLetters[fi].ch+' \u2192 field ('+modeNames[fieldMode]+')');
-  roleDesc.push(medallionLetter.ch+' \u2192 medallion ('+medNames[medMode]+')');
-
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+chars.length+' letters \u00b7 '+roleDesc.join(' \u00b7 ')+' \u00b7 seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+chars.length+' letters \u00b7 \u201c'+name+'\u201d in Solitreo \u00b7 seed: '+seed;
 
   // Taalim breakdown
   var body=document.getElementById('taalimBody');
-  var html='<div class="taalim-section"><h3>Letter Roles</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">Each letter becomes a building block, transformed through rug-making operations:</p>';
+  var html='<div class="taalim-section"><h3>Composition</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">The name <strong>\u201c'+name+'\u201d</strong> is written in Solitreo script at the center medallion. ';
+  html+='The surrounding motifs are built from the individual letterforms:</p>';
   html+='<ul style="font-size:14px;color:var(--text);list-style:none;padding:0;margin-top:8px;">';
-  html+='<li><strong>'+borderLetter.ch+'</strong> (first) \u2192 Border \u2014 mirror-tiled along all 4 edges</li>';
-  for(fi=0;fi<fieldLetters.length;fi++){
-    html+='<li><strong>'+fieldLetters[fi].ch+'</strong> (middle) \u2192 Field \u2014 '+modeNames[fieldMode]+' fill</li>';
+  html+='<li><strong>Medallion</strong> \u2014 \u201c'+solitreoStr+'\u201d readable in GanchosSans</li>';
+  html+='<li><strong>'+borderLetter.ch+'</strong> (first letter) \u2192 Guard stripe + border motifs</li>';
+  for(var fi=0;fi<fieldLetters.length;fi++){
+    html+='<li><strong>'+fieldLetters[fi].ch+'</strong> \u2192 Field pattern ('+modeNames[fieldMode]+')</li>';
   }
-  html+='<li><strong>'+medallionLetter.ch+'</strong> (last) \u2192 Medallion \u2014 '+medNames[medMode]+' centered</li>';
-  if(bmps.length>=2) html+='<li><strong>'+borderLetter.ch+' \u00d7 '+medallionLetter.ch+'</strong> \u2192 Corner accents</li>';
+  if(bmps.length>=2) html+='<li><strong>Secondary motifs</strong> \u2192 '+medNames[medMode]+' at 1/4 and 3/4 height</li>';
   html+='</ul></div>';
 
   html+='<div class="taalim-section"><h3>Statistics</h3><div class="taalim-stats">';
   html+='<div class="taalim-stat"><div class="val">'+W+'\u00d7'+H+'</div><div class="lbl">Grid</div></div>';
-  html+='<div class="taalim-stat"><div class="val">'+filled+'</div><div class="lbl">Filled</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+density+'%</div><div class="lbl">Density</div></div>';
-  html+='<div class="taalim-stat"><div class="val">'+sSmall+'/'+sMed+'/'+sLarge+'</div><div class="lbl">Scales</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+chars.length+'</div><div class="lbl">Letters</div></div>';
+  html+='<div class="taalim-stat"><div class="val">'+sSmall+'/'+sMed+'</div><div class="lbl">Motif px</div></div>';
   html+='</div></div>';
 
-  html+='<div class="taalim-section"><p style="font-size:13px;color:var(--text-3);">Remix #'+remixCounter+' \u00b7 rotation '+remixRot+'&times;90\u00b0 \u00b7 field: '+modeNames[fieldMode]+' \u00b7 medallion: '+medNames[medMode]+'</p></div>';
+  html+='<div class="taalim-section"><p style="font-size:13px;color:var(--text-3);">Remix #'+remixCounter+' \u00b7 field: '+modeNames[fieldMode]+'</p></div>';
   body.innerHTML=html;
 
   saveToLibrary(name);
