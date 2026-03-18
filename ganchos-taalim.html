@@ -1126,15 +1126,21 @@ function generatePattern(){
     return da-db;
   });
 
-  // Build letter queue: largest first
-  var sizeLevels=[0.32,0.24,0.18,0.13,0.09,0.06,0.04];
+  // Build letter queue: 60% large (~same size), 40% smaller
+  // The "big" size should be dominant — like the sketch
+  var bigFrac=0.28;// ~28% of rug height = the main letter size
   var letterQueue2=[];
-  for(var si=0;si<sizeLevels.length;si++){
-    // More letters at smaller sizes
-    var cnt=Math.max(2,Math.floor(2+si*1.5));
-    for(var ci2=0;ci2<cnt;ci2++){
-      letterQueue2.push({ch:chars[(si*2+ci2)%chars.length],frac:sizeLevels[si]});
-    }
+  // 60% are big (all roughly the same size with slight variation)
+  var bigCount=Math.max(8,Math.floor(candidates.length*0.15));
+  for(var bi=0;bi<bigCount;bi++){
+    var vary=0.85+rng()*0.3;// 0.85x to 1.15x — subtle variation
+    letterQueue2.push({ch:chars[bi%chars.length],frac:bigFrac*vary});
+  }
+  // 40% are smaller (range of smaller sizes)
+  var smallCount=Math.max(5,Math.floor(bigCount*0.65));
+  for(var si=0;si<smallCount;si++){
+    var smallFrac=0.06+rng()*0.12;// 6% to 18%
+    letterQueue2.push({ch:chars[si%chars.length],frac:smallFrac});
   }
 
   // Placed letter bounding boxes for collision detection
