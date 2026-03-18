@@ -1569,10 +1569,7 @@ document.getElementById('rugPreset').addEventListener('change',function(){
 });
 document.getElementById('rugW').addEventListener('change',function(){document.getElementById('rugPreset').value='';generatePattern();});
 document.getElementById('rugH').addEventListener('change',function(){document.getElementById('rugPreset').value='';generatePattern();});
-document.getElementById('interiorStructure').addEventListener('change',function(){generatePattern();});
-document.getElementById('exteriorStructure').addEventListener('change',function(){generatePattern();});
-document.getElementById('layoutMode').addEventListener('change',function(){generatePattern();});
-document.getElementById('borderWidth').addEventListener('change',function(){generatePattern();});
+// (No additional param controls — pattern is fully derived from the name)
 
 // Library: Clear All button & fetch shared library on load
 document.getElementById('libClearAll').addEventListener('click',clearLibrary);
