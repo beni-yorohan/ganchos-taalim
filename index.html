@@ -1035,92 +1035,162 @@ function generatePattern(){
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
   var solitreoStr=transliterate(name);
-
-  // ── Render each letter LARGE ──
-  // Letters should fill 40-70% of rug height
   var numLetters=chars.length;
-  var baseFontSize=Math.floor(H*0.5/Math.max(1,Math.sqrt(numLetters*0.5)));
-  baseFontSize=Math.max(40,Math.min(baseFontSize,Math.floor(H*0.6)));
 
-  var letterBmps=[];
+  // ══════════════════════════════════════════════════════════
+  // PHASE 1: BORDER BAND — small letter motifs tiled along edges
+  // ══════════════════════════════════════════════════════════
+  var borderW=Math.max(8,Math.floor(Math.min(W,H)*0.05));
+  var borderMotifSize=Math.max(6,Math.floor(borderW*0.8));
+  var borderCh=chars[0];// first letter for border
+  var borderBmp=renderLetterLarge(borderCh,borderMotifSize);
+  if(borderBmp){
+    var bTile=makeMirrorTile(borderBmp);
+    // Fill all 4 border bands
+    tileFill(grid,bTile,0,0,W,borderW,false,'set');
+    tileFill(grid,bTile,0,H-borderW,W,borderW,false,'set');
+    tileFill(grid,bTile,0,borderW,borderW,H-borderW*2,false,'set');
+    tileFill(grid,bTile,W-borderW,borderW,borderW,H-borderW*2,false,'set');
+  }
+  // Solid outer frame 1px
+  for(y=0;y<H;y++){grid[y][0]=1;grid[y][W-1]=1;}
+  for(var x=0;x<W;x++){grid[0][x]=1;grid[H-1][x]=1;}
+
+  // Corner squares
+  var cornerS=Math.max(6,borderW);
+  if(chars.length>1){
+    var cBmp=renderLetterLarge(chars[chars.length-1],Math.floor(cornerS*0.7));
+    if(cBmp){
+      var cTile=makePinwheel(cBmp);
+      var csw=cTile[0].length,csh=cTile.length;
+      stampOR(grid,cTile,1,1);
+      stampOR(grid,cTile,W-csw-1,1);
+      stampOR(grid,cTile,1,H-csh-1);
+      stampOR(grid,cTile,W-csw-1,H-csh-1);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // PHASE 2: LARGE LETTERS — the main composition
+  // Each letter rendered HUGE, with different transforms, overlapping
+  // ══════════════════════════════════════════════════════════
+  var innerX=borderW+2,innerY=borderW+20;// leave room for label
+  var innerW=W-borderW*2-4,innerH=H-borderW*2-24;
+
+  // Only compose the LEFT HALF (vertical mirror will handle right)
+  var halfW=Math.floor(innerW/2);
+
+  // Determine how many large letters to place
+  // Use unique chars (skip duplicates for placement)
+  var uniqueChars=[];
+  var seen={};
   for(var i=0;i<chars.length;i++){
-    // Vary size per letter for organic feel
-    var sizeMult=0.7+rng()*0.6;// 0.7x to 1.3x
-    var fs=Math.floor(baseFontSize*sizeMult);
-    var lb=renderLetterLarge(chars[i],fs);
-    if(lb) letterBmps.push({ch:chars[i],bmp:lb,fontSize:fs});
+    if(!seen[chars[i]]){uniqueChars.push(chars[i]);seen[chars[i]]=true;}
   }
-  if(!letterBmps.length){
-    grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='Could not render letters.';
-    return;
-  }
+  var nLarge=Math.min(uniqueChars.length,5);// max 5 large letters
 
-  // ── Assign transformations based on position + remix ──
+  // Large font size: letters should be 40-70% of inner height
+  var largeFontBase=Math.floor(innerH*0.5/Math.max(1,Math.sqrt(nLarge*0.6)));
+  largeFontBase=Math.max(60,Math.min(largeFontBase,Math.floor(innerH*0.65)));
+
   var transforms=['normal','mirrorH','rotate180','mirrorV','rotate90','rotate270'];
-  var placements=[];
+  var largePlacements=[];
 
-  // Distribute letters across the rug area
-  // Use a loose grid: letters placed in rows, with some overlap
-  var cols=Math.max(1,Math.min(3,Math.ceil(numLetters/2)));
-  var rows=Math.ceil(numLetters/cols);
-  var cellW=Math.floor((W-20)/cols);
-  var cellH=Math.floor((H-60)/rows);// leave room for label at top
+  for(i=0;i<nLarge;i++){
+    // Size variation: 0.6x to 1.2x
+    var sizeMult=0.6+rng()*0.6;
+    var fs=Math.floor(largeFontBase*sizeMult);
+    var lbmp=renderLetterLarge(uniqueChars[i],fs);
+    if(!lbmp)continue;
 
-  for(i=0;i<letterBmps.length;i++){
-    var col=i%cols;
-    var row=Math.floor(i/cols);
+    // Transform
+    var tIdx=(i+Math.floor(rng()*transforms.length))%transforms.length;
+    var tr=transforms[tIdx];
+    var tbmp=lbmp;
+    if(tr==='mirrorH') tbmp=mirrorH(lbmp);
+    else if(tr==='mirrorV') tbmp=mirrorV(lbmp);
+    else if(tr==='rotate180') tbmp=rotateBmp90(rotateBmp90(lbmp));
+    else if(tr==='rotate90') tbmp=rotateBmp90(lbmp);
+    else if(tr==='rotate270') tbmp=rotateBmp90(rotateBmp90(rotateBmp90(lbmp)));
 
-    // Pick transform based on position and remix
-    var tIdx=(i+remixCounter)%transforms.length;
-    var transform=transforms[tIdx];
+    // Position: distribute vertically, spread across the half-width
+    // Letters should OVERLAP significantly
+    var bw2=tbmp[0].length,bh2=tbmp.length;
+    var vertSlot=i/Math.max(1,nLarge-1);// 0 to 1
+    var py=Math.floor(innerY+vertSlot*(innerH-bh2*0.5)-bh2*0.25);
+    var px=Math.floor(innerX+(rng()*halfW*0.6));
+    // Let some letters extend past center for overlap
+    px=Math.max(innerX,Math.min(px,innerX+halfW+bw2/4));
+    py=Math.max(innerY,Math.min(py,innerY+innerH-bh2/2));
 
-    // Apply transformation to bitmap
-    var bmp=letterBmps[i].bmp;
-    if(transform==='mirrorH') bmp=mirrorH(bmp);
-    else if(transform==='mirrorV') bmp=mirrorV(bmp);
-    else if(transform==='rotate180'){bmp=rotateBmp90(rotateBmp90(bmp));}
-    else if(transform==='rotate90') bmp=rotateBmp90(bmp);
-    else if(transform==='rotate270'){bmp=rotateBmp90(rotateBmp90(rotateBmp90(bmp)));}
-
-    // Position: center of each cell, with slight random offset for organic feel
-    var bw2=bmp[0].length,bh2=bmp.length;
-    var px=Math.floor(10+col*cellW+(cellW-bw2)/2+(rng()-0.5)*cellW*0.15);
-    var py=Math.floor(40+row*cellH+(cellH-bh2)/2+(rng()-0.5)*cellH*0.15);
-
-    // Clamp to stay within rug
-    px=Math.max(4,Math.min(W-bw2-4,px));
-    py=Math.max(30,Math.min(H-bh2-4,py));
-
-    placements.push({ch:letterBmps[i].ch,bmp:bmp,x:px,y:py,transform:transform,fontSize:letterBmps[i].fontSize});
+    largePlacements.push({ch:uniqueChars[i],bmp:tbmp,x:px,y:py,transform:tr,fontSize:fs});
   }
 
-  // ── Stamp letters onto grid with XOR (overlaps create interesting forms) ──
-  for(i=0;i<placements.length;i++){
-    stampXOR(grid,placements[i].bmp,placements[i].x,placements[i].y);
+  // Stamp large letters with XOR so overlaps create interesting negative space
+  for(i=0;i<largePlacements.length;i++){
+    stampXOR(grid,largePlacements[i].bmp,largePlacements[i].x,largePlacements[i].y);
   }
 
-  // ── Add small readable name label at top center ──
-  var labelSize=Math.max(10,Math.floor(H*0.035));
+  // ══════════════════════════════════════════════════════════
+  // PHASE 3: FILL MOTIFS — small letters scattered in gaps
+  // ══════════════════════════════════════════════════════════
+  var fillSize=Math.max(8,Math.floor(Math.min(W,H)*0.03));
+  var fillCount=Math.floor(nLarge*4+rng()*8);
+
+  for(i=0;i<fillCount;i++){
+    var fch=chars[Math.floor(rng()*chars.length)];
+    var fSizeMult=0.5+rng()*1.0;
+    var ffs=Math.floor(fillSize*fSizeMult);
+    var fbmp=renderLetterLarge(fch,Math.max(5,ffs));
+    if(!fbmp)continue;
+
+    // Random transform
+    var ft=Math.floor(rng()*4);
+    for(var r=0;r<ft;r++) fbmp=rotateBmp90(fbmp);
+    if(rng()>0.5) fbmp=mirrorH(fbmp);
+
+    // Place randomly in the interior (left half)
+    var fx=Math.floor(innerX+rng()*halfW);
+    var fy=Math.floor(innerY+rng()*innerH);
+    fx=Math.max(borderW+1,Math.min(fx,borderW+halfW-fbmp[0].length));
+    fy=Math.max(borderW+1,Math.min(fy,H-borderW-fbmp.length-1));
+
+    // Only stamp if the area is mostly empty (fill gaps, don't clutter filled areas)
+    var bw3=fbmp[0].length,bh3=fbmp.length;
+    var filled3=0,total3=0;
+    for(var sy=fy;sy<fy+bh3&&sy<H;sy++){
+      for(var sx=fx;sx<fx+bw3&&sx<W;sx++){
+        if(grid[sy][sx])filled3++;
+        total3++;
+      }
+    }
+    // Only fill if area is less than 30% filled
+    if(total3>0&&filled3/total3<0.3){
+      stampOR(grid,fbmp,fx,fy);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // PHASE 4: NAME LABEL — small readable text at top center
+  // ══════════════════════════════════════════════════════════
+  var labelSize=Math.max(8,Math.floor(H*0.025));
   var labelBmp=renderLabelBitmap(solitreoStr,labelSize);
   if(labelBmp){
     var lw=labelBmp[0].length,lh=labelBmp.length;
     var lx=Math.floor((W-lw)/2);
-    var ly=Math.max(6,Math.floor(H*0.02));
-    // Clear a small zone for the label
-    for(y=ly-2;y<ly+lh+2;y++){
-      for(var x=lx-4;x<lx+lw+4;x++){
-        if(y>=0&&y<H&&x>=0&&x<W) grid[y][x]=0;
+    var ly=borderW+3;
+    // Clear zone for label
+    for(y=ly-1;y<ly+lh+1&&y<H;y++){
+      for(x=lx-3;x<lx+lw+3&&x<W;x++){
+        if(y>=0&&x>=0) grid[y][x]=0;
       }
     }
     stampOR(grid,labelBmp,lx,ly);
   }
 
-  // ── Simple thin border frame ──
-  for(y=0;y<H;y++){grid[y][0]=1;grid[y][1]=1;grid[y][W-1]=1;grid[y][W-2]=1;}
-  for(x=0;x<W;x++){grid[0][x]=1;grid[1][x]=1;grid[H-1][x]=1;grid[H-2][x]=1;}
-
-  // ── Vertical mirror symmetry ──
+  // ══════════════════════════════════════════════════════════
+  // PHASE 5: VERTICAL MIRROR SYMMETRY
+  // ══════════════════════════════════════════════════════════
   for(y=0;y<H;y++){
     for(x=0;x<Math.floor(W/2);x++){
       grid[y][W-1-x]=grid[y][x];
@@ -1137,22 +1207,21 @@ function generatePattern(){
   document.getElementById('patternStats').textContent=
     W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+chars.length+' letters \u00b7 seed: '+seed;
 
-  // Taalim
   var body=document.getElementById('taalimBody');
   var html='<div class="taalim-section"><h3>Composition</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">The name <strong>\u201c'+name+'\u201d</strong> ('+solitreoStr+') ';
-  html+='is composed from its individual Solitreo letterforms, each transformed and placed to create an organic rug design:</p>';
+  html+='<p style="font-size:14px;color:var(--text);">\u201c'+name+'\u201d ('+solitreoStr+') \u2014 ';
+  html+='each letterform is rendered large, transformed, and layered to create the rug design.</p>';
   html+='<ul style="font-size:14px;color:var(--text);list-style:none;padding:0;margin-top:8px;">';
-  for(i=0;i<placements.length;i++){
-    var p=placements[i];
+  html+='<li><strong>Border</strong> \u2014 '+borderCh+' mirror-tiled as decorative band</li>';
+  for(i=0;i<largePlacements.length;i++){
+    var p=largePlacements[i];
     html+='<li><strong>'+p.ch+'</strong> \u2014 '+p.transform+' at '+p.fontSize+'px</li>';
   }
+  html+='<li><strong>Fill</strong> \u2014 '+fillCount+' small motifs in gaps</li>';
   html+='</ul></div>';
-
-  html+='<div class="taalim-section"><h3>Statistics</h3><div class="taalim-stats">';
+  html+='<div class="taalim-section"><div class="taalim-stats">';
   html+='<div class="taalim-stat"><div class="val">'+W+'\u00d7'+H+'</div><div class="lbl">Grid</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+density+'%</div><div class="lbl">Density</div></div>';
-  html+='<div class="taalim-stat"><div class="val">'+chars.length+'</div><div class="lbl">Letters</div></div>';
   html+='</div></div>';
   body.innerHTML=html;
 
