@@ -931,20 +931,26 @@ function sliceToBands(bmp,numBands){
 }
 
 // ─── RENDER SINGLE LETTER AS LARGE BITMAP ─────────────────────
-function renderLetterLarge(ch,fontSize){
+function renderLetterLarge(ch,fontSize,outline){
   var pad=Math.floor(fontSize*0.3);
   var cw=fontSize+pad*2,ch2=Math.floor(fontSize*1.4)+pad*2;
   var c=document.createElement('canvas');
   c.width=cw;c.height=ch2;
   var ctx=c.getContext('2d');
   ctx.fillStyle='#FFF';ctx.fillRect(0,0,cw,ch2);
-  ctx.fillStyle='#000';
   ctx.font=fontSize+'px GanchosSans';
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.direction='rtl';
-  ctx.fillText(ch,cw/2,ch2/2);
+  if(outline){
+    // OUTLINE MODE: strokeText creates flowing line quality
+    var lw=Math.max(1,Math.floor(fontSize*0.04));
+    ctx.strokeStyle='#000';ctx.lineWidth=lw;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeText(ch,cw/2,ch2/2);
+  } else {
+    ctx.fillStyle='#000';
+    ctx.fillText(ch,cw/2,ch2/2);
+  }
   var img=ctx.getImageData(0,0,cw,ch2);
-  // Extract bitmap and crop to bounding box
   var bmp=[];
   for(var y=0;y<ch2;y++){
     bmp[y]=new Uint8Array(cw);
