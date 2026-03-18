@@ -1053,7 +1053,11 @@ function generatePattern(){
   // 4. Each letter gets a bounding-box buffer zone
   // ══════════════════════════════════════════════════════════
 
-  var margin=Math.max(3,Math.floor(Math.min(W,H)*0.015));
+  // Border system: outer frame → guard stripe → decorated band → inner guard → field
+  var borderOuter=Math.max(2,Math.floor(Math.min(W,H)*0.005));// solid outer frame
+  var guardW=Math.max(1,Math.floor(Math.min(W,H)*0.004));// thin guard stripes
+  var borderBand=Math.max(8,Math.floor(Math.min(W,H)*0.04));// main decorated border
+  var margin=borderOuter+guardW+borderBand+guardW+Math.max(2,Math.floor(Math.min(W,H)*0.008));// total reserved
   var gap=Math.max(2,Math.floor(Math.min(W,H)*0.008));
   var halfW=cx;
 
