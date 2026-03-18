@@ -958,9 +958,9 @@ function generatePattern(){
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
   // ── Rasterize letters at MULTIPLE scales for hierarchy ──
-  var sSmall=Math.max(5,Math.floor(Math.min(W,H)/16));// ~6px: border motifs
-  var sMed=Math.max(8,Math.floor(Math.min(W,H)/8));// ~12px: field motifs
-  var sLarge=Math.max(14,Math.floor(Math.min(W,H)/4));// ~24-32px: medallion
+  var sSmall=Math.max(8,Math.floor(Math.min(W,H)/20));// ~15px: border motifs
+  var sMed=Math.max(16,Math.floor(Math.min(W,H)/10));// ~30px: field motifs
+  var sLarge=Math.max(30,Math.floor(Math.min(W,H)/5));// ~60px: medallion
 
   var bmps=[];
   for(var i=0;i<chars.length;i++){
