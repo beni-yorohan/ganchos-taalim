@@ -1089,16 +1089,16 @@ function generatePattern(){
   // GAP FILLING: Keep adding small letters until density >30%
   // ══════════════════════════════════════════════════════════
   var fillRound=0;
-  var maxFillRounds=30;
+  var maxFillRounds=80;
   while(fillRound<maxFillRounds){
     // Check current density of left half
     var filled=0,total=0;
     for(y=0;y<H;y++)for(var x=0;x<halfW;x++){if(grid[y]&&grid[y][x])filled++;total++;}
-    if(total>0&&filled/total>0.32)break;// dense enough
+    if(total>0&&filled/total>0.42)break;// target 42% density
 
     var fch=chars[Math.floor(rng()*chars.length)];
-    var ffs=Math.max(8,Math.floor(H*(0.04+rng()*0.08)));
-    var fbmp=renderLetterLarge(fch,ffs,rng()>0.5);
+    var ffs=Math.max(8,Math.floor(H*(0.05+rng()*0.15)));
+    var fbmp=renderLetterLarge(fch,ffs);
     if(!fbmp){fillRound++;continue;}
     if(rng()>0.5)fbmp=mirrorH(fbmp);
     if(rng()>0.5)fbmp=mirrorV(fbmp);
