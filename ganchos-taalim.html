@@ -1125,20 +1125,36 @@ function generatePattern(){
     return da-db;
   });
 
-  // Build letter queue: 80% same size, 20% smaller
-  var bigFrac=0.18;// ~18% of rug height — not huge, but clearly dominant
+  // Build letter queue: 80% big, 20% clearly smaller
+  // Equal distribution of ALL letters from the name
+  var bigFrac=0.20;
+  var smallFrac2=0.08;// small = obviously smaller (40% of big size)
   var letterQueue2=[];
-  // 80% are the SAME size (subtle variation only)
-  var bigCount=Math.max(12,Math.floor(candidates.length*0.25));
-  for(var bi=0;bi<bigCount;bi++){
-    var vary=0.90+rng()*0.20;// 0.90x to 1.10x — very tight range
-    letterQueue2.push({ch:chars[bi%chars.length],frac:bigFrac*vary});
+  var totalLetters=Math.max(15,Math.floor(candidates.length*0.25));
+  var bigCount=Math.floor(totalLetters*0.8);
+  var smallCount=totalLetters-bigCount;
+
+  // Shuffle a balanced letter pool: each char appears equally
+  var balancedPool=[];
+  var perChar=Math.ceil(totalLetters/chars.length);
+  for(var pi=0;pi<perChar;pi++){
+    for(var ci3=0;ci3<chars.length;ci3++) balancedPool.push(chars[ci3]);
   }
-  // 20% are smaller accent letters
-  var smallCount=Math.max(3,Math.floor(bigCount*0.25));
+  // Fisher-Yates shuffle with seeded rng
+  for(var fi=balancedPool.length-1;fi>0;fi--){
+    var fj=Math.floor(rng()*(fi+1));
+    var tmp=balancedPool[fi];balancedPool[fi]=balancedPool[fj];balancedPool[fj]=tmp;
+  }
+
+  // 80% big
+  for(var bi=0;bi<bigCount;bi++){
+    var vary=0.88+rng()*0.24;// slight variation
+    letterQueue2.push({ch:balancedPool[bi%balancedPool.length],frac:bigFrac*vary});
+  }
+  // 20% small — clearly different scale
   for(var si=0;si<smallCount;si++){
-    var smallFrac=0.04+rng()*0.08;// 4% to 12%
-    letterQueue2.push({ch:chars[si%chars.length],frac:smallFrac});
+    var sVary=0.7+rng()*0.6;
+    letterQueue2.push({ch:balancedPool[(bigCount+si)%balancedPool.length],frac:smallFrac2*sVary});
   }
 
   // Placed letter bounding boxes for collision detection
