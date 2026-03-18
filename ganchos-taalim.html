@@ -1232,9 +1232,62 @@ function generatePattern(){
     stampOR(grid,labelBmp2,lx3,ly3);
   }
 
-  // Thin outer frame
-  for(y=0;y<H;y++){grid[y][0]=1;grid[y][W-1]=1;}
-  for(var x=0;x<W;x++){grid[0][x]=1;grid[H-1][x]=1;}
+  // ══════════════════════════════════════════════════════════
+  // BORDER HIERARCHY (drawn AFTER mirror so it's on both sides)
+  // outer frame → guard stripe → decorated band → inner guard
+  // ══════════════════════════════════════════════════════════
+
+  // 1. Solid outer frame
+  for(y=0;y<H;y++)for(var x=0;x<W;x++){
+    if(y<borderOuter||y>=H-borderOuter||x<borderOuter||x>=W-borderOuter) grid[y][x]=1;
+  }
+
+  // 2. Outer guard stripe (thin solid line)
+  var g1=borderOuter+guardW;
+  for(y=borderOuter;y<H-borderOuter;y++)for(var x=borderOuter;x<W-borderOuter;x++){
+    if(y<g1||y>=H-g1||x<g1||x>=W-g1) grid[y][x]=1;
+  }
+
+  // 3. Decorated border band — small letter motifs tiled along all 4 edges
+  var bandStart=g1;
+  var bandEnd=bandStart+borderBand;
+  var borderMotifCh=uniqueChars[0];
+  var borderMotifSize=Math.max(5,Math.floor(borderBand*0.75));
+  var borderMotifBmp=renderLetterLarge(borderMotifCh,borderMotifSize);
+  if(borderMotifBmp){
+    var bTile=makeMirrorTile(borderMotifBmp);
+    // Top band
+    tileFill(grid,bTile,bandStart,bandStart,W-bandStart*2,borderBand,false,'set');
+    // Bottom band
+    tileFill(grid,bTile,bandStart,H-bandEnd,W-bandStart*2,borderBand,false,'set');
+    // Left band
+    tileFill(grid,bTile,bandStart,bandEnd,borderBand,H-bandEnd*2,false,'set');
+    // Right band
+    tileFill(grid,bTile,W-bandEnd,bandEnd,borderBand,H-bandEnd*2,false,'set');
+  }
+
+  // 4. Inner guard stripe
+  var g2=bandEnd;
+  var g2e=g2+guardW;
+  for(y=g2;y<H-g2;y++)for(var x=g2;x<W-g2;x++){
+    if(y<g2e||y>=H-g2e||x<g2e||x>=W-g2e) grid[y][x]=1;
+  }
+
+  // 5. Corner motifs — pinwheel of second letter in the border band corners
+  if(uniqueChars.length>1){
+    var cornerCh=uniqueChars[1%uniqueChars.length];
+    var cornerSize=Math.max(5,Math.floor(borderBand*0.8));
+    var cornerBmp=renderLetterLarge(cornerCh,cornerSize);
+    if(cornerBmp){
+      var cTile=makePinwheel(cornerBmp);
+      var ctw=cTile[0].length,cth=cTile.length;
+      // 4 corners — overwrite the border band corners
+      stampOR(grid,cTile,bandStart,bandStart);
+      stampOR(grid,cTile,W-bandStart-ctw,bandStart);
+      stampOR(grid,cTile,bandStart,H-bandStart-cth);
+      stampOR(grid,cTile,W-bandStart-ctw,H-bandStart-cth);
+    }
+  }
 
   if(rugSketch)rugSketch.refresh();
 
