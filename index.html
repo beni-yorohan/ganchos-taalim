@@ -521,15 +521,15 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
     <div class="gen-controls">
       <label>Size
         <select id="rugPreset" autocomplete="off">
-          <option value="64,96">Small 64&times;96</option>
-          <option value="96,128" selected>Medium 96&times;128</option>
-          <option value="128,192">Large 128&times;192</option>
-          <option value="80,200">Runner 80&times;200</option>
+          <option value="200,300">Small 200&times;300</option>
+          <option value="300,400" selected>Medium 300&times;400</option>
+          <option value="400,600">Large 400&times;600</option>
+          <option value="200,600">Runner 200&times;600</option>
           <option value="">Custom</option>
         </select>
       </label>
-      <label>W <input type="number" id="rugW" value="96" min="32" max="256"></label>
-      <label>H <input type="number" id="rugH" value="128" min="32" max="256"></label>
+      <label>W <input type="number" id="rugW" value="300" min="100" max="800"></label>
+      <label>H <input type="number" id="rugH" value="400" min="100" max="800"></label>
       <button class="btn" id="remixBtn">Remix</button>
     </div>
 
@@ -613,7 +613,7 @@ section+section:not(#generator)::before{content:'';display:block;width:40px;heig
 <!-- ═══════════════════════════ JAVASCRIPT ════════════════════ -->
 <script>
 // ─── STATE ──────────────────────────────────────────────────────
-let W=96, H=128;
+let W=300, H=400;
 let grid=[];
 let fontLoaded=false;
 let remixCounter=0;
@@ -952,15 +952,15 @@ function generatePattern(){
   var seed=remixCounter>0?name+'_'+remixCounter:name;
   var rng=createPRNG(seed);
 
-  W=parseInt(document.getElementById('rugW').value)||96;
-  H=parseInt(document.getElementById('rugH').value)||128;
+  W=parseInt(document.getElementById('rugW').value)||300;
+  H=parseInt(document.getElementById('rugH').value)||400;
   grid=[];
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
   // ── Rasterize letters at MULTIPLE scales for hierarchy ──
-  var sSmall=Math.max(5,Math.floor(Math.min(W,H)/16));// ~6px: border motifs
-  var sMed=Math.max(8,Math.floor(Math.min(W,H)/8));// ~12px: field motifs
-  var sLarge=Math.max(14,Math.floor(Math.min(W,H)/4));// ~24-32px: medallion
+  var sSmall=Math.max(8,Math.floor(Math.min(W,H)/20));// ~15px: border motifs
+  var sMed=Math.max(16,Math.floor(Math.min(W,H)/10));// ~30px: field motifs
+  var sLarge=Math.max(30,Math.floor(Math.min(W,H)/5));// ~60px: medallion
 
   var bmps=[];
   for(var i=0;i<chars.length;i++){
@@ -1472,8 +1472,8 @@ function saveToLibrary(name){
       thumb:thumb||'',
       timestamp:Date.now(),
       params:{
-        w:parseInt(document.getElementById('rugW').value)||96,
-        h:parseInt(document.getElementById('rugH').value)||128,
+        w:parseInt(document.getElementById('rugW').value)||300,
+        h:parseInt(document.getElementById('rugH').value)||400,
         remix:remixCounter
       }
     };
