@@ -1065,198 +1065,114 @@ function generatePattern(){
     return;
   }
   var chars=transliterateToChars(name);
-  if(!chars.length){
-    grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='No transliterable characters found.';
-    return;
-  }
+  if(!chars.length){grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
+    document.getElementById('patternStats').textContent='No transliterable characters found.';return;}
   var seed=remixCounter>0?name+'_'+remixCounter:name;
   var rng=createPRNG(seed);
   W=parseInt(document.getElementById('rugW').value)||300;
   H=parseInt(document.getElementById('rugH').value)||400;
-  grid=[];
-  for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
+  grid=[];for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
   var solitreoStr=transliterate(name);
-
-  // ── Deduplicate chars ──
   var uc=[];var seen={};
   for(var i=0;i<chars.length;i++){if(!seen[chars[i]]){uc.push(chars[i]);seen[chars[i]]=true;}}
-
-  // ── Assign shapes to roles (cycle if fewer than 5 unique) ──
-  var borderCh=uc[0];
-  var fieldCh=uc[1%uc.length];
-  var medCh=uc[2%uc.length];
-  var cornerCh=uc[3%uc.length];
-  var guardCh=uc[4%uc.length];
-
-  // ── Zone dimensions ──
-  var outerFrame=Math.max(2,Math.floor(Math.min(W,H)*0.008));
-  var guard1W=Math.max(3,Math.floor(Math.min(W,H)*0.012));
-  var borderBandW=Math.max(15,Math.floor(Math.min(W,H)*0.09));
-  var guard2W=Math.max(3,Math.floor(Math.min(W,H)*0.012));
-  var totalBorder=outerFrame+guard1W+borderBandW+guard2W;
-
-  var fieldX=totalBorder;
-  var fieldY=totalBorder;
-  var fieldW=W-totalBorder*2;
-  var fieldH=H-totalBorder*2;
   var cx=Math.floor(W/2);
 
-  // ══════════════════════════════════════════════════════════
-  // PHASE B: GENERATE MOTIFS from shapes
-  // ══════════════════════════════════════════════════════════
-
-  // Field motif: pinwheel from field shape — render LARGE for substance
-  var fieldShapeSize=Math.max(15,Math.floor(Math.min(W,H)*0.12)+Math.floor(rng()*10));
-  var fieldShapeBmp=rasterizeFromFont(fieldCh,fieldShapeSize);
-  var fieldMotif=fieldShapeBmp?makePinwheel(fieldShapeBmp):null;
-
-  // Border motif: mirror tile — must fill the border band width
-  var borderShapeSize=Math.max(8,Math.floor(borderBandW*0.9));
-  var borderShapeBmp=rasterizeFromFont(borderCh,borderShapeSize);
-  var borderMotif=borderShapeBmp?makeMirrorTile(borderShapeBmp):null;
-
-  // Medallion motif: scaled up mirror tile — substantial center piece
-  var medSize=Math.max(40,Math.floor(Math.min(fieldW,fieldH)*0.5));
-  var medShapeBmp=rasterizeFromFont(medCh,Math.max(15,Math.floor(medSize*0.4)));
-  var medallion=null;
-  if(medShapeBmp){
-    if(uc.length>3){
-      var med2Bmp=rasterizeFromFont(uc[(uc.length-1)%uc.length],Math.max(15,Math.floor(medSize*0.4)));
-      if(med2Bmp) medShapeBmp=makeCompoundMotif(medShapeBmp,med2Bmp,Math.max(15,Math.floor(medSize*0.4)));
-    }
-    medallion=makeRugMedallion(medShapeBmp,medSize);
-  }
-
-  // Corner motif: pinwheel — fill the border band corner
-  var cornerSize=Math.max(8,Math.floor(borderBandW*0.9));
-  var cornerShapeBmp=rasterizeFromFont(cornerCh,cornerSize);
-  var cornerMotif=cornerShapeBmp?makePinwheel(cornerShapeBmp):null;
-
-  // Guard stripe motif: horizontal band — visible thickness
-  var guardShapeBmp=rasterizeFromFont(guardCh,Math.max(6,Math.floor(Math.min(W,H)*0.04)));
-  var guardBands=guardShapeBmp?sliceToBands(guardShapeBmp,3):null;
-  var guardMotif=guardBands&&guardBands.length>0?makeGuardPattern(guardBands[0],guard1W):null;
-
-  // ══════════════════════════════════════════════════════════
-  // PHASE C: COMPOSE RUG (all on left half, mirror at end)
-  // ══════════════════════════════════════════════════════════
-
-  // 1. FIELD FILL — pinwheel tiled across entire field zone
-  if(fieldMotif){
-    var useBrick=rng()>0.5;
-    tileFill(grid,fieldMotif,fieldX,fieldY,fieldW,fieldH,useBrick,'set');
-  }
-
-  // 2. MEDALLION — clear center zone, stamp medallion
-  if(medallion){
-    var mw=medallion[0].length,mh=medallion.length;
-    var mx=Math.floor((W-mw)/2);
-    var my=Math.floor((H-mh)/2);
-    // Clear zone with small buffer
-    var buf=Math.max(2,Math.floor(Math.min(W,H)*0.01));
-    for(y=my-buf;y<my+mh+buf;y++){
-      for(var x=mx-buf;x<mx+mw+buf;x++){
-        if(y>=fieldY&&y<fieldY+fieldH&&x>=fieldX&&x<fieldX+fieldW&&y<H&&x<W)
-          grid[y][x]=0;
-      }
-    }
-    // Frame around medallion (thin border)
-    for(y=my-1;y<=my+mh;y++){
-      if(y>=0&&y<H){if(mx-1>=0)grid[y][mx-1]=1;if(mx+mw<W)grid[y][mx+mw]=1;}
-    }
-    for(var x=mx-1;x<=mx+mw;x++){
-      if(x>=0&&x<W){if(my-1>=0)grid[my-1][x]=1;if(my+mh<H)grid[my+mh][x]=1;}
-    }
-    stampOR(grid,medallion,mx,my);
-  }
-
-  // 3. BORDER BANDS — mirror tile motif along all 4 edges
-  var bbStart=outerFrame+guard1W;
-  if(borderMotif){
-    // Top
-    tileFill(grid,borderMotif,bbStart,bbStart,W-bbStart*2,borderBandW,false,'set');
-    // Bottom
-    tileFill(grid,borderMotif,bbStart,H-bbStart-borderBandW,W-bbStart*2,borderBandW,false,'set');
-    // Left
-    tileFill(grid,borderMotif,bbStart,bbStart+borderBandW,borderBandW,H-bbStart*2-borderBandW*2,false,'set');
-    // Right
-    tileFill(grid,borderMotif,W-bbStart-borderBandW,bbStart+borderBandW,borderBandW,H-bbStart*2-borderBandW*2,false,'set');
-  }
-
-  // 4. CORNER PIECES — pinwheel in each corner of the border band
-  if(cornerMotif){
-    var ctw=cornerMotif[0].length,cth=cornerMotif.length;
-    stampOR(grid,cornerMotif,bbStart,bbStart);
-    stampOR(grid,cornerMotif,W-bbStart-ctw,bbStart);
-    stampOR(grid,cornerMotif,bbStart,H-bbStart-cth);
-    stampOR(grid,cornerMotif,W-bbStart-ctw,H-bbStart-cth);
-  }
-
-  // 5. GUARD STRIPES — band pattern between frame/border and border/field
-  if(guardMotif){
-    // Outer guard (between frame and border band)
-    tileFill(grid,guardMotif,outerFrame,outerFrame,W-outerFrame*2,guard1W,false,'set');
-    tileFill(grid,guardMotif,outerFrame,H-outerFrame-guard1W,W-outerFrame*2,guard1W,false,'set');
-    tileFill(grid,guardMotif,outerFrame,outerFrame+guard1W,guard1W,H-outerFrame*2-guard1W*2,false,'set');
-    tileFill(grid,guardMotif,W-outerFrame-guard1W,outerFrame+guard1W,guard1W,H-outerFrame*2-guard1W*2,false,'set');
-    // Inner guard (between border band and field)
-    var ig=bbStart+borderBandW;
-    tileFill(grid,guardMotif,ig,ig,W-ig*2,guard2W,false,'set');
-    tileFill(grid,guardMotif,ig,H-ig-guard2W,W-ig*2,guard2W,false,'set');
-    tileFill(grid,guardMotif,ig,ig+guard2W,guard2W,H-ig*2-guard2W*2,false,'set');
-    tileFill(grid,guardMotif,W-ig-guard2W,ig+guard2W,guard2W,H-ig*2-guard2W*2,false,'set');
-  }
-
-  // 6. OUTER FRAME — solid
+  // ── BORDER: frame + guard + decorated band + guard ──
+  var outerFrame=Math.max(2,Math.floor(Math.min(W,H)*0.007));
+  var guardW=Math.max(2,Math.floor(Math.min(W,H)*0.01));
+  var borderBandW=Math.max(12,Math.floor(Math.min(W,H)*0.07));
+  var totalBorder=outerFrame+guardW+borderBandW+guardW;
   for(y=0;y<H;y++)for(var x=0;x<W;x++){
-    if(y<outerFrame||y>=H-outerFrame||x<outerFrame||x>=W-outerFrame) grid[y][x]=1;
+    if(y<outerFrame||y>=H-outerFrame||x<outerFrame||x>=W-outerFrame) grid[y][x]=1;}
+  var g1e=outerFrame+guardW;
+  for(y=outerFrame;y<H-outerFrame;y++)for(var x=outerFrame;x<W-outerFrame;x++){
+    if(y<g1e||y>=H-g1e||x<g1e||x>=W-g1e) grid[y][x]=1;}
+  var bbS=g1e;
+  var borderShapeBmp=rasterizeFromFont(uc[0],Math.max(6,Math.floor(borderBandW*0.8)));
+  if(borderShapeBmp){
+    var borderMotif=makeMirrorTile(borderShapeBmp);
+    tileFill(grid,borderMotif,bbS,bbS,W-bbS*2,borderBandW,false,'set');
+    tileFill(grid,borderMotif,bbS,H-bbS-borderBandW,W-bbS*2,borderBandW,false,'set');
+    tileFill(grid,borderMotif,bbS,bbS+borderBandW,borderBandW,H-bbS*2-borderBandW*2,false,'set');
+    tileFill(grid,borderMotif,W-bbS-borderBandW,bbS+borderBandW,borderBandW,H-bbS*2-borderBandW*2,false,'set');
   }
+  if(uc.length>1){
+    var cBmp2=rasterizeFromFont(uc[1%uc.length],Math.max(6,Math.floor(borderBandW*0.8)));
+    if(cBmp2){var cT=makePinwheel(cBmp2);var ctw2=cT[0].length,cth2=cT.length;
+      stampOR(grid,cT,bbS,bbS);stampOR(grid,cT,W-bbS-ctw2,bbS);
+      stampOR(grid,cT,bbS,H-bbS-cth2);stampOR(grid,cT,W-bbS-ctw2,H-bbS-cth2);}}
+  var g2s=bbS+borderBandW,g2e=g2s+guardW;
+  for(y=g2s;y<H-g2s;y++)for(var x=g2s;x<W-g2s;x++){
+    if(y<g2e||y>=H-g2e||x<g2e||x>=W-g2e) grid[y][x]=1;}
 
-  // 7. VERTICAL MIRROR — left half → right half
-  for(y=0;y<H;y++){
-    for(var x=0;x<cx;x++){
-      grid[y][W-1-x]=grid[y][x];
-    }
-  }
+  // ── FIELD: Organic Poisson placement of shapes ──
+  var margin=totalBorder+2;
+  var gap=Math.max(2,Math.floor(Math.min(W,H)*0.008));
+  var halfW=cx;
+  var minDist=Math.max(8,Math.floor(Math.min(W,H)*0.025));
+  var candidates=[];var pGrid={};var cSz=Math.floor(minDist/1.414);
+  function pK(a,b){return Math.floor(a/cSz)+'_'+Math.floor(b/cSz);}
+  var sp={x:Math.floor((margin+halfW)/2),y:Math.floor(H/2)};
+  candidates.push(sp);var actv=[sp];pGrid[pK(sp.x,sp.y)]=[sp];
+  var pi2=0;
+  while(actv.length>0&&pi2<2000){pi2++;
+    var aI=Math.floor(rng()*actv.length);var pt2=actv[aI];var fc=false;
+    for(var at2=0;at2<15;at2++){
+      var ang=rng()*Math.PI*2;var dst=minDist+rng()*minDist;
+      var nx2=Math.floor(pt2.x+Math.cos(ang)*dst);var ny2=Math.floor(pt2.y+Math.sin(ang)*dst);
+      if(nx2<margin||nx2>=halfW-2||ny2<margin||ny2>=H-margin)continue;
+      var tc=false;var gx2=Math.floor(nx2/cSz)-2,gy2=Math.floor(ny2/cSz)-2;
+      for(var gyi2=gy2;gyi2<=gy2+4&&!tc;gyi2++){for(var gxi2=gx2;gxi2<=gx2+4&&!tc;gxi2++){
+        var nb=pGrid[gxi2+'_'+gyi2];if(!nb)continue;
+        for(var ni2=0;ni2<nb.length;ni2++){var dx2=nb[ni2].x-nx2,dy2=nb[ni2].y-ny2;
+          if(dx2*dx2+dy2*dy2<minDist*minDist){tc=true;break;}}}}
+      if(!tc){var np2={x:nx2,y:ny2};candidates.push(np2);actv.push(np2);
+        var k2=pK(nx2,ny2);if(!pGrid[k2])pGrid[k2]=[];pGrid[k2].push(np2);fc=true;}}
+    if(!fc)actv.splice(aI,1);}
+  candidates.sort(function(a,b){
+    return((a.x-(margin+halfW)/2)*(a.x-(margin+halfW)/2)+(a.y-H/2)*(a.y-H/2))-
+          ((b.x-(margin+halfW)/2)*(b.x-(margin+halfW)/2)+(b.y-H/2)*(b.y-H/2));});
 
-  // 8. NAME LABEL — small text near top center
-  var labelSize2=Math.max(8,Math.floor(H*0.025));
-  var labelBmp2=renderLabelBitmap(solitreoStr,labelSize2);
-  if(labelBmp2){
-    var lw3=labelBmp2[0].length,lh3=labelBmp2.length;
-    var lx3=Math.floor((W-lw3)/2);
-    var ly3=Math.floor(H*0.06);
-    var clr=2;
-    for(y=ly3-clr;y<ly3+lh3+clr&&y<H;y++){
-      for(var x=lx3-clr;x<lx3+lw3+clr&&x<W;x++){
-        if(y>=0&&x>=0&&grid[y]) grid[y][x]=0;
-      }
-    }
-    stampOR(grid,labelBmp2,lx3,ly3);
-  }
+  var bigFrac=0.20;var smFrac=0.07;
+  var totL=Math.max(20,Math.floor(candidates.length*0.35));
+  var bigN=Math.floor(totL*0.8);var smN=totL-bigN;
+  var lq=[];var li=0;
+  for(var b2=0;b2<bigN;b2++){lq.push({ch:uc[li%uc.length],frac:bigFrac*(0.88+rng()*0.24),big:true});li++;}
+  for(var s2=0;s2<smN;s2++){lq.push({ch:uc[li%uc.length],frac:smFrac*(0.7+rng()*0.6),big:false});li++;}
+
+  var pBoxes=[];var totalPlaced=0;
+  for(var qi2=0;qi2<lq.length;qi2++){
+    var q2=lq[qi2];var fs3=Math.max(8,Math.floor(H*q2.frac));
+    var ang2=(rng()-0.5)*(q2.big?0.35:0.8);
+    var bmp3=renderLetterLarge(q2.ch,fs3,false,ang2);
+    if(!bmp3)continue;if(rng()>0.5)bmp3=mirrorH(bmp3);
+    var bw3=bmp3[0].length,bh3=bmp3.length;
+    var sLim=q2.big?candidates.length:Math.min(candidates.length,60);
+    for(var ti2=0;ti2<sLim;ti2++){
+      var cd=candidates[ti2];var px2=cd.x-Math.floor(bw3/2);var py2=cd.y-Math.floor(bh3/2);
+      if(px2<margin||py2<margin||px2+bw3>halfW||py2+bh3>H-margin)continue;
+      var bx={x:px2-gap,y:py2-gap,w:bw3+gap*2,h:bh3+gap*2};var col=false;
+      for(var bi3=0;bi3<pBoxes.length;bi3++){var pb2=pBoxes[bi3];
+        if(bx.x<pb2.x+pb2.w&&bx.x+bx.w>pb2.x&&bx.y<pb2.y+pb2.h&&bx.y+bx.h>pb2.y){col=true;break;}}
+      if(!col){stampOR(grid,bmp3,px2,py2);pBoxes.push(bx);totalPlaced++;break;}}}
+
+  // ── MIRROR + LABEL ──
+  for(y=0;y<H;y++)for(var x=0;x<cx;x++) grid[y][W-1-x]=grid[y][x];
+  var lSz=Math.max(8,Math.floor(H*0.025));
+  var lBmp=renderLabelBitmap(solitreoStr,lSz);
+  if(lBmp){var lw4=lBmp[0].length,lh4=lBmp.length;
+    var lx4=Math.floor((W-lw4)/2);var ly4=g2e+3;
+    for(y=ly4-2;y<ly4+lh4+2&&y<H;y++)for(var x=lx4-2;x<lx4+lw4+2&&x<W;x++)
+      if(y>=0&&x>=0&&grid[y])grid[y][x]=0;
+    stampOR(grid,lBmp,lx4,ly4);}
 
   if(rugSketch)rugSketch.refresh();
-
-  var filled2=0;
-  for(y=0;y<H;y++)for(var x=0;x<W;x++)if(grid[y][x])filled2++;
-  var density=((filled2/(W*H))*100).toFixed(1);
-
-  document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 seed: '+seed;
-
-  var body=document.getElementById('taalimBody');
-  var html='<div class="taalim-section"><h3>Rug Composition</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">\u201c'+name+'\u201d \u2192 '+uc.length+' unique shapes \u2192 motifs \u2192 rug</p>';
-  html+='<ul style="font-size:14px;color:var(--text);list-style:none;padding:0;margin-top:8px;">';
-  html+='<li><strong>Border</strong> \u2014 '+borderCh+' \u2192 mirror tile</li>';
-  html+='<li><strong>Field</strong> \u2014 '+fieldCh+' \u2192 pinwheel'+(fieldMotif?' ('+fieldMotif[0].length+'px tile)':'')+'</li>';
-  html+='<li><strong>Medallion</strong> \u2014 '+medCh+(uc.length>3?' + '+uc[uc.length-1]:'')+' \u2192 diamond</li>';
-  html+='<li><strong>Corners</strong> \u2014 '+cornerCh+' \u2192 pinwheel</li>';
-  html+='<li><strong>Guards</strong> \u2014 '+guardCh+' \u2192 band stripe</li>';
-  html+='</ul></div>';
-  body.innerHTML=html;
-
+  var fl=0;for(y=0;y<H;y++)for(var x=0;x<W;x++)if(grid[y][x])fl++;
+  var dn=((fl/(W*H))*100).toFixed(1);
+  document.getElementById('patternStats').textContent=W+'\u00d7'+H+' \u00b7 '+dn+'% \u00b7 '+totalPlaced+' shapes \u00b7 seed: '+seed;
+  document.getElementById('taalimBody').innerHTML='<div class="taalim-section"><h3>Composition</h3>'+
+    '<p style="font-size:14px;color:var(--text);">'+uc.length+' unique shapes \u2014 border: '+uc[0]+' mirror tile \u00b7 '+
+    'field: '+totalPlaced+' shapes (Poisson placement) \u00b7 '+dn+'% density</p></div>';
   saveToLibrary(name);
 }
 
