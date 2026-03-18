@@ -952,8 +952,8 @@ function generatePattern(){
   var seed=remixCounter>0?name+'_'+remixCounter:name;
   var rng=createPRNG(seed);
 
-  W=parseInt(document.getElementById('rugW').value)||96;
-  H=parseInt(document.getElementById('rugH').value)||128;
+  W=parseInt(document.getElementById('rugW').value)||300;
+  H=parseInt(document.getElementById('rugH').value)||400;
   grid=[];
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
