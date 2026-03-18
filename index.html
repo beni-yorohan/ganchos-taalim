@@ -930,36 +930,74 @@ function sliceToBands(bmp,numBands){
   return bands;
 }
 
-// ─── RENDER NAME AS BITMAP ─────────────────────────────────────
-// Render the Solitreo name into a binary bitmap using Canvas 2D
-function renderNameBitmap(solitreoStr,maxW,maxH,fontSize){
+// ─── RENDER SINGLE LETTER AS LARGE BITMAP ─────────────────────
+function renderLetterLarge(ch,fontSize){
+  var pad=Math.floor(fontSize*0.3);
+  var cw=fontSize+pad*2,ch2=Math.floor(fontSize*1.4)+pad*2;
   var c=document.createElement('canvas');
-  c.width=maxW;c.height=maxH;
+  c.width=cw;c.height=ch2;
   var ctx=c.getContext('2d');
-  ctx.fillStyle='#FFF';ctx.fillRect(0,0,maxW,maxH);
+  ctx.fillStyle='#FFF';ctx.fillRect(0,0,cw,ch2);
   ctx.fillStyle='#000';
   ctx.font=fontSize+'px GanchosSans';
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.direction='rtl';
-  ctx.fillText(solitreoStr,maxW/2,maxH/2);
-  var img=ctx.getImageData(0,0,maxW,maxH);
+  ctx.fillText(ch,cw/2,ch2/2);
+  var img=ctx.getImageData(0,0,cw,ch2);
+  // Extract bitmap and crop to bounding box
   var bmp=[];
-  for(var y=0;y<maxH;y++){
-    bmp[y]=new Uint8Array(maxW);
-    for(var x=0;x<maxW;x++){
-      var idx=(y*maxW+x)*4;
+  for(var y=0;y<ch2;y++){
+    bmp[y]=new Uint8Array(cw);
+    for(var x=0;x<cw;x++){
+      var idx=(y*cw+x)*4;
       bmp[y][x]=(img.data[idx]+img.data[idx+1]+img.data[idx+2])/3<128?1:0;
     }
   }
-  // Crop to bounding box with padding
-  var top=maxH,bot=0,left=maxW,right=0;
-  for(y=0;y<maxH;y++)for(x=0;x<maxW;x++){
+  var top=ch2,bot=0,left=cw,right=0;
+  for(y=0;y<ch2;y++)for(x=0;x<cw;x++){
     if(bmp[y][x]){if(y<top)top=y;if(y>bot)bot=y;if(x<left)left=x;if(x>right)right=x;}
   }
-  if(top>bot)return null;// nothing rendered
-  var pad=4;
-  top=Math.max(0,top-pad);bot=Math.min(maxH-1,bot+pad);
-  left=Math.max(0,left-pad);right=Math.min(maxW-1,right+pad);
+  if(top>bot)return null;
+  var p2=2;
+  top=Math.max(0,top-p2);bot=Math.min(ch2-1,bot+p2);
+  left=Math.max(0,left-p2);right=Math.min(cw-1,right+p2);
+  var cropped=[];
+  for(y=top;y<=bot;y++){
+    var row=new Uint8Array(right-left+1);
+    for(x=left;x<=right;x++) row[x-left]=bmp[y][x];
+    cropped.push(row);
+  }
+  return cropped;
+}
+
+// Render small label text as bitmap
+function renderLabelBitmap(text,fontSize){
+  var c=document.createElement('canvas');
+  var cw=Math.floor(fontSize*text.length*1.2)+20;
+  var ch2=Math.floor(fontSize*1.8);
+  c.width=cw;c.height=ch2;
+  var ctx=c.getContext('2d');
+  ctx.fillStyle='#FFF';ctx.fillRect(0,0,cw,ch2);
+  ctx.fillStyle='#000';
+  ctx.font=fontSize+'px GanchosSans';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.direction='rtl';
+  ctx.fillText(text,cw/2,ch2/2);
+  var img=ctx.getImageData(0,0,cw,ch2);
+  var bmp=[];
+  for(var y=0;y<ch2;y++){
+    bmp[y]=new Uint8Array(cw);
+    for(var x=0;x<cw;x++){
+      var idx=(y*cw+x)*4;
+      bmp[y][x]=(img.data[idx]+img.data[idx+1]+img.data[idx+2])/3<128?1:0;
+    }
+  }
+  // Crop
+  var top=ch2,bot=0,left=cw,right=0;
+  for(y=0;y<ch2;y++)for(x=0;x<cw;x++){
+    if(bmp[y][x]){if(y<top)top=y;if(y>bot)bot=y;if(x<left)left=x;if(x>right)right=x;}
+  }
+  if(top>bot)return null;
   var cropped=[];
   for(y=top;y<=bot;y++){
     var row=new Uint8Array(right-left+1);
@@ -996,188 +1034,98 @@ function generatePattern(){
   grid=[];
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
-  // ── Rasterize individual letters for motifs ──
-  var sSmall=Math.max(8,Math.floor(Math.min(W,H)/20));
-  var sMed=Math.max(14,Math.floor(Math.min(W,H)/12));
+  var solitreoStr=transliterate(name);
 
-  var bmps=[];
+  // ── Render each letter LARGE ──
+  // Letters should fill 40-70% of rug height
+  var numLetters=chars.length;
+  var baseFontSize=Math.floor(H*0.5/Math.max(1,Math.sqrt(numLetters*0.5)));
+  baseFontSize=Math.max(40,Math.min(baseFontSize,Math.floor(H*0.6)));
+
+  var letterBmps=[];
   for(var i=0;i<chars.length;i++){
-    var bs=rasterLetterBitmap(chars[i],sSmall);
-    var bm=rasterLetterBitmap(chars[i],sMed);
-    if(bs&&bm)bmps.push({ch:chars[i],small:bs,med:bm});
+    // Vary size per letter for organic feel
+    var sizeMult=0.7+rng()*0.6;// 0.7x to 1.3x
+    var fs=Math.floor(baseFontSize*sizeMult);
+    var lb=renderLetterLarge(chars[i],fs);
+    if(lb) letterBmps.push({ch:chars[i],bmp:lb,fontSize:fs});
   }
-  if(!bmps.length){
+  if(!letterBmps.length){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
-    document.getElementById('patternStats').textContent='Could not rasterize letters.';
+    document.getElementById('patternStats').textContent='Could not render letters.';
     return;
   }
 
-  // ── Render the FULL NAME as a readable bitmap for the medallion ──
-  var solitreoStr=transliterate(name);
-  var nameLen=solitreoStr.replace(/\s/g,'').length;
-  var medFontSize=Math.max(20,Math.floor(Math.min(W*0.6,H*0.15)/Math.max(1,nameLen*0.15)));
-  medFontSize=Math.min(medFontSize,Math.floor(H*0.12));
-  var nameBmp=renderNameBitmap(solitreoStr,Math.floor(W*0.6),Math.floor(H*0.15),medFontSize);
+  // ── Assign transformations based on position + remix ──
+  var transforms=['normal','mirrorH','rotate180','mirrorV','rotate90','rotate270'];
+  var placements=[];
 
-  // ── Assign roles ──
-  var borderLetter=bmps[0];
-  var fieldLetters=bmps.length>1?bmps.slice(1):[bmps[0]];
+  // Distribute letters across the rug area
+  // Use a loose grid: letters placed in rows, with some overlap
+  var cols=Math.max(1,Math.min(3,Math.ceil(numLetters/2)));
+  var rows=Math.ceil(numLetters/cols);
+  var cellW=Math.floor((W-20)/cols);
+  var cellH=Math.floor((H-60)/rows);// leave room for label at top
 
-  // ── Remix ──
-  var remixRot=Math.floor(rng()*4);
-  var fieldMode=Math.floor(rng()*3);
-  var medMode=Math.floor(rng()*2);
+  for(i=0;i<letterBmps.length;i++){
+    var col=i%cols;
+    var row=Math.floor(i/cols);
 
-  var borderSmall=borderLetter.small;
-  for(var ri=0;ri<remixRot;ri++) borderSmall=rotateBmp90(borderSmall);
+    // Pick transform based on position and remix
+    var tIdx=(i+remixCounter)%transforms.length;
+    var transform=transforms[tIdx];
 
-  // ── Zone dimensions ──
-  var outerBorderW=2;
-  var guardW=Math.max(3,Math.floor(Math.min(W,H)*0.03));
-  var innerBorderW=Math.max(5,Math.floor(Math.min(W,H)*0.05));
-  var totalBorder=outerBorderW+guardW+innerBorderW;
+    // Apply transformation to bitmap
+    var bmp=letterBmps[i].bmp;
+    if(transform==='mirrorH') bmp=mirrorH(bmp);
+    else if(transform==='mirrorV') bmp=mirrorV(bmp);
+    else if(transform==='rotate180'){bmp=rotateBmp90(rotateBmp90(bmp));}
+    else if(transform==='rotate90') bmp=rotateBmp90(bmp);
+    else if(transform==='rotate270'){bmp=rotateBmp90(rotateBmp90(rotateBmp90(bmp)));}
 
-  // ════════════════════════════════════════════════════
-  // 1. OUTER FRAME
-  // ════════════════════════════════════════════════════
-  for(y=0;y<H;y++)for(var x=0;x<W;x++){
-    if(y<outerBorderW||y>=H-outerBorderW||x<outerBorderW||x>=W-outerBorderW)
-      grid[y][x]=1;
+    // Position: center of each cell, with slight random offset for organic feel
+    var bw2=bmp[0].length,bh2=bmp.length;
+    var px=Math.floor(10+col*cellW+(cellW-bw2)/2+(rng()-0.5)*cellW*0.15);
+    var py=Math.floor(40+row*cellH+(cellH-bh2)/2+(rng()-0.5)*cellH*0.15);
+
+    // Clamp to stay within rug
+    px=Math.max(4,Math.min(W-bw2-4,px));
+    py=Math.max(30,Math.min(H-bh2-4,py));
+
+    placements.push({ch:letterBmps[i].ch,bmp:bmp,x:px,y:py,transform:transform,fontSize:letterBmps[i].fontSize});
   }
 
-  // ════════════════════════════════════════════════════
-  // 2. GUARD STRIPE
-  // ════════════════════════════════════════════════════
-  var guardTile=makeMirrorTile(borderSmall);
-  var gx0=outerBorderW,gy0=outerBorderW;
-  var gw=W-outerBorderW*2,gh=H-outerBorderW*2;
-  tileFill(grid,guardTile,gx0,gy0,gw,guardW,false,'set');
-  tileFill(grid,guardTile,gx0,gy0+gh-guardW,gw,guardW,false,'set');
-  tileFill(grid,guardTile,gx0,gy0+guardW,guardW,gh-guardW*2,false,'set');
-  tileFill(grid,guardTile,gx0+gw-guardW,gy0+guardW,guardW,gh-guardW*2,false,'set');
-
-  // ════════════════════════════════════════════════════
-  // 3. MAIN BORDER
-  // ════════════════════════════════════════════════════
-  var borderMed=bmps.length>1?bmps[1].small:rotateBmp90(borderSmall);
-  for(ri=0;ri<(remixRot+1)%4;ri++) borderMed=rotateBmp90(borderMed);
-  var borderPW=makePinwheel(borderMed);
-  var bx0=outerBorderW+guardW,by0=outerBorderW+guardW;
-  var bw=W-(outerBorderW+guardW)*2,bh=H-(outerBorderW+guardW)*2;
-  tileFill(grid,borderPW,bx0,by0,bw,innerBorderW,false,'set');
-  tileFill(grid,borderPW,bx0,by0+bh-innerBorderW,bw,innerBorderW,false,'set');
-  tileFill(grid,borderPW,bx0,by0+innerBorderW,innerBorderW,bh-innerBorderW*2,false,'set');
-  tileFill(grid,borderPW,bx0+bw-innerBorderW,by0+innerBorderW,innerBorderW,bh-innerBorderW*2,false,'set');
-
-  // ════════════════════════════════════════════════════
-  // 4. FIELD: decorative motifs filling the interior
-  // ════════════════════════════════════════════════════
-  var fx0=totalBorder,fy0=totalBorder;
-  var fw=W-totalBorder*2,fh=H-totalBorder*2;
-
-  var fBmp=fieldLetters[0].med;
-  var fieldRot2=Math.floor(rng()*4);
-  for(ri=0;ri<fieldRot2;ri++) fBmp=rotateBmp90(fBmp);
-  var fTile;
-  if(fieldMode===0) fTile=makePinwheel(fBmp);
-  else fTile=makeMirrorTile(fBmp);
-  tileFill(grid,fTile,fx0,fy0,fw,fh,fieldMode===2,'set');
-
-  if(fieldLetters.length>1){
-    var fBmp2=fieldLetters[Math.min(1,fieldLetters.length-1)].med;
-    var fTile2=makePinwheel(rotateBmp90(fBmp2));
-    tileFill(grid,fTile2,fx0,fy0,fw,fh,false,'xor');
+  // ── Stamp letters onto grid with XOR (overlaps create interesting forms) ──
+  for(i=0;i<placements.length;i++){
+    stampXOR(grid,placements[i].bmp,placements[i].x,placements[i].y);
   }
 
-  // ════════════════════════════════════════════════════
-  // 5. MEDALLION: the NAME itself, readable, centered
-  // ════════════════════════════════════════════════════
-  var cx=Math.floor(W/2),cy=Math.floor(H/2);
-
-  if(nameBmp&&nameBmp.length>0){
-    var nW=nameBmp[0].length,nH=nameBmp.length;
-    var padX=Math.floor(nW*0.2),padY=Math.floor(nH*0.5);
-    var clearW=nW+padX*2,clearH=nH+padY*2;
-
-    // Clear rectangle for the medallion
-    for(y=cy-Math.floor(clearH/2);y<cy+Math.floor(clearH/2);y++){
-      for(x=cx-Math.floor(clearW/2);x<cx+Math.floor(clearW/2);x++){
-        if(y>=totalBorder&&y<H-totalBorder&&x>=totalBorder&&x<W-totalBorder)
-          grid[y][x]=0;
+  // ── Add small readable name label at top center ──
+  var labelSize=Math.max(10,Math.floor(H*0.035));
+  var labelBmp=renderLabelBitmap(solitreoStr,labelSize);
+  if(labelBmp){
+    var lw=labelBmp[0].length,lh=labelBmp.length;
+    var lx=Math.floor((W-lw)/2);
+    var ly=Math.max(6,Math.floor(H*0.02));
+    // Clear a small zone for the label
+    for(y=ly-2;y<ly+lh+2;y++){
+      for(var x=lx-4;x<lx+lw+4;x++){
+        if(y>=0&&y<H&&x>=0&&x<W) grid[y][x]=0;
       }
     }
-
-    // Draw medallion frame (stepped rectangle)
-    var fTop=cy-Math.floor(clearH/2),fBot=cy+Math.floor(clearH/2)-1;
-    var fLeft=cx-Math.floor(clearW/2),fRight=cx+Math.floor(clearW/2)-1;
-    // Outer frame of medallion (2px)
-    for(y=fTop;y<=fBot;y++){
-      for(x=fLeft;x<=fRight;x++){
-        if(y>=0&&y<H&&x>=0&&x<W){
-          if(y<=fTop+1||y>=fBot-1||x<=fLeft+1||x>=fRight-1) grid[y][x]=1;
-        }
-      }
-    }
-    // Inner decorative border of medallion (letter-derived)
-    var medBorderBmp=bmps[bmps.length-1].small;
-    var medBorderTile=makeMirrorTile(medBorderBmp);
-    var mbW=3;// medallion inner border width
-    // Top inner border
-    tileFill(grid,medBorderTile,fLeft+2,fTop+2,clearW-4,mbW,false,'set');
-    // Bottom inner border
-    tileFill(grid,medBorderTile,fLeft+2,fBot-1-mbW,clearW-4,mbW,false,'set');
-    // Left inner border
-    tileFill(grid,medBorderTile,fLeft+2,fTop+2+mbW,mbW,clearH-4-mbW*2,false,'set');
-    // Right inner border
-    tileFill(grid,medBorderTile,fRight-1-mbW,fTop+2+mbW,mbW,clearH-4-mbW*2,false,'set');
-
-    // Stamp the actual name text
-    var nameX=cx-Math.floor(nW/2);
-    var nameY=cy-Math.floor(nH/2);
-    stampOR(grid,nameBmp,nameX,nameY);
+    stampOR(grid,labelBmp,lx,ly);
   }
 
-  // ════════════════════════════════════════════════════
-  // 6. SECONDARY MOTIFS: at 1/4 and 3/4 height
-  // ════════════════════════════════════════════════════
-  if(bmps.length>=2){
-    var qBmp=bmps[Math.floor(bmps.length/2)].med;
-    var qTile=medMode===0?makePinwheel(qBmp):makeMirrorTile(qBmp);
-    var qTW=qTile[0].length,qTH=qTile.length;
-    var qy1=Math.floor(H*0.22),qy2=Math.floor(H*0.78);
-    var medTop=cy-Math.floor((nameBmp?nameBmp.length*1.5:20)/2);
-    var medBot=cy+Math.floor((nameBmp?nameBmp.length*1.5:20)/2);
-    if(qy1+qTH<medTop)
-      stampXOR(grid,qTile,cx-Math.floor(qTW/2),qy1-Math.floor(qTH/2));
-    if(qy2-qTH>medBot)
-      stampXOR(grid,qTile,cx-Math.floor(qTW/2),qy2-Math.floor(qTH/2));
-  }
+  // ── Simple thin border frame ──
+  for(y=0;y<H;y++){grid[y][0]=1;grid[y][1]=1;grid[y][W-1]=1;grid[y][W-2]=1;}
+  for(x=0;x<W;x++){grid[0][x]=1;grid[1][x]=1;grid[H-1][x]=1;grid[H-2][x]=1;}
 
-  // ════════════════════════════════════════════════════
-  // 7. CORNERS
-  // ════════════════════════════════════════════════════
-  if(bmps.length>=2){
-    var cS=Math.max(4,innerBorderW);
-    var c1b=scaleBmp(bmps[0].small,cS);
-    var c2b=scaleBmp(bmps[bmps.length-1].small,cS);
-    var cornerM=makeMirrorTile(orBmp(c1b,c2b));
-    var csW=cornerM[0].length,csH=cornerM.length;
-    stampOR(grid,cornerM,outerBorderW+guardW,outerBorderW+guardW);
-    stampOR(grid,cornerM,W-outerBorderW-guardW-csW,outerBorderW+guardW);
-    stampOR(grid,cornerM,outerBorderW+guardW,H-outerBorderW-guardW-csH);
-    stampOR(grid,cornerM,W-outerBorderW-guardW-csW,H-outerBorderW-guardW-csH);
-  }
-
-  // ════════════════════════════════════════════════════
-  // 8. SYMMETRY: vertical mirror
-  // ════════════════════════════════════════════════════
+  // ── Vertical mirror symmetry ──
   for(y=0;y<H;y++){
     for(x=0;x<Math.floor(W/2);x++){
       grid[y][W-1-x]=grid[y][x];
     }
   }
-
-  // ════════════════════════════════════════════════════
 
   if(rugSketch)rugSketch.refresh();
 
@@ -1185,34 +1133,27 @@ function generatePattern(){
   var filled=0;
   for(y=0;y<H;y++)for(x=0;x<W;x++)if(grid[y][x])filled++;
   var density=((filled/(W*H))*100).toFixed(1);
-  var modeNames=['pinwheel','mirror tile','brick repeat'];
-  var medNames=['pinwheel','mirror tile'];
 
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+chars.length+' letters \u00b7 \u201c'+name+'\u201d in Solitreo \u00b7 seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+chars.length+' letters \u00b7 seed: '+seed;
 
-  // Taalim breakdown
+  // Taalim
   var body=document.getElementById('taalimBody');
   var html='<div class="taalim-section"><h3>Composition</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">The name <strong>\u201c'+name+'\u201d</strong> is written in Solitreo script at the center medallion. ';
-  html+='The surrounding motifs are built from the individual letterforms:</p>';
+  html+='<p style="font-size:14px;color:var(--text);">The name <strong>\u201c'+name+'\u201d</strong> ('+solitreoStr+') ';
+  html+='is composed from its individual Solitreo letterforms, each transformed and placed to create an organic rug design:</p>';
   html+='<ul style="font-size:14px;color:var(--text);list-style:none;padding:0;margin-top:8px;">';
-  html+='<li><strong>Medallion</strong> \u2014 \u201c'+solitreoStr+'\u201d readable in GanchosSans</li>';
-  html+='<li><strong>'+borderLetter.ch+'</strong> (first letter) \u2192 Guard stripe + border motifs</li>';
-  for(var fi=0;fi<fieldLetters.length;fi++){
-    html+='<li><strong>'+fieldLetters[fi].ch+'</strong> \u2192 Field pattern ('+modeNames[fieldMode]+')</li>';
+  for(i=0;i<placements.length;i++){
+    var p=placements[i];
+    html+='<li><strong>'+p.ch+'</strong> \u2014 '+p.transform+' at '+p.fontSize+'px</li>';
   }
-  if(bmps.length>=2) html+='<li><strong>Secondary motifs</strong> \u2192 '+medNames[medMode]+' at 1/4 and 3/4 height</li>';
   html+='</ul></div>';
 
   html+='<div class="taalim-section"><h3>Statistics</h3><div class="taalim-stats">';
   html+='<div class="taalim-stat"><div class="val">'+W+'\u00d7'+H+'</div><div class="lbl">Grid</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+density+'%</div><div class="lbl">Density</div></div>';
   html+='<div class="taalim-stat"><div class="val">'+chars.length+'</div><div class="lbl">Letters</div></div>';
-  html+='<div class="taalim-stat"><div class="val">'+sSmall+'/'+sMed+'</div><div class="lbl">Motif px</div></div>';
   html+='</div></div>';
-
-  html+='<div class="taalim-section"><p style="font-size:13px;color:var(--text-3);">Remix #'+remixCounter+' \u00b7 field: '+modeNames[fieldMode]+'</p></div>';
   body.innerHTML=html;
 
   saveToLibrary(name);
