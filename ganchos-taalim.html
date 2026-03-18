@@ -931,25 +931,24 @@ function sliceToBands(bmp,numBands){
 }
 
 // ─── RENDER SINGLE LETTER AS LARGE BITMAP ─────────────────────
-function renderLetterLarge(ch,fontSize,outline){
-  var pad=Math.floor(fontSize*0.3);
-  var cw=fontSize+pad*2,ch2=Math.floor(fontSize*1.4)+pad*2;
+// angle: rotation in radians (0 = upright). Supports any angle for organic feel.
+function renderLetterLarge(ch,fontSize,outline,angle){
+  // Canvas needs extra room for rotation
+  var diag=Math.ceil(Math.sqrt(2)*fontSize*1.5);
+  var pad=Math.floor(diag*0.15);
+  var cw=diag+pad*2,ch2=diag+pad*2;
   var c=document.createElement('canvas');
   c.width=cw;c.height=ch2;
   var ctx=c.getContext('2d');
   ctx.fillStyle='#FFF';ctx.fillRect(0,0,cw,ch2);
+  // Apply rotation around center
+  ctx.translate(cw/2,ch2/2);
+  if(angle) ctx.rotate(angle);
   ctx.font=fontSize+'px GanchosSans';
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.direction='rtl';
-  if(outline){
-    // OUTLINE MODE: strokeText creates flowing line quality
-    var lw=Math.max(1,Math.floor(fontSize*0.04));
-    ctx.strokeStyle='#000';ctx.lineWidth=lw;ctx.lineJoin='round';ctx.lineCap='round';
-    ctx.strokeText(ch,cw/2,ch2/2);
-  } else {
-    ctx.fillStyle='#000';
-    ctx.fillText(ch,cw/2,ch2/2);
-  }
+  ctx.fillStyle='#000';
+  ctx.fillText(ch,0,0);
   var img=ctx.getImageData(0,0,cw,ch2);
   var bmp=[];
   for(var y=0;y<ch2;y++){
