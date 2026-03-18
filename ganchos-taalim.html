@@ -1090,10 +1090,10 @@ function generatePattern(){
   var guardCh=uc[4%uc.length];
 
   // ── Zone dimensions ──
-  var outerFrame=Math.max(2,Math.floor(Math.min(W,H)*0.006));
-  var guard1W=Math.max(2,Math.floor(Math.min(W,H)*0.008));
-  var borderBandW=Math.max(10,Math.floor(Math.min(W,H)*0.06));
-  var guard2W=Math.max(2,Math.floor(Math.min(W,H)*0.008));
+  var outerFrame=Math.max(2,Math.floor(Math.min(W,H)*0.008));
+  var guard1W=Math.max(3,Math.floor(Math.min(W,H)*0.012));
+  var borderBandW=Math.max(15,Math.floor(Math.min(W,H)*0.09));
+  var guard2W=Math.max(3,Math.floor(Math.min(W,H)*0.012));
   var totalBorder=outerFrame+guard1W+borderBandW+guard2W;
 
   var fieldX=totalBorder;
