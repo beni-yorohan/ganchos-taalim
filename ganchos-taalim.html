@@ -1447,20 +1447,16 @@ function saveToLibrary(name){
       thumb:thumb||'',
       timestamp:Date.now(),
       params:{
-        interior:document.getElementById('interiorStructure').value,
-        exterior:document.getElementById('exteriorStructure').value,
-        layout:document.getElementById('layoutMode').value,
-        w:parseInt(document.getElementById('rugW').value)||128,
+        w:parseInt(document.getElementById('rugW').value)||96,
         h:parseInt(document.getElementById('rugH').value)||128,
-        border:parseInt(document.getElementById('borderWidth').value)||0,
         remix:remixCounter
       }
     };
-    // Check for duplicate in current library (same name+interior+remix)
+    // Check for duplicate in current library (same name+remix)
     var dupKey=null;
     for(var i=0;i<libAll.length;i++){
       var e=libAll[i];
-      if(e.name===entry.name&&e.params.interior===entry.params.interior&&(e.params.remix||0)===(entry.params.remix||0)){
+      if(e.name===entry.name&&(e.params.remix||0)===(entry.params.remix||0)){
         dupKey=e._fbKey;break;
       }
     }
