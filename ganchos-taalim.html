@@ -1060,7 +1060,7 @@ function generatePattern(){
 
   // Poisson disk sampling on the left half
   // Generates well-distributed points with minimum distance between them
-  var minDist=Math.max(12,Math.floor(Math.min(W,H)*0.04));
+  var minDist=Math.max(8,Math.floor(Math.min(W,H)*0.025));
   var candidates=[];
   var poissonGrid={};
   var cellSize=Math.floor(minDist/1.414);
