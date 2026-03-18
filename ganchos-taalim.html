@@ -1106,36 +1106,35 @@ function generatePattern(){
   // PHASE B: GENERATE MOTIFS from shapes
   // ══════════════════════════════════════════════════════════
 
-  // Field motif: pinwheel from field shape
-  var fieldShapeSize=Math.max(6,Math.floor(Math.min(W,H)*0.05)+Math.floor(rng()*8));
+  // Field motif: pinwheel from field shape — render LARGE for substance
+  var fieldShapeSize=Math.max(15,Math.floor(Math.min(W,H)*0.12)+Math.floor(rng()*10));
   var fieldShapeBmp=rasterizeFromFont(fieldCh,fieldShapeSize);
   var fieldMotif=fieldShapeBmp?makePinwheel(fieldShapeBmp):null;
 
-  // Border motif: mirror tile from border shape
-  var borderShapeSize=Math.max(5,Math.floor(borderBandW*0.45));
+  // Border motif: mirror tile — must fill the border band width
+  var borderShapeSize=Math.max(8,Math.floor(borderBandW*0.9));
   var borderShapeBmp=rasterizeFromFont(borderCh,borderShapeSize);
   var borderMotif=borderShapeBmp?makeMirrorTile(borderShapeBmp):null;
 
-  // Medallion motif: scaled up mirror tile
-  var medSize=Math.max(20,Math.floor(Math.min(fieldW,fieldH)*0.4));
-  var medShapeBmp=rasterizeFromFont(medCh,Math.max(8,Math.floor(medSize*0.3)));
+  // Medallion motif: scaled up mirror tile — substantial center piece
+  var medSize=Math.max(40,Math.floor(Math.min(fieldW,fieldH)*0.5));
+  var medShapeBmp=rasterizeFromFont(medCh,Math.max(15,Math.floor(medSize*0.4)));
   var medallion=null;
   if(medShapeBmp){
-    // If we have enough unique chars, compound the medallion with another shape
     if(uc.length>3){
-      var med2Bmp=rasterizeFromFont(uc[(uc.length-1)%uc.length],Math.max(8,Math.floor(medSize*0.3)));
-      if(med2Bmp) medShapeBmp=makeCompoundMotif(medShapeBmp,med2Bmp,Math.max(8,Math.floor(medSize*0.3)));
+      var med2Bmp=rasterizeFromFont(uc[(uc.length-1)%uc.length],Math.max(15,Math.floor(medSize*0.4)));
+      if(med2Bmp) medShapeBmp=makeCompoundMotif(medShapeBmp,med2Bmp,Math.max(15,Math.floor(medSize*0.4)));
     }
     medallion=makeRugMedallion(medShapeBmp,medSize);
   }
 
-  // Corner motif: pinwheel from corner shape
-  var cornerSize=Math.max(5,Math.floor(borderBandW*0.5));
+  // Corner motif: pinwheel — fill the border band corner
+  var cornerSize=Math.max(8,Math.floor(borderBandW*0.9));
   var cornerShapeBmp=rasterizeFromFont(cornerCh,cornerSize);
   var cornerMotif=cornerShapeBmp?makePinwheel(cornerShapeBmp):null;
 
-  // Guard stripe motif: horizontal band from guard shape
-  var guardShapeBmp=rasterizeFromFont(guardCh,Math.max(4,guard1W*2));
+  // Guard stripe motif: horizontal band — visible thickness
+  var guardShapeBmp=rasterizeFromFont(guardCh,Math.max(6,Math.floor(Math.min(W,H)*0.04)));
   var guardBands=guardShapeBmp?sliceToBands(guardShapeBmp,3):null;
   var guardMotif=guardBands&&guardBands.length>0?makeGuardPattern(guardBands[0],guard1W):null;
 
