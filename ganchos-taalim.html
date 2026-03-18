@@ -1125,20 +1125,19 @@ function generatePattern(){
     return da-db;
   });
 
-  // Build letter queue: 60% large (~same size), 40% smaller
-  // The "big" size should be dominant — like the sketch
-  var bigFrac=0.28;// ~28% of rug height = the main letter size
+  // Build letter queue: 80% same size, 20% smaller
+  var bigFrac=0.18;// ~18% of rug height — not huge, but clearly dominant
   var letterQueue2=[];
-  // 60% are big (all roughly the same size with slight variation)
-  var bigCount=Math.max(8,Math.floor(candidates.length*0.15));
+  // 80% are the SAME size (subtle variation only)
+  var bigCount=Math.max(12,Math.floor(candidates.length*0.25));
   for(var bi=0;bi<bigCount;bi++){
-    var vary=0.85+rng()*0.3;// 0.85x to 1.15x — subtle variation
+    var vary=0.90+rng()*0.20;// 0.90x to 1.10x — very tight range
     letterQueue2.push({ch:chars[bi%chars.length],frac:bigFrac*vary});
   }
-  // 40% are smaller (range of smaller sizes)
-  var smallCount=Math.max(5,Math.floor(bigCount*0.65));
+  // 20% are smaller accent letters
+  var smallCount=Math.max(3,Math.floor(bigCount*0.25));
   for(var si=0;si<smallCount;si++){
-    var smallFrac=0.06+rng()*0.12;// 6% to 18%
+    var smallFrac=0.04+rng()*0.08;// 4% to 12%
     letterQueue2.push({ch:chars[si%chars.length],frac:smallFrac});
   }
 
