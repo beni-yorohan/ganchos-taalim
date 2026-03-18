@@ -957,12 +957,17 @@ function generatePattern(){
   grid=[];
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
-  // ── Rasterize all letters SMALL so they become fine geometric units ──
-  var motifSize=Math.max(6,Math.min(Math.floor(Math.min(W,H)/12),10));
+  // ── Rasterize letters at MULTIPLE scales for hierarchy ──
+  var sSmall=Math.max(5,Math.floor(Math.min(W,H)/16));// ~6px: border motifs
+  var sMed=Math.max(8,Math.floor(Math.min(W,H)/8));// ~12px: field motifs
+  var sLarge=Math.max(14,Math.floor(Math.min(W,H)/4));// ~24-32px: medallion
+
   var bmps=[];
   for(var i=0;i<chars.length;i++){
-    var b=rasterLetterBitmap(chars[i],motifSize);
-    if(b)bmps.push({ch:chars[i],bmp:b});
+    var bs=rasterLetterBitmap(chars[i],sSmall);
+    var bm=rasterLetterBitmap(chars[i],sMed);
+    var bl=rasterLetterBitmap(chars[i],sLarge);
+    if(bs&&bm&&bl)bmps.push({ch:chars[i],small:bs,med:bm,large:bl});
   }
   if(!bmps.length){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
@@ -970,104 +975,158 @@ function generatePattern(){
     return;
   }
 
-  // ── Assign roles based on position ──
+  // ── Assign roles ──
   var borderLetter=bmps[0];
   var medallionLetter=bmps[bmps.length-1];
-  var fieldLetters=bmps.length>2?bmps.slice(1,bmps.length-1):[bmps[0]];
+  var fieldLetters=bmps.length>2?bmps.slice(1,bmps.length-1):[bmps[Math.floor(bmps.length/2)]];
 
-  // ── Border width ──
-  var borderW=Math.max(3,Math.floor(Math.min(W,H)*0.06));
-
-  // ── Remix: rotate letters, pick modes ──
+  // ── Remix: rotate, pick modes ──
   var remixRot=Math.floor(rng()*4);
-  for(var ri=0;ri<remixRot;ri++) borderLetter={ch:borderLetter.ch,bmp:rotateBmp90(borderLetter.bmp)};
-  var fieldRot=Math.floor(rng()*4);
-  for(ri=0;ri<fieldRot;ri++){
-    for(var fi=0;fi<fieldLetters.length;fi++)
-      fieldLetters[fi]={ch:fieldLetters[fi].ch,bmp:rotateBmp90(fieldLetters[fi].bmp)};
-  }
   var fieldMode=Math.floor(rng()*3);// 0=pinwheel, 1=mirror, 2=brick
   var medMode=Math.floor(rng()*2);// 0=pinwheel, 1=mirror
 
-  // ════════════════════════════════════════════════════
-  // 1. BORDER: first letter, mirror-tiled as a repeating band
-  // ════════════════════════════════════════════════════
-  var borderBmp=scaleBmp(borderLetter.bmp,Math.max(4,Math.min(borderW,motifSize)));
-  var borderTile=makeMirrorTile(borderBmp);
+  // Apply remix rotations to border letter
+  var borderSmall=borderLetter.small;
+  for(var ri=0;ri<remixRot;ri++) borderSmall=rotateBmp90(borderSmall);
 
-  // Fill all 4 border strips with clean SET mode (no XOR)
-  tileFill(grid,borderTile,0,0,W,borderW,false,'set');
-  tileFill(grid,borderTile,0,H-borderW,W,borderW,false,'set');
-  tileFill(grid,borderTile,0,borderW,borderW,H-borderW*2,false,'set');
-  tileFill(grid,borderTile,W-borderW,borderW,borderW,H-borderW*2,false,'set');
-
-  // Solid 1px outer frame
-  for(y=0;y<H;y++){grid[y][0]=1;grid[y][W-1]=1;}
-  for(var x=0;x<W;x++){grid[0][x]=1;grid[H-1][x]=1;}
+  // ── Zone dimensions ──
+  var outerBorderW=2;// solid outer frame
+  var guardW=Math.max(3,Math.floor(Math.min(W,H)*0.04));// guard stripe
+  var innerBorderW=Math.max(4,Math.floor(Math.min(W,H)*0.06));// main border
+  var totalBorder=outerBorderW+guardW+innerBorderW;
 
   // ════════════════════════════════════════════════════
-  // 2. FIELD: fill interior densely with transformed letter tiles
+  // 1. OUTER FRAME: solid lines
   // ════════════════════════════════════════════════════
-  var fieldX0=borderW,fieldY0=borderW;
-  var fieldW=W-borderW*2,fieldH=H-borderW*2;
-
-  // Build the field tile from the first field letter
-  var fieldBmp=fieldLetters[0].bmp;
-  var fieldTile;
-  if(fieldMode===0) fieldTile=makePinwheel(fieldBmp);
-  else if(fieldMode===1) fieldTile=makeMirrorTile(fieldBmp);
-  else fieldTile=makeMirrorTile(fieldBmp);// brick uses same tile
-
-  // Fill the entire field densely
-  tileFill(grid,fieldTile,fieldX0,fieldY0,fieldW,fieldH,fieldMode===2,'set');
-
-  // If multiple field letters, layer the second one with XOR for interference
-  if(fieldLetters.length>1){
-    var fieldBmp2=fieldLetters[1].bmp;
-    var fieldTile2=makePinwheel(fieldBmp2);// always pinwheel for contrast
-    tileFill(grid,fieldTile2,fieldX0,fieldY0,fieldW,fieldH,false,'xor');
+  for(y=0;y<H;y++)for(var x=0;x<W;x++){
+    if(y<outerBorderW||y>=H-outerBorderW||x<outerBorderW||x>=W-outerBorderW)
+      grid[y][x]=1;
   }
 
   // ════════════════════════════════════════════════════
-  // 3. MEDALLION: single clean centered motif from last letter
+  // 2. GUARD STRIPE: alternating checkerboard from first letter
   // ════════════════════════════════════════════════════
-  var medSize=Math.max(8,Math.floor(Math.min(fieldW,fieldH)*0.3));
-  var medBmp=scaleBmp(medallionLetter.bmp,medSize);
-  var medTile=medMode===0?makePinwheel(medBmp):makeMirrorTile(medBmp);
-  var medW=medTile[0].length,medH=medTile.length;
-  var centerX=Math.floor(W/2),centerY=Math.floor(H/2);
+  var guardTile=makeMirrorTile(borderSmall);
+  var gx0=outerBorderW,gy0=outerBorderW;
+  var gw=W-outerBorderW*2,gh=H-outerBorderW*2;
+  // Top guard
+  tileFill(grid,guardTile,gx0,gy0,gw,guardW,false,'set');
+  // Bottom guard
+  tileFill(grid,guardTile,gx0,gy0+gh-guardW,gw,guardW,false,'set');
+  // Left guard
+  tileFill(grid,guardTile,gx0,gy0+guardW,guardW,gh-guardW*2,false,'set');
+  // Right guard
+  tileFill(grid,guardTile,gx0+gw-guardW,gy0+guardW,guardW,gh-guardW*2,false,'set');
 
-  // Clear a diamond zone for the medallion
-  var clearR=Math.floor(Math.max(medW,medH)/2)+2;
-  for(y=centerY-clearR;y<=centerY+clearR;y++){
-    for(x=centerX-clearR;x<=centerX+clearR;x++){
-      if(y>=borderW&&y<H-borderW&&x>=borderW&&x<W-borderW){
-        var dy=Math.abs(y-centerY),dx=Math.abs(x-centerX);
-        if(dy+dx<=clearR) grid[y][x]=0;
+  // ════════════════════════════════════════════════════
+  // 3. MAIN BORDER: second letter (or first rotated) at medium scale
+  // ════════════════════════════════════════════════════
+  var borderMed=bmps.length>1?bmps[1].small:rotateBmp90(borderSmall);
+  for(ri=0;ri<(remixRot+1)%4;ri++) borderMed=rotateBmp90(borderMed);
+  var borderPW=makePinwheel(borderMed);
+  var bx0=outerBorderW+guardW,by0=outerBorderW+guardW;
+  var bw=W-(outerBorderW+guardW)*2,bh=H-(outerBorderW+guardW)*2;
+  // Top
+  tileFill(grid,borderPW,bx0,by0,bw,innerBorderW,false,'set');
+  // Bottom
+  tileFill(grid,borderPW,bx0,by0+bh-innerBorderW,bw,innerBorderW,false,'set');
+  // Left
+  tileFill(grid,borderPW,bx0,by0+innerBorderW,innerBorderW,bh-innerBorderW*2,false,'set');
+  // Right
+  tileFill(grid,borderPW,bx0+bw-innerBorderW,by0+innerBorderW,innerBorderW,bh-innerBorderW*2,false,'set');
+
+  // ════════════════════════════════════════════════════
+  // 4. FIELD: fill interior with medium-scale transformed letters
+  // ════════════════════════════════════════════════════
+  var fx0=totalBorder,fy0=totalBorder;
+  var fw=W-totalBorder*2,fh=H-totalBorder*2;
+
+  // Primary field tile from first field letter
+  var fBmp=fieldLetters[0].med;
+  var fieldRot2=Math.floor(rng()*4);
+  for(ri=0;ri<fieldRot2;ri++) fBmp=rotateBmp90(fBmp);
+  var fTile;
+  if(fieldMode===0) fTile=makePinwheel(fBmp);
+  else fTile=makeMirrorTile(fBmp);
+  tileFill(grid,fTile,fx0,fy0,fw,fh,fieldMode===2,'set');
+
+  // Layer second field letter for richness (XOR creates interference pattern)
+  if(fieldLetters.length>1){
+    var fBmp2=fieldLetters[1].med;
+    var fTile2=makePinwheel(rotateBmp90(fBmp2));
+    tileFill(grid,fTile2,fx0,fy0,fw,fh,false,'xor');
+  }
+
+  // ════════════════════════════════════════════════════
+  // 5. MEDALLION: large-scale centered motif — the focal point
+  // ════════════════════════════════════════════════════
+  var medBmp=medallionLetter.large;
+  var medRot=Math.floor(rng()*4);
+  for(ri=0;ri<medRot;ri++) medBmp=rotateBmp90(medBmp);
+  var medTile=medMode===0?makePinwheel(medBmp):makeMirrorTile(medBmp);
+  var mTW=medTile[0].length,mTH=medTile.length;
+  var cx=Math.floor(W/2),cy=Math.floor(H/2);
+
+  // Clear a stepped diamond zone
+  var clearR=Math.floor(Math.max(mTW,mTH)/2)+3;
+  for(y=cy-clearR;y<=cy+clearR;y++){
+    for(x=cx-clearR;x<=cx+clearR;x++){
+      if(y>=totalBorder&&y<H-totalBorder&&x>=totalBorder&&x<W-totalBorder){
+        var dy=Math.abs(y-cy),dx=Math.abs(x-cx);
+        // Stepped diamond (step size = 2 for organic feel)
+        if(Math.floor(dy/2)*2+Math.floor(dx/2)*2<=clearR) grid[y][x]=0;
       }
     }
   }
 
-  // Stamp medallion centered
-  stampOR(grid,medTile,centerX-Math.floor(medW/2),centerY-Math.floor(medH/2));
+  // Diamond outline (1px frame around the clear zone)
+  for(y=cy-clearR-1;y<=cy+clearR+1;y++){
+    for(x=cx-clearR-1;x<=cx+clearR+1;x++){
+      if(y>=totalBorder&&y<H-totalBorder&&x>=totalBorder&&x<W-totalBorder){
+        var dy2=Math.abs(y-cy),dx2=Math.abs(x-cx);
+        var dist=Math.floor(dy2/2)*2+Math.floor(dx2/2)*2;
+        if(dist===clearR||dist===clearR+1) grid[y][x]=1;
+      }
+    }
+  }
+
+  // Stamp medallion
+  stampOR(grid,medTile,cx-Math.floor(mTW/2),cy-Math.floor(mTH/2));
 
   // ════════════════════════════════════════════════════
-  // 4. CORNERS: small combined motif in each corner
+  // 6. QUARTER MEDALLIONS: smaller versions at 1/4 and 3/4 height
   // ════════════════════════════════════════════════════
   if(bmps.length>=2){
-    var cornerS=Math.max(4,Math.floor(borderW));
-    var c1=scaleBmp(borderLetter.bmp,cornerS);
-    var c2=scaleBmp(medallionLetter.bmp,cornerS);
-    var corner=makeMirrorTile(xorBmp(c1,c2));
-    var cs2=corner[0].length;
-    stampOR(grid,corner,0,0);
-    stampOR(grid,corner,W-cs2,0);
-    stampOR(grid,corner,0,H-corner.length);
-    stampOR(grid,corner,W-cs2,H-corner.length);
+    var qMedBmp=bmps[Math.floor(bmps.length/2)].med;
+    var qTile=makeMirrorTile(qMedBmp);
+    var qW=qTile[0].length,qH=qTile.length;
+    var qy1=Math.floor(H*0.25),qy2=Math.floor(H*0.75);
+    // Only stamp if they don't overlap the main medallion
+    if(qy1+qH<cy-clearR){
+      stampXOR(grid,qTile,cx-Math.floor(qW/2),qy1-Math.floor(qH/2));
+    }
+    if(qy2-qH>cy+clearR){
+      stampXOR(grid,qTile,cx-Math.floor(qW/2),qy2-Math.floor(qH/2));
+    }
   }
 
   // ════════════════════════════════════════════════════
-  // 5. SYMMETRY: enforce vertical mirror
+  // 7. CORNERS: combined motif in border corners
+  // ════════════════════════════════════════════════════
+  if(bmps.length>=2){
+    var cS=Math.max(4,innerBorderW);
+    var c1b=scaleBmp(borderLetter.small,cS);
+    var c2b=scaleBmp(medallionLetter.small,cS);
+    var cornerM=makeMirrorTile(orBmp(c1b,c2b));
+    var csW=cornerM[0].length,csH=cornerM.length;
+    stampOR(grid,cornerM,outerBorderW+guardW,outerBorderW+guardW);
+    stampOR(grid,cornerM,W-outerBorderW-guardW-csW,outerBorderW+guardW);
+    stampOR(grid,cornerM,outerBorderW+guardW,H-outerBorderW-guardW-csH);
+    stampOR(grid,cornerM,W-outerBorderW-guardW-csW,H-outerBorderW-guardW-csH);
+  }
+
+  // ════════════════════════════════════════════════════
+  // 8. SYMMETRY: vertical mirror for rug feel
   // ════════════════════════════════════════════════════
   for(y=0;y<H;y++){
     for(x=0;x<Math.floor(W/2);x++){
