@@ -1150,15 +1150,16 @@ function generatePattern(){
   for(var qi=0;qi<letterQueue2.length&&candIdx<candidates.length;qi++){
     var q=letterQueue2[qi];
     var fs2=Math.max(8,Math.floor(H*q.frac));
-    var bmp2=renderLetterLarge(q.ch,fs2);
-    if(!bmp2)continue;
 
-    // Transform
-    var tRoll=rng();
-    if(tRoll<0.2) bmp2=mirrorH(bmp2);
-    else if(tRoll<0.4) bmp2=mirrorV(bmp2);
-    else if(tRoll<0.55) bmp2=rotateBmp90(bmp2);
-    else if(tRoll<0.65){bmp2=rotateBmp90(bmp2);bmp2=rotateBmp90(bmp2);}
+    // Organic rotation: subtle angles for big letters, wider range for small
+    var angleRange=q.frac>0.2?0.35:0.8;// big=±20°, small=±45°
+    var angle2=(rng()-0.5)*angleRange;
+    // Also sometimes mirror
+    var doMirror=rng()>0.5;
+
+    var bmp2=renderLetterLarge(q.ch,fs2,false,angle2);
+    if(!bmp2)continue;
+    if(doMirror) bmp2=mirrorH(bmp2);
 
     var bw2=bmp2[0].length,bh2=bmp2.length;
 
