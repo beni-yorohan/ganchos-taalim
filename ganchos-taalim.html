@@ -893,8 +893,10 @@ function stampOR(g,bmp,gx,gy){
 }
 
 // Tile a motif bitmap across a rectangular region with optional brick offset
-function tileFill(g,motif,x0,y0,w,h,brick){
+// mode: 'set'=overwrite, 'xor'=toggle, 'or'=union
+function tileFill(g,motif,x0,y0,w,h,brick,mode){
   var mh=motif.length,mw=motif[0].length;
+  if(!mode)mode='set';
   for(var y=y0;y<y0+h;y++){
     if(y<0||y>=g.length)continue;
     var rowIdx=Math.floor((y-y0)/mh);
@@ -903,7 +905,10 @@ function tileFill(g,motif,x0,y0,w,h,brick){
       if(x<0||x>=g[0].length)continue;
       var mx=((x-x0+xOff)%mw+mw)%mw;
       var my=((y-y0)%mh+mh)%mh;
-      if(motif[my][mx]) g[y][x]=g[y][x]?0:1;// XOR for layering
+      var v=motif[my][mx];
+      if(mode==='set') g[y][x]=v;
+      else if(mode==='xor'){if(v) g[y][x]=g[y][x]?0:1;}
+      else if(mode==='or'){if(v) g[y][x]=1;}
     }
   }
 }
