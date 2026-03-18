@@ -1049,9 +1049,9 @@ function generatePattern(){
   // Like the sketch: letters everywhere, flowing into each other
   // ══════════════════════════════════════════════════════════
 
-  // Scale levels: huge (55%), large (35%), medium (20%), small (12%), tiny (6%)
-  var scales=[0.55,0.35,0.20,0.12,0.06];
-  var placementsPerScale=[2,3,4,6,10];// more placements at smaller scales
+  // Scale levels — many more placements, pack the surface
+  var scales=[0.50,0.38,0.28,0.20,0.14,0.09,0.05];
+  var placementsPerScale=[3,4,5,7,10,14,20];// pack it dense
 
   // All work on LEFT HALF only, mirror at end
   var halfW=cx;
@@ -1089,16 +1089,16 @@ function generatePattern(){
   // GAP FILLING: Keep adding small letters until density >30%
   // ══════════════════════════════════════════════════════════
   var fillRound=0;
-  var maxFillRounds=30;
+  var maxFillRounds=80;
   while(fillRound<maxFillRounds){
     // Check current density of left half
     var filled=0,total=0;
     for(y=0;y<H;y++)for(var x=0;x<halfW;x++){if(grid[y]&&grid[y][x])filled++;total++;}
-    if(total>0&&filled/total>0.32)break;// dense enough
+    if(total>0&&filled/total>0.42)break;// target 42% density
 
     var fch=chars[Math.floor(rng()*chars.length)];
-    var ffs=Math.max(8,Math.floor(H*(0.04+rng()*0.08)));
-    var fbmp=renderLetterLarge(fch,ffs,rng()>0.5);
+    var ffs=Math.max(8,Math.floor(H*(0.05+rng()*0.15)));
+    var fbmp=renderLetterLarge(fch,ffs);
     if(!fbmp){fillRound++;continue;}
     if(rng()>0.5)fbmp=mirrorH(fbmp);
     if(rng()>0.5)fbmp=mirrorV(fbmp);
