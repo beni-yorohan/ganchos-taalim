@@ -1125,43 +1125,45 @@ function generatePattern(){
     return da-db;
   });
 
-  // Build letter queue: 80% big, 20% smaller
-  // STRICT round-robin: char[0], char[1], char[2], char[0], char[1]...
-  // Every letter appears equally. No randomization of letter choice.
-  var bigFrac=0.20;
-  var smallFrac2=0.08;
+  // Deduplicate chars so each UNIQUE letter gets equal representation
+  var uniqueChars=[];
+  var seenCh={};
+  for(var ui=0;ui<chars.length;ui++){
+    if(!seenCh[chars[ui]]){uniqueChars.push(chars[ui]);seenCh[chars[ui]]=true;}
+  }
+
+  // Build letter queue: 80% big, 20% clearly smaller
+  // Round-robin through UNIQUE chars only
+  var bigFrac=0.22;// dominant size
+  var smallFrac2=0.07;// obviously smaller
   var letterQueue2=[];
-  var totalLetters=Math.max(15,Math.floor(candidates.length*0.25));
+  var totalLetters=Math.max(20,Math.floor(candidates.length*0.35));
   var bigCount=Math.floor(totalLetters*0.8);
   var smallCount=totalLetters-bigCount;
   var letterIdx=0;
 
-  // 80% big — strict round-robin through chars
-  for(var bi=0;bi<bigCount;bi++){
+  for(var bi2=0;bi2<bigCount;bi2++){
     var vary=0.88+rng()*0.24;
-    letterQueue2.push({ch:chars[letterIdx%chars.length],frac:bigFrac*vary});
+    letterQueue2.push({ch:uniqueChars[letterIdx%uniqueChars.length],frac:bigFrac*vary,big:true});
     letterIdx++;
   }
-  // 20% small — continue the same round-robin
-  for(var si=0;si<smallCount;si++){
+  for(var si2=0;si2<smallCount;si2++){
     var sVary=0.7+rng()*0.6;
-    letterQueue2.push({ch:chars[letterIdx%chars.length],frac:smallFrac2*sVary});
+    letterQueue2.push({ch:uniqueChars[letterIdx%uniqueChars.length],frac:smallFrac2*sVary,big:false});
     letterIdx++;
   }
 
   // Placed letter bounding boxes for collision detection
-  var placedBoxes=[];// {x,y,w,h} including gap buffer
+  var placedBoxes=[];
   var totalPlaced=0;
-  var candIdx=0;
 
-  for(var qi=0;qi<letterQueue2.length&&candIdx<candidates.length;qi++){
+  for(var qi=0;qi<letterQueue2.length;qi++){
     var q=letterQueue2[qi];
     var fs2=Math.max(8,Math.floor(H*q.frac));
 
-    // Organic rotation: subtle angles for big letters, wider range for small
-    var angleRange=q.frac>0.2?0.35:0.8;// big=±20°, small=±45°
+    // Organic rotation
+    var angleRange=q.big?0.35:0.8;
     var angle2=(rng()-0.5)*angleRange;
-    // Also sometimes mirror
     var doMirror=rng()>0.5;
 
     var bmp2=renderLetterLarge(q.ch,fs2,false,angle2);
@@ -1170,22 +1172,20 @@ function generatePattern(){
 
     var bw2=bmp2[0].length,bh2=bmp2.length;
 
-    // Try candidates starting from current index
+    // Try ALL candidates (not just 30) — search harder for big letters
     var placed=false;
-    for(var ti=0;ti<Math.min(candidates.length-candIdx,30);ti++){
-      var cand=candidates[candIdx+ti];
-      // Center letter on candidate point
+    var searchLimit=q.big?candidates.length:Math.min(candidates.length,60);
+    for(var ti=0;ti<searchLimit;ti++){
+      var cand=candidates[ti];
       var px=cand.x-Math.floor(bw2/2);
       var py=cand.y-Math.floor(bh2/2);
 
-      // Bounds check
       if(px<margin||py<margin||px+bw2>halfW||py+bh2>H-margin)continue;
 
-      // Bounding box collision check (fast — just rectangles with gap buffer)
       var box={x:px-gap,y:py-gap,w:bw2+gap*2,h:bh2+gap*2};
       var collides2=false;
-      for(var bi=0;bi<placedBoxes.length;bi++){
-        var pb=placedBoxes[bi];
+      for(var bi3=0;bi3<placedBoxes.length;bi3++){
+        var pb=placedBoxes[bi3];
         if(box.x<pb.x+pb.w&&box.x+box.w>pb.x&&box.y<pb.y+pb.h&&box.y+box.h>pb.y){
           collides2=true;break;
         }
@@ -1196,11 +1196,9 @@ function generatePattern(){
       stampOR(grid,bmp2,px,py);
       placedBoxes.push(box);
       totalPlaced++;
-      candIdx+=ti+1;// advance past used candidates
       placed=true;
       break;
     }
-    if(!placed) candIdx++;// skip forward
   }
 
   // ══════════════════════════════════════════════════════════
