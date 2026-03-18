@@ -1125,36 +1125,28 @@ function generatePattern(){
     return da-db;
   });
 
-  // Build letter queue: 80% big, 20% clearly smaller
-  // Equal distribution of ALL letters from the name
+  // Build letter queue: 80% big, 20% smaller
+  // STRICT round-robin: char[0], char[1], char[2], char[0], char[1]...
+  // Every letter appears equally. No randomization of letter choice.
   var bigFrac=0.20;
-  var smallFrac2=0.08;// small = obviously smaller (40% of big size)
+  var smallFrac2=0.08;
   var letterQueue2=[];
   var totalLetters=Math.max(15,Math.floor(candidates.length*0.25));
   var bigCount=Math.floor(totalLetters*0.8);
   var smallCount=totalLetters-bigCount;
+  var letterIdx=0;
 
-  // Shuffle a balanced letter pool: each char appears equally
-  var balancedPool=[];
-  var perChar=Math.ceil(totalLetters/chars.length);
-  for(var pi=0;pi<perChar;pi++){
-    for(var ci3=0;ci3<chars.length;ci3++) balancedPool.push(chars[ci3]);
-  }
-  // Fisher-Yates shuffle with seeded rng
-  for(var fi=balancedPool.length-1;fi>0;fi--){
-    var fj=Math.floor(rng()*(fi+1));
-    var tmp=balancedPool[fi];balancedPool[fi]=balancedPool[fj];balancedPool[fj]=tmp;
-  }
-
-  // 80% big
+  // 80% big — strict round-robin through chars
   for(var bi=0;bi<bigCount;bi++){
-    var vary=0.88+rng()*0.24;// slight variation
-    letterQueue2.push({ch:balancedPool[bi%balancedPool.length],frac:bigFrac*vary});
+    var vary=0.88+rng()*0.24;
+    letterQueue2.push({ch:chars[letterIdx%chars.length],frac:bigFrac*vary});
+    letterIdx++;
   }
-  // 20% small — clearly different scale
+  // 20% small — continue the same round-robin
   for(var si=0;si<smallCount;si++){
     var sVary=0.7+rng()*0.6;
-    letterQueue2.push({ch:balancedPool[(bigCount+si)%balancedPool.length],frac:smallFrac2*sVary});
+    letterQueue2.push({ch:chars[letterIdx%chars.length],frac:smallFrac2*sVary});
+    letterIdx++;
   }
 
   // Placed letter bounding boxes for collision detection
