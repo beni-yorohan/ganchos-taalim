@@ -1059,14 +1059,10 @@ function generatePattern(){
   for(var si=0;si<scales.length;si++){
     var fs=Math.max(10,Math.floor(H*scales[si]));
     var count=placementsPerScale[si];
-    // Use outline for large/medium, filled for small/tiny
-    var useOutline=si<3;
-
     for(var ci=0;ci<count;ci++){
-      // Pick letter from name (cycle through)
       var ch=chars[(si*3+ci)%chars.length];
 
-      var bmp=renderLetterLarge(ch,fs,useOutline);
+      var bmp=renderLetterLarge(ch,fs);
       if(!bmp)continue;
 
       // Transform: rotate, mirror based on seed
@@ -1078,16 +1074,14 @@ function generatePattern(){
 
       var bw=bmp[0].length,bh=bmp.length;
 
-      // Position: random within left half, allow overflow into center
-      // Larger letters get more constrained positions
-      var maxX=halfW+Math.floor(bw*0.3);// can cross center slightly
+      var maxX=halfW+Math.floor(bw*0.3);
       var px=Math.floor(rng()*(maxX-bw*0.3));
       var py=Math.floor(rng()*(H-bh*0.5))-Math.floor(bh*0.2);
-      px=Math.max(-Math.floor(bw*0.2),px);// can bleed off left edge slightly
+      px=Math.max(-Math.floor(bw*0.2),px);
       py=Math.max(-Math.floor(bh*0.1),Math.min(py,H-Math.floor(bh*0.3)));
 
-      // Stamp with XOR for interesting overlap effects
-      stampXOR(grid,bmp,px,py);
+      // Solid overlap — letters layer on top, never cancel
+      stampOR(grid,bmp,px,py);
     }
   }
 
