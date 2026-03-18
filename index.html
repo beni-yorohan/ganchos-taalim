@@ -931,20 +931,26 @@ function sliceToBands(bmp,numBands){
 }
 
 // ─── RENDER SINGLE LETTER AS LARGE BITMAP ─────────────────────
-function renderLetterLarge(ch,fontSize){
+function renderLetterLarge(ch,fontSize,outline){
   var pad=Math.floor(fontSize*0.3);
   var cw=fontSize+pad*2,ch2=Math.floor(fontSize*1.4)+pad*2;
   var c=document.createElement('canvas');
   c.width=cw;c.height=ch2;
   var ctx=c.getContext('2d');
   ctx.fillStyle='#FFF';ctx.fillRect(0,0,cw,ch2);
-  ctx.fillStyle='#000';
   ctx.font=fontSize+'px GanchosSans';
   ctx.textAlign='center';ctx.textBaseline='middle';
   ctx.direction='rtl';
-  ctx.fillText(ch,cw/2,ch2/2);
+  if(outline){
+    // OUTLINE MODE: strokeText creates flowing line quality
+    var lw=Math.max(1,Math.floor(fontSize*0.04));
+    ctx.strokeStyle='#000';ctx.lineWidth=lw;ctx.lineJoin='round';ctx.lineCap='round';
+    ctx.strokeText(ch,cw/2,ch2/2);
+  } else {
+    ctx.fillStyle='#000';
+    ctx.fillText(ch,cw/2,ch2/2);
+  }
   var img=ctx.getImageData(0,0,cw,ch2);
-  // Extract bitmap and crop to bounding box
   var bmp=[];
   for(var y=0;y<ch2;y++){
     bmp[y]=new Uint8Array(cw);
@@ -1035,200 +1041,152 @@ function generatePattern(){
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
 
   var solitreoStr=transliterate(name);
-  var cx=Math.floor(W/2);// center axis
-  var placements=[];
-
-  // Pick a "primary" letter (most visually interesting — longest name letter)
-  // and "secondary" letters for variety
-  var primary=chars[0];
-  var secondary=chars.length>1?chars[1]:chars[0];
-  var tertiary=chars.length>2?chars[2]:chars[0];
-  var accent=chars[chars.length-1];
-
-  // Helper: stamp a PAIR straddling center axis (each pair = mirrored left+right)
-  function stampPair(bmp,yPos,xOffset,mode){
-    var bw=bmp[0].length,bh=bmp.length;
-    var mirBmp=mirrorH(bmp);
-    // Left: place so right edge approaches center
-    var lx=cx-xOffset-bw;
-    // Right: mirror of left
-    var rx=cx+xOffset;
-    lx=Math.max(0,lx);rx=Math.min(W-bw,rx);
-    yPos=Math.max(0,Math.min(H-bh,yPos));
-    if(mode==='xor'){stampXOR(grid,bmp,lx,yPos);stampXOR(grid,mirBmp,rx,yPos);}
-    else{stampOR(grid,bmp,lx,yPos);stampOR(grid,mirBmp,rx,yPos);}
-    return {lx:lx,rx:rx,y:yPos,w:bw,h:bh};
-  }
+  var cx=Math.floor(W/2);
 
   // ══════════════════════════════════════════════════════════
-  // ZONE 1: TOP CORNERS — large primary letter, mirrored pair
-  // Like the SVG's big Ayin shapes flanking the top
+  // CALLIGRAPHIC PACKING: Fill the rug surface with overlapping
+  // outlined letterforms at multiple scales until dense
+  // Like the sketch: letters everywhere, flowing into each other
   // ══════════════════════════════════════════════════════════
-  var topSize=Math.floor(H*0.35);
-  var topBmp=renderLetterLarge(primary,topSize);
-  if(topBmp){
-    var topY=Math.floor(H*0.02);
-    var topOff=Math.floor(W*0.02);// tight to edges
-    stampPair(topBmp,topY,topOff,'or');
-    placements.push({ch:primary,zone:'top corners',size:topSize,transform:'normal pair'});
-  }
 
-  // ══════════════════════════════════════════════════════════
-  // ZONE 2: BOTTOM — primary letter INVERTED, mirrored pair
-  // Like the SVG's large inverted forms at bottom
-  // ══════════════════════════════════════════════════════════
-  var botSize=Math.floor(H*0.35);
-  var botBmp=renderLetterLarge(primary,botSize);
-  if(botBmp){
-    botBmp=mirrorV(botBmp);// flip upside down
-    var botY=H-botBmp.length-Math.floor(H*0.02);
-    var botOff=Math.floor(W*0.02);
-    stampPair(botBmp,botY,botOff,'or');
-    placements.push({ch:primary,zone:'bottom',size:botSize,transform:'inverted pair'});
-  }
+  // Scale levels: huge (55%), large (35%), medium (20%), small (12%), tiny (6%)
+  var scales=[0.55,0.35,0.20,0.12,0.06];
+  var placementsPerScale=[2,3,4,6,10];// more placements at smaller scales
 
-  // ══════════════════════════════════════════════════════════
-  // ZONE 3: MID-FLANKS — secondary letter at medium scale
-  // Placed in the middle-left and middle-right
-  // ══════════════════════════════════════════════════════════
-  var midSize=Math.floor(H*0.22);
-  var midBmp=renderLetterLarge(secondary,midSize);
-  if(midBmp){
-    var midY=Math.floor((H-midBmp.length)/2);
-    var midOff=Math.floor(W*0.05);
-    stampPair(midBmp,midY,midOff,'xor');
-    placements.push({ch:secondary,zone:'mid flanks',size:midSize,transform:'pair (XOR overlap)'});
-  }
+  // All work on LEFT HALF only, mirror at end
+  var halfW=cx;
 
-  // ══════════════════════════════════════════════════════════
-  // ZONE 4: CENTER COLUMN — vertical stack of small paired motifs
-  // Like the SVG's center column of small Ayin pairs
-  // ══════════════════════════════════════════════════════════
-  var centerSize=Math.floor(H*0.06);
-  var centerBmp=renderLetterLarge(tertiary,centerSize);
-  if(centerBmp){
-    var numCenter=Math.floor(H/(centerBmp.length*1.3));
-    numCenter=Math.max(3,Math.min(numCenter,8));
-    var spacing=Math.floor(H/numCenter);
-    for(var ci=0;ci<numCenter;ci++){
-      var cy2=Math.floor(ci*spacing+spacing*0.1);
-      // Tight pair right at center
-      var centerOff=Math.floor(centerBmp[0].length*0.1);
-      stampPair(centerBmp,cy2,centerOff,'or');
+  for(var si=0;si<scales.length;si++){
+    var fs=Math.max(10,Math.floor(H*scales[si]));
+    var count=placementsPerScale[si];
+    // Use outline for large/medium, filled for small/tiny
+    var useOutline=si<3;
+
+    for(var ci=0;ci<count;ci++){
+      // Pick letter from name (cycle through)
+      var ch=chars[(si*3+ci)%chars.length];
+
+      var bmp=renderLetterLarge(ch,fs,useOutline);
+      if(!bmp)continue;
+
+      // Transform: rotate, mirror based on seed
+      var tRoll=rng();
+      if(tRoll<0.25) bmp=mirrorH(bmp);
+      else if(tRoll<0.5) bmp=mirrorV(bmp);
+      else if(tRoll<0.7) bmp=rotateBmp90(bmp);
+      else if(tRoll<0.85){bmp=rotateBmp90(bmp);bmp=rotateBmp90(bmp);}
+
+      var bw=bmp[0].length,bh=bmp.length;
+
+      // Position: random within left half, allow overflow into center
+      // Larger letters get more constrained positions
+      var maxX=halfW+Math.floor(bw*0.3);// can cross center slightly
+      var px=Math.floor(rng()*(maxX-bw*0.3));
+      var py=Math.floor(rng()*(H-bh*0.5))-Math.floor(bh*0.2);
+      px=Math.max(-Math.floor(bw*0.2),px);// can bleed off left edge slightly
+      py=Math.max(-Math.floor(bh*0.1),Math.min(py,H-Math.floor(bh*0.3)));
+
+      // Stamp with XOR for interesting overlap effects
+      stampXOR(grid,bmp,px,py);
     }
-    placements.push({ch:tertiary,zone:'center column',size:centerSize,transform:numCenter+'x paired stack'});
   }
 
   // ══════════════════════════════════════════════════════════
-  // ZONE 5: VERTICAL CONNECTORS — tall thin shapes top-to-bottom
-  // Like the SVG's Yod/Vav shapes running the full height
+  // GAP FILLING: Keep adding small letters until density >30%
   // ══════════════════════════════════════════════════════════
-  var tallSize=Math.floor(H*0.3);
-  var tallBmp=renderLetterLarge(accent,tallSize);
-  if(tallBmp){
-    // Place two pairs: one upper, one lower, creating vertical flow
-    var tallOff=Math.floor(W*0.15);
-    var tall1Y=Math.floor(H*0.08);
-    var tall2Y=Math.floor(H*0.55);
-    stampPair(tallBmp,tall1Y,tallOff,'xor');
-    stampPair(tallBmp,tall2Y,tallOff,'xor');
-    placements.push({ch:accent,zone:'vertical connectors',size:tallSize,transform:'2x tall pairs'});
-  }
+  var fillRound=0;
+  var maxFillRounds=30;
+  while(fillRound<maxFillRounds){
+    // Check current density of left half
+    var filled=0,total=0;
+    for(y=0;y<H;y++)for(var x=0;x<halfW;x++){if(grid[y]&&grid[y][x])filled++;total++;}
+    if(total>0&&filled/total>0.32)break;// dense enough
 
-  // ══════════════════════════════════════════════════════════
-  // ZONE 6: ACCENT MOTIFS — tiny letters filling remaining gaps
-  // Different letters from the name, smallest scale
-  // ══════════════════════════════════════════════════════════
-  var accentSize=Math.floor(H*0.035);
-  var accentCount=Math.floor(6+chars.length*2);
-  for(var ai=0;ai<accentCount;ai++){
-    var ach=chars[ai%chars.length];
-    var aSizeMult=0.6+rng()*0.8;
-    var afs=Math.max(6,Math.floor(accentSize*aSizeMult));
-    var abmp=renderLetterLarge(ach,afs);
-    if(!abmp)continue;
-    // Random transform
-    if(rng()>0.5) abmp=mirrorH(abmp);
-    if(rng()>0.5) abmp=mirrorV(abmp);
-    // Random position on LEFT HALF only (will be mirrored)
-    var ax=Math.floor(rng()*(cx-abmp[0].length));
-    var ay=Math.floor(rng()*(H-abmp.length));
-    // Check if area is sparse enough
-    var bw3=abmp[0].length,bh3=abmp.length;
-    var filled3=0,total3=0;
-    for(var sy=ay;sy<ay+bh3&&sy<H;sy++){
-      for(var sx=ax;sx<ax+bw3&&sx<W;sx++){
-        if(grid[sy]&&grid[sy][sx])filled3++;total3++;
+    var fch=chars[Math.floor(rng()*chars.length)];
+    var ffs=Math.max(8,Math.floor(H*(0.04+rng()*0.08)));
+    var fbmp=renderLetterLarge(fch,ffs,rng()>0.5);
+    if(!fbmp){fillRound++;continue;}
+    if(rng()>0.5)fbmp=mirrorH(fbmp);
+    if(rng()>0.5)fbmp=mirrorV(fbmp);
+
+    var fx=Math.floor(rng()*halfW);
+    var fy=Math.floor(rng()*H);
+
+    // Check if THIS spot is sparse
+    var bw3=fbmp[0].length,bh3=fbmp.length;
+    var f3=0,t3=0;
+    for(var sy=Math.max(0,fy);sy<fy+bh3&&sy<H;sy++){
+      for(var sx=Math.max(0,fx);sx<fx+bw3&&sx<halfW;sx++){
+        if(grid[sy]&&grid[sy][sx])f3++;t3++;
       }
     }
-    if(total3>0&&filled3/total3<0.25){
-      stampOR(grid,abmp,ax,ay);
+    if(t3>0&&f3/t3<0.2){
+      stampOR(grid,fbmp,fx,fy);
     }
+    fillRound++;
   }
 
   // ══════════════════════════════════════════════════════════
-  // ZONE 7: BORDER BAND — decorative frame from first letter
-  // ══════════════════════════════════════════════════════════
-  var borderW2=Math.max(6,Math.floor(Math.min(W,H)*0.04));
-  var borderBmp2=renderLetterLarge(primary,Math.max(5,Math.floor(borderW2*0.7)));
-  if(borderBmp2){
-    var bTile=makeMirrorTile(borderBmp2);
-    // Overwrite border zones
-    tileFill(grid,bTile,0,0,W,borderW2,false,'set');
-    tileFill(grid,bTile,0,H-borderW2,W,borderW2,false,'set');
-    tileFill(grid,bTile,0,borderW2,borderW2,H-borderW2*2,false,'set');
-    tileFill(grid,bTile,W-borderW2,borderW2,borderW2,H-borderW2*2,false,'set');
-  }
-  // Solid outer frame
-  for(y=0;y<H;y++){grid[y][0]=1;grid[y][W-1]=1;}
-  for(var x=0;x<W;x++){grid[0][x]=1;grid[H-1][x]=1;}
-
-  // ══════════════════════════════════════════════════════════
-  // FINAL: VERTICAL MIRROR — left half → right half
+  // VERTICAL MIRROR — left half → right half
   // ══════════════════════════════════════════════════════════
   for(y=0;y<H;y++){
-    for(x=0;x<cx;x++){
+    for(var x=0;x<cx;x++){
       grid[y][W-1-x]=grid[y][x];
     }
   }
 
   // ══════════════════════════════════════════════════════════
-  // NAME LABEL — small text at top center, cleared zone
+  // NAME LABEL — small "BENI" in Solitreo, center-top area
+  // Cleared zone so it's readable amid the pattern
   // ══════════════════════════════════════════════════════════
-  var labelSize2=Math.max(8,Math.floor(H*0.025));
+  var labelSize2=Math.max(10,Math.floor(H*0.03));
   var labelBmp2=renderLabelBitmap(solitreoStr,labelSize2);
   if(labelBmp2){
     var lw2=labelBmp2[0].length,lh2=labelBmp2.length;
     var lx2=Math.floor((W-lw2)/2);
-    var ly2=borderW2+3;
-    for(y=ly2-2;y<ly2+lh2+2&&y<H;y++){
-      for(x=lx2-4;x<lx2+lw2+4&&x<W;x++){
+    var ly2=Math.floor(H*0.12);
+    // Clear zone
+    var clr=4;
+    for(y=ly2-clr;y<ly2+lh2+clr&&y<H;y++){
+      for(var x=lx2-clr;x<lx2+lw2+clr&&x<W;x++){
         if(y>=0&&x>=0&&grid[y]) grid[y][x]=0;
       }
     }
     stampOR(grid,labelBmp2,lx2,ly2);
   }
 
+  // ══════════════════════════════════════════════════════════
+  // CORNER ACCENTS — simple cross-hatch like the sketch
+  // ══════════════════════════════════════════════════════════
+  var cornerS=Math.max(8,Math.floor(Math.min(W,H)*0.06));
+  for(y=0;y<cornerS;y++){
+    for(var x=0;x<cornerS;x++){
+      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[y][x]=1;
+      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[y][W-1-x]=1;
+      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[H-1-y][x]=1;
+      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[H-1-y][W-1-x]=1;
+    }
+  }
+
+  // Thin outer frame
+  for(y=0;y<H;y++){grid[y][0]=1;grid[y][W-1]=1;}
+  for(var x=0;x<W;x++){grid[0][x]=1;grid[H-1][x]=1;}
+
   if(rugSketch)rugSketch.refresh();
 
-  var filled=0;
-  for(y=0;y<H;y++)for(x=0;x<W;x++)if(grid[y][x])filled++;
-  var density=((filled/(W*H))*100).toFixed(1);
+  var filled2=0;
+  for(y=0;y<H;y++)for(var x=0;x<W;x++)if(grid[y][x])filled2++;
+  var density=((filled2/(W*H))*100).toFixed(1);
 
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+chars.length+' letters \u00b7 seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+density+'% density \u00b7 '+chars.length+' letters \u00b7 seed: '+seed;
 
   var body=document.getElementById('taalimBody');
   var html='<div class="taalim-section"><h3>Composition</h3>';
   html+='<p style="font-size:14px;color:var(--text);">\u201c'+name+'\u201d ('+solitreoStr+') \u2014 ';
-  html+='letterforms placed as mirrored pairs across a center axis at multiple scales.</p>';
-  html+='<ul style="font-size:14px;color:var(--text);list-style:none;padding:0;margin-top:8px;">';
-  for(var pi=0;pi<placements.length;pi++){
-    html+='<li><strong>'+placements[pi].ch+'</strong> \u2014 '+placements[pi].zone+' ('+placements[pi].size+'px, '+placements[pi].transform+')</li>';
-  }
-  html+='<li><strong>Accents</strong> \u2014 '+accentCount+' tiny motifs in gaps</li>';
-  html+='<li><strong>Border</strong> \u2014 '+primary+' mirror-tiled band</li>';
-  html+='</ul></div>';
+  html+='calligraphic packing of outlined letterforms at 5 scale levels, mirrored on center axis.</p>';
+  html+='<p style="font-size:14px;color:var(--text-3);margin-top:4px;">'+density+'% density \u00b7 '+W+'\u00d7'+H+' grid</p>';
+  html+='</div>';
   body.innerHTML=html;
 
   saveToLibrary(name);
