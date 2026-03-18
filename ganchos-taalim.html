@@ -1049,9 +1049,9 @@ function generatePattern(){
   // Like the sketch: letters everywhere, flowing into each other
   // ══════════════════════════════════════════════════════════
 
-  // Scale levels: huge (55%), large (35%), medium (20%), small (12%), tiny (6%)
-  var scales=[0.55,0.35,0.20,0.12,0.06];
-  var placementsPerScale=[2,3,4,6,10];// more placements at smaller scales
+  // Scale levels — many more placements, pack the surface
+  var scales=[0.50,0.38,0.28,0.20,0.14,0.09,0.05];
+  var placementsPerScale=[3,4,5,7,10,14,20];// pack it dense
 
   // All work on LEFT HALF only, mirror at end
   var halfW=cx;
