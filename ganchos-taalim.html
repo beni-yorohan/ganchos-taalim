@@ -930,6 +930,47 @@ function sliceToBands(bmp,numBands){
   return bands;
 }
 
+// ─── MOTIF BUILDERS ────────────────────────────────────────────
+
+// Medallion motif: scale shape up, apply 4-way mirror symmetry → diamond form
+function makeRugMedallion(shapeBmp,finalSize){
+  var half=Math.max(4,Math.floor(finalSize/2));
+  var scaled=scaleBmp(shapeBmp,half);
+  if(!scaled)return null;
+  // Make it square by padding
+  var sh=scaled.length,sw=scaled[0].length;
+  var sq=Math.max(sh,sw);
+  var sqBmp=[];
+  for(var y=0;y<sq;y++){
+    sqBmp[y]=new Uint8Array(sq);
+    var sy=y-Math.floor((sq-sh)/2);
+    for(var x=0;x<sq;x++){
+      var sx=x-Math.floor((sq-sw)/2);
+      if(sy>=0&&sy<sh&&sx>=0&&sx<sw) sqBmp[y][x]=scaled[sy][sx];
+    }
+  }
+  return makeMirrorTile(sqBmp);
+}
+
+// Guard stripe: extrude a 1-row band vertically to given thickness
+function makeGuardPattern(bandRow,thickness){
+  var w=bandRow[0].length;
+  var r=[];
+  for(var y=0;y<thickness;y++){
+    r[y]=new Uint8Array(w);
+    for(var x=0;x<w;x++) r[y][x]=bandRow[0][x];
+  }
+  return r;
+}
+
+// Compound motif: overlay two shapes at same size
+function makeCompoundMotif(bmpA,bmpB,size){
+  var a=scaleBmp(bmpA,size);
+  var b=scaleBmp(bmpB,size);
+  if(!a||!b)return a||b;
+  return orBmp(a,b);
+}
+
 // ─── RENDER SINGLE LETTER AS LARGE BITMAP ─────────────────────
 // angle: rotation in radians (0 = upright). Supports any angle for organic feel.
 function renderLetterLarge(ch,fontSize,outline,angle){
