@@ -1044,105 +1044,104 @@ function generatePattern(){
   var cx=Math.floor(W/2);
 
   // ══════════════════════════════════════════════════════════
-  // MOSAIC LAYOUT: Divide the LEFT HALF into rows of cells.
-  // Each cell gets ONE letter, sized to fit, with consistent
-  // gutters. No overlapping. No cut-off. Every letter intact.
-  // Then mirror left → right for symmetry.
+  // COLLISION-AWARE ORGANIC PACKING
+  // Place letters one at a time, largest first.
+  // Each letter finds a spot where it DOESN'T overlap anything.
+  // Like tiger stripes: organic, dense, no crossing, breathing room.
+  // Work on LEFT HALF only, mirror at end.
   // ══════════════════════════════════════════════════════════
 
-  var gutter=Math.max(2,Math.floor(Math.min(W,H)*0.015));// consistent gap
-  var border=Math.max(3,Math.floor(Math.min(W,H)*0.02));// outer margin
-  var halfW=cx-border;// usable left half width
-  var usableH=H-border*2;// usable height
+  var margin=Math.max(3,Math.floor(Math.min(W,H)*0.02));
+  var gap=Math.max(2,Math.floor(Math.min(W,H)*0.012));// breathing room between letters
+  var halfW=cx;
 
-  // Build rows: divide height into rows of varying size
-  // Row heights are seeded from the letter bitmaps
-  var rows=[];
-  var curY=border;
-  var rowIdx=0;
+  // Build an occupancy map: tracks which pixels are "claimed" (including gaps)
+  var occupied=[];
+  for(y=0;y<H;y++) occupied[y]=new Uint8Array(W);
 
-  while(curY<H-border-gutter){
-    // Row height: varies between 12% and 35% of usable height
-    var rowFrac=0.12+rng()*0.23;
-    var rowH=Math.max(20,Math.floor(usableH*rowFrac));
-    if(curY+rowH>H-border) rowH=H-border-curY;
-    if(rowH<15)break;
-
-    // Divide this row into cells (columns)
-    var cells=[];
-    var curX=border;
-    var colIdx=0;
-
-    while(curX<cx-gutter){
-      // Cell width: varies between 20% and 60% of half width
-      var colFrac=0.20+rng()*0.40;
-      var cellW=Math.max(15,Math.floor(halfW*colFrac));
-      if(curX+cellW>cx) cellW=cx-curX;
-      if(cellW<10)break;
-
-      cells.push({x:curX,y:curY,w:cellW,h:rowH});
-      curX+=cellW+gutter;
-      colIdx++;
-      if(colIdx>6)break;// safety
-    }
-
-    rows.push(cells);
-    curY+=rowH+gutter;
-    rowIdx++;
-    if(rowIdx>10)break;// safety
+  // Mark margins as occupied
+  for(y=0;y<H;y++)for(var x=0;x<W;x++){
+    if(y<margin||y>=H-margin||x<margin||x>=halfW) occupied[y][x]=1;
   }
 
-  // Place one letter per cell
-  var letterIdx=0;
+  // Generate a list of letters to place: big first, then progressively smaller
+  var letterQueue=[];
+  // Start with large sizes, add more at each smaller scale
+  var sizeLevels=[
+    {frac:0.40,count:2},
+    {frac:0.30,count:3},
+    {frac:0.22,count:4},
+    {frac:0.16,count:5},
+    {frac:0.11,count:6},
+    {frac:0.07,count:8},
+    {frac:0.04,count:10}
+  ];
+  for(var si=0;si<sizeLevels.length;si++){
+    for(var ci2=0;ci2<sizeLevels[si].count;ci2++){
+      letterQueue.push({ch:chars[(si*3+ci2)%chars.length],frac:sizeLevels[si].frac});
+    }
+  }
+
   var totalPlaced=0;
-  for(var ri=0;ri<rows.length;ri++){
-    for(var ci2=0;ci2<rows[ri].length;ci2++){
-      var cell=rows[ri][ci2];
-      var ch2=chars[letterIdx%chars.length];
-      letterIdx++;
 
-      // Fit letter into cell: font size = cell height minus padding
-      var cellPad=Math.max(1,Math.floor(Math.min(cell.w,cell.h)*0.08));
-      var fitH=cell.h-cellPad*2;
-      var fitW=cell.w-cellPad*2;
-      var fs2=Math.max(8,Math.floor(fitH*0.85));
+  for(var qi=0;qi<letterQueue.length;qi++){
+    var q=letterQueue[qi];
+    var fs2=Math.max(8,Math.floor(H*q.frac));
+    var bmp2=renderLetterLarge(q.ch,fs2);
+    if(!bmp2)continue;
 
-      var bmp2=renderLetterLarge(ch2,fs2);
-      if(!bmp2)continue;
+    // Transform
+    var tRoll=rng();
+    if(tRoll<0.2) bmp2=mirrorH(bmp2);
+    else if(tRoll<0.4) bmp2=mirrorV(bmp2);
+    else if(tRoll<0.55) bmp2=rotateBmp90(bmp2);
+    else if(tRoll<0.65){bmp2=rotateBmp90(bmp2);bmp2=rotateBmp90(bmp2);}
 
-      // Transform based on seed
-      var tRoll=rng();
-      if(tRoll<0.2) bmp2=mirrorH(bmp2);
-      else if(tRoll<0.4) bmp2=mirrorV(bmp2);
-      else if(tRoll<0.55) bmp2=rotateBmp90(bmp2);
-      else if(tRoll<0.65){bmp2=rotateBmp90(bmp2);bmp2=rotateBmp90(bmp2);}
+    var bw2=bmp2[0].length,bh2=bmp2.length;
 
-      // Scale down if bitmap is bigger than cell
-      var bw2=bmp2[0].length,bh2=bmp2.length;
-      if(bw2>fitW||bh2>fitH){
-        // Re-render at smaller size
-        var scale2=Math.min(fitW/bw2,fitH/bh2);
-        fs2=Math.max(6,Math.floor(fs2*scale2));
-        bmp2=renderLetterLarge(ch2,fs2);
-        if(!bmp2)continue;
-        // Re-apply transform
-        if(tRoll<0.2) bmp2=mirrorH(bmp2);
-        else if(tRoll<0.4) bmp2=mirrorV(bmp2);
-        else if(tRoll<0.55) bmp2=rotateBmp90(bmp2);
-        else if(tRoll<0.65){bmp2=rotateBmp90(bmp2);bmp2=rotateBmp90(bmp2);}
-        bw2=bmp2[0].length;bh2=bmp2.length;
+    // Try random positions to find one that doesn't collide
+    var placed=false;
+    var maxTries=60;
+    for(var tri=0;tri<maxTries;tri++){
+      var px=margin+Math.floor(rng()*(halfW-margin-bw2));
+      var py=margin+Math.floor(rng()*(H-margin*2-bh2));
+      if(px<margin||py<margin)continue;
+      if(px+bw2>halfW||py+bh2>H-margin)continue;
+
+      // Check if this position collides with any occupied pixel (including gap buffer)
+      var collides=false;
+      for(var cy=0;cy<bh2&&!collides;cy++){
+        for(var cx2=0;cx2<bw2&&!collides;cx2++){
+          if(!bmp2[cy][cx2])continue;// only check filled pixels of the letter
+          // Check the pixel AND surrounding gap zone
+          for(var dy=-gap;dy<=gap&&!collides;dy++){
+            for(var dx=-gap;dx<=gap&&!collides;dx++){
+              var gy=py+cy+dy,gx=px+cx2+dx;
+              if(gy>=0&&gy<H&&gx>=0&&gx<W&&occupied[gy][gx]) collides=true;
+            }
+          }
+        }
       }
 
-      // Center letter within its cell
-      var lx=cell.x+Math.floor((cell.w-bw2)/2);
-      var ly=cell.y+Math.floor((cell.h-bh2)/2);
-
-      // Ensure fully within bounds
-      lx=Math.max(cell.x+cellPad,Math.min(lx,cell.x+cell.w-bw2-cellPad));
-      ly=Math.max(cell.y+cellPad,Math.min(ly,cell.y+cell.h-bh2-cellPad));
-
-      stampOR(grid,bmp2,lx,ly);
-      totalPlaced++;
+      if(!collides){
+        // Place the letter
+        stampOR(grid,bmp2,px,py);
+        // Mark occupied (the letter pixels + gap buffer)
+        for(var cy2=0;cy2<bh2;cy2++){
+          for(var cx3=0;cx3<bw2;cx3++){
+            if(!bmp2[cy2][cx3])continue;
+            for(var dy2=-gap;dy2<=gap;dy2++){
+              for(var dx2=-gap;dx2<=gap;dx2++){
+                var gy2=py+cy2+dy2,gx2=px+cx3+dx2;
+                if(gy2>=0&&gy2<H&&gx2>=0&&gx2<W) occupied[gy2][gx2]=1;
+              }
+            }
+          }
+        }
+        totalPlaced++;
+        placed=true;
+        break;
+      }
     }
   }
 
@@ -1156,7 +1155,7 @@ function generatePattern(){
   }
 
   // ══════════════════════════════════════════════════════════
-  // NAME LABEL — small "BENI" near top center
+  // NAME LABEL — small text near top center
   // ══════════════════════════════════════════════════════════
   var labelSize2=Math.max(10,Math.floor(H*0.03));
   var labelBmp2=renderLabelBitmap(solitreoStr,labelSize2);
@@ -1184,13 +1183,13 @@ function generatePattern(){
   var density=((filled2/(W*H))*100).toFixed(1);
 
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+totalPlaced+' letters placed \u00b7 seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+totalPlaced+' letters \u00b7 seed: '+seed;
 
   var body=document.getElementById('taalimBody');
   var html='<div class="taalim-section"><h3>Composition</h3>';
   html+='<p style="font-size:14px;color:var(--text);">\u201c'+name+'\u201d ('+solitreoStr+') \u2014 ';
-  html+='mosaic layout: '+rows.length+' rows, '+totalPlaced+' letters, each in its own cell with systematic spacing.</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);margin-top:4px;">'+density+'% density \u00b7 '+W+'\u00d7'+H+' grid \u00b7 gutter: '+gutter+'px</p>';
+  html+='collision-aware packing: '+totalPlaced+' letters placed largest-first, no overlapping, consistent spacing.</p>';
+  html+='<p style="font-size:14px;color:var(--text-3);margin-top:4px;">'+density+'% density \u00b7 '+W+'\u00d7'+H+' grid</p>';
   html+='</div>';
   body.innerHTML=html;
 
