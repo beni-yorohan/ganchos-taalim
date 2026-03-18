@@ -1064,270 +1064,177 @@ function generatePattern(){
     document.getElementById('taalimBody').innerHTML='<p style="color:var(--text-3);font-size:14px;">Enter a name to generate a pattern.</p>';
     return;
   }
-
   var chars=transliterateToChars(name);
   if(!chars.length){
     grid=[];W=0;H=0;if(rugSketch)rugSketch.refresh();
     document.getElementById('patternStats').textContent='No transliterable characters found.';
     return;
   }
-
   var seed=remixCounter>0?name+'_'+remixCounter:name;
   var rng=createPRNG(seed);
-
   W=parseInt(document.getElementById('rugW').value)||300;
   H=parseInt(document.getElementById('rugH').value)||400;
   grid=[];
   for(var y=0;y<H;y++) grid[y]=new Uint8Array(W);
-
   var solitreoStr=transliterate(name);
+
+  // ── Deduplicate chars ──
+  var uc=[];var seen={};
+  for(var i=0;i<chars.length;i++){if(!seen[chars[i]]){uc.push(chars[i]);seen[chars[i]]=true;}}
+
+  // ── Assign shapes to roles (cycle if fewer than 5 unique) ──
+  var borderCh=uc[0];
+  var fieldCh=uc[1%uc.length];
+  var medCh=uc[2%uc.length];
+  var cornerCh=uc[3%uc.length];
+  var guardCh=uc[4%uc.length];
+
+  // ── Zone dimensions ──
+  var outerFrame=Math.max(2,Math.floor(Math.min(W,H)*0.006));
+  var guard1W=Math.max(2,Math.floor(Math.min(W,H)*0.008));
+  var borderBandW=Math.max(10,Math.floor(Math.min(W,H)*0.06));
+  var guard2W=Math.max(2,Math.floor(Math.min(W,H)*0.008));
+  var totalBorder=outerFrame+guard1W+borderBandW+guard2W;
+
+  var fieldX=totalBorder;
+  var fieldY=totalBorder;
+  var fieldW=W-totalBorder*2;
+  var fieldH=H-totalBorder*2;
   var cx=Math.floor(W/2);
 
   // ══════════════════════════════════════════════════════════
-  // ORGANIC SYSTEMATIC PACKING (Poisson-like)
-  // 1. Generate candidate positions using Poisson disk sampling
-  //    (organic but evenly spaced — like sunflower seeds)
-  // 2. Sort positions by distance from center (largest letters
-  //    go near center, smallest at edges)
-  // 3. Place letters at candidates, largest first, skipping
-  //    positions that would cause overlap
-  // 4. Each letter gets a bounding-box buffer zone
+  // PHASE B: GENERATE MOTIFS from shapes
   // ══════════════════════════════════════════════════════════
 
-  // Border system: outer frame → guard stripe → decorated band → inner guard → field
-  var borderOuter=Math.max(2,Math.floor(Math.min(W,H)*0.005));// solid outer frame
-  var guardW=Math.max(1,Math.floor(Math.min(W,H)*0.004));// thin guard stripes
-  var borderBand=Math.max(8,Math.floor(Math.min(W,H)*0.04));// main decorated border
-  var margin=borderOuter+guardW+borderBand+guardW+Math.max(2,Math.floor(Math.min(W,H)*0.008));// total reserved
-  var gap=Math.max(2,Math.floor(Math.min(W,H)*0.008));
-  var halfW=cx;
+  // Field motif: pinwheel from field shape
+  var fieldShapeSize=Math.max(6,Math.floor(Math.min(W,H)*0.05)+Math.floor(rng()*8));
+  var fieldShapeBmp=rasterizeFromFont(fieldCh,fieldShapeSize);
+  var fieldMotif=fieldShapeBmp?makePinwheel(fieldShapeBmp):null;
 
-  // Poisson disk sampling on the left half
-  // Generates well-distributed points with minimum distance between them
-  var minDist=Math.max(8,Math.floor(Math.min(W,H)*0.025));
-  var candidates=[];
-  var poissonGrid={};
-  var cellSize=Math.floor(minDist/1.414);
+  // Border motif: mirror tile from border shape
+  var borderShapeSize=Math.max(5,Math.floor(borderBandW*0.45));
+  var borderShapeBmp=rasterizeFromFont(borderCh,borderShapeSize);
+  var borderMotif=borderShapeBmp?makeMirrorTile(borderShapeBmp):null;
 
-  function poissonKey(x,y){return Math.floor(x/cellSize)+'_'+Math.floor(y/cellSize);}
+  // Medallion motif: scaled up mirror tile
+  var medSize=Math.max(20,Math.floor(Math.min(fieldW,fieldH)*0.4));
+  var medShapeBmp=rasterizeFromFont(medCh,Math.max(8,Math.floor(medSize*0.3)));
+  var medallion=null;
+  if(medShapeBmp){
+    // If we have enough unique chars, compound the medallion with another shape
+    if(uc.length>3){
+      var med2Bmp=rasterizeFromFont(uc[(uc.length-1)%uc.length],Math.max(8,Math.floor(medSize*0.3)));
+      if(med2Bmp) medShapeBmp=makeCompoundMotif(medShapeBmp,med2Bmp,Math.max(8,Math.floor(medSize*0.3)));
+    }
+    medallion=makeRugMedallion(medShapeBmp,medSize);
+  }
 
-  // Seed with center point
-  var seedPoints=[{x:Math.floor(halfW/2),y:Math.floor(H/2)}];
-  var active=seedPoints.slice();
-  candidates.push(seedPoints[0]);
-  poissonGrid[poissonKey(seedPoints[0].x,seedPoints[0].y)]=[seedPoints[0]];
+  // Corner motif: pinwheel from corner shape
+  var cornerSize=Math.max(5,Math.floor(borderBandW*0.5));
+  var cornerShapeBmp=rasterizeFromFont(cornerCh,cornerSize);
+  var cornerMotif=cornerShapeBmp?makePinwheel(cornerShapeBmp):null;
 
-  var maxPoissonIter=2000;
-  var pIter=0;
-  while(active.length>0&&pIter<maxPoissonIter){
-    pIter++;
-    var aIdx=Math.floor(rng()*active.length);
-    var pt=active[aIdx];
-    var foundChild=false;
+  // Guard stripe motif: horizontal band from guard shape
+  var guardShapeBmp=rasterizeFromFont(guardCh,Math.max(4,guard1W*2));
+  var guardBands=guardShapeBmp?sliceToBands(guardShapeBmp,3):null;
+  var guardMotif=guardBands&&guardBands.length>0?makeGuardPattern(guardBands[0],guard1W):null;
 
-    for(var attempt=0;attempt<15;attempt++){
-      var angle=rng()*Math.PI*2;
-      var dist=minDist+rng()*minDist;
-      var nx=Math.floor(pt.x+Math.cos(angle)*dist);
-      var ny=Math.floor(pt.y+Math.sin(angle)*dist);
+  // ══════════════════════════════════════════════════════════
+  // PHASE C: COMPOSE RUG (all on left half, mirror at end)
+  // ══════════════════════════════════════════════════════════
 
-      // Must be in bounds (left half, within margins)
-      if(nx<margin||nx>=halfW-margin||ny<margin||ny>=H-margin)continue;
+  // 1. FIELD FILL — pinwheel tiled across entire field zone
+  if(fieldMotif){
+    var useBrick=rng()>0.5;
+    tileFill(grid,fieldMotif,fieldX,fieldY,fieldW,fieldH,useBrick,'set');
+  }
 
-      // Check minimum distance against neighbors
-      var tooClose=false;
-      var gx0=Math.floor(nx/cellSize)-2,gy0=Math.floor(ny/cellSize)-2;
-      for(var gyi=gy0;gyi<=gy0+4&&!tooClose;gyi++){
-        for(var gxi=gx0;gxi<=gx0+4&&!tooClose;gxi++){
-          var nbrs=poissonGrid[gxi+'_'+gyi];
-          if(!nbrs)continue;
-          for(var ni=0;ni<nbrs.length;ni++){
-            var ddx=nbrs[ni].x-nx,ddy=nbrs[ni].y-ny;
-            if(ddx*ddx+ddy*ddy<minDist*minDist){tooClose=true;break;}
-          }
-        }
-      }
-
-      if(!tooClose){
-        var np={x:nx,y:ny};
-        candidates.push(np);
-        active.push(np);
-        var key=poissonKey(nx,ny);
-        if(!poissonGrid[key])poissonGrid[key]=[];
-        poissonGrid[key].push(np);
-        foundChild=true;
+  // 2. MEDALLION — clear center zone, stamp medallion
+  if(medallion){
+    var mw=medallion[0].length,mh=medallion.length;
+    var mx=Math.floor((W-mw)/2);
+    var my=Math.floor((H-mh)/2);
+    // Clear zone with small buffer
+    var buf=Math.max(2,Math.floor(Math.min(W,H)*0.01));
+    for(y=my-buf;y<my+mh+buf;y++){
+      for(var x=mx-buf;x<mx+mw+buf;x++){
+        if(y>=fieldY&&y<fieldY+fieldH&&x>=fieldX&&x<fieldX+fieldW&&y<H&&x<W)
+          grid[y][x]=0;
       }
     }
-
-    if(!foundChild) active.splice(aIdx,1);
-  }
-
-  // Sort candidates: center-out spiral (big letters near center)
-  var hcx=halfW/2,hcy=H/2;
-  candidates.sort(function(a,b){
-    var da=(a.x-hcx)*(a.x-hcx)+(a.y-hcy)*(a.y-hcy);
-    var db=(b.x-hcx)*(b.x-hcx)+(b.y-hcy)*(b.y-hcy);
-    return da-db;
-  });
-
-  // Deduplicate chars so each UNIQUE letter gets equal representation
-  var uniqueChars=[];
-  var seenCh={};
-  for(var ui=0;ui<chars.length;ui++){
-    if(!seenCh[chars[ui]]){uniqueChars.push(chars[ui]);seenCh[chars[ui]]=true;}
-  }
-
-  // Build letter queue: 80% big, 20% clearly smaller
-  // Round-robin through UNIQUE chars only
-  var bigFrac=0.22;// dominant size
-  var smallFrac2=0.07;// obviously smaller
-  var letterQueue2=[];
-  var totalLetters=Math.max(20,Math.floor(candidates.length*0.35));
-  var bigCount=Math.floor(totalLetters*0.8);
-  var smallCount=totalLetters-bigCount;
-  var letterIdx=0;
-
-  for(var bi2=0;bi2<bigCount;bi2++){
-    var vary=0.88+rng()*0.24;
-    letterQueue2.push({ch:uniqueChars[letterIdx%uniqueChars.length],frac:bigFrac*vary,big:true});
-    letterIdx++;
-  }
-  for(var si2=0;si2<smallCount;si2++){
-    var sVary=0.7+rng()*0.6;
-    letterQueue2.push({ch:uniqueChars[letterIdx%uniqueChars.length],frac:smallFrac2*sVary,big:false});
-    letterIdx++;
-  }
-
-  // Placed letter bounding boxes for collision detection
-  var placedBoxes=[];
-  var totalPlaced=0;
-
-  for(var qi=0;qi<letterQueue2.length;qi++){
-    var q=letterQueue2[qi];
-    var fs2=Math.max(8,Math.floor(H*q.frac));
-
-    // Organic rotation
-    var angleRange=q.big?0.35:0.8;
-    var angle2=(rng()-0.5)*angleRange;
-    var doMirror=rng()>0.5;
-
-    var bmp2=renderLetterLarge(q.ch,fs2,false,angle2);
-    if(!bmp2)continue;
-    if(doMirror) bmp2=mirrorH(bmp2);
-
-    var bw2=bmp2[0].length,bh2=bmp2.length;
-
-    // Try ALL candidates (not just 30) — search harder for big letters
-    var placed=false;
-    var searchLimit=q.big?candidates.length:Math.min(candidates.length,60);
-    for(var ti=0;ti<searchLimit;ti++){
-      var cand=candidates[ti];
-      var px=cand.x-Math.floor(bw2/2);
-      var py=cand.y-Math.floor(bh2/2);
-
-      if(px<margin||py<margin||px+bw2>halfW||py+bh2>H-margin)continue;
-
-      var box={x:px-gap,y:py-gap,w:bw2+gap*2,h:bh2+gap*2};
-      var collides2=false;
-      for(var bi3=0;bi3<placedBoxes.length;bi3++){
-        var pb=placedBoxes[bi3];
-        if(box.x<pb.x+pb.w&&box.x+box.w>pb.x&&box.y<pb.y+pb.h&&box.y+box.h>pb.y){
-          collides2=true;break;
-        }
-      }
-      if(collides2)continue;
-
-      // Place it
-      stampOR(grid,bmp2,px,py);
-      placedBoxes.push(box);
-      totalPlaced++;
-      placed=true;
-      break;
+    // Frame around medallion (thin border)
+    for(y=my-1;y<=my+mh;y++){
+      if(y>=0&&y<H){if(mx-1>=0)grid[y][mx-1]=1;if(mx+mw<W)grid[y][mx+mw]=1;}
     }
+    for(var x=mx-1;x<=mx+mw;x++){
+      if(x>=0&&x<W){if(my-1>=0)grid[my-1][x]=1;if(my+mh<H)grid[my+mh][x]=1;}
+    }
+    stampOR(grid,medallion,mx,my);
   }
 
-  // ══════════════════════════════════════════════════════════
-  // VERTICAL MIRROR — left half → right half
-  // ══════════════════════════════════════════════════════════
+  // 3. BORDER BANDS — mirror tile motif along all 4 edges
+  var bbStart=outerFrame+guard1W;
+  if(borderMotif){
+    // Top
+    tileFill(grid,borderMotif,bbStart,bbStart,W-bbStart*2,borderBandW,false,'set');
+    // Bottom
+    tileFill(grid,borderMotif,bbStart,H-bbStart-borderBandW,W-bbStart*2,borderBandW,false,'set');
+    // Left
+    tileFill(grid,borderMotif,bbStart,bbStart+borderBandW,borderBandW,H-bbStart*2-borderBandW*2,false,'set');
+    // Right
+    tileFill(grid,borderMotif,W-bbStart-borderBandW,bbStart+borderBandW,borderBandW,H-bbStart*2-borderBandW*2,false,'set');
+  }
+
+  // 4. CORNER PIECES — pinwheel in each corner of the border band
+  if(cornerMotif){
+    var ctw=cornerMotif[0].length,cth=cornerMotif.length;
+    stampOR(grid,cornerMotif,bbStart,bbStart);
+    stampOR(grid,cornerMotif,W-bbStart-ctw,bbStart);
+    stampOR(grid,cornerMotif,bbStart,H-bbStart-cth);
+    stampOR(grid,cornerMotif,W-bbStart-ctw,H-bbStart-cth);
+  }
+
+  // 5. GUARD STRIPES — band pattern between frame/border and border/field
+  if(guardMotif){
+    // Outer guard (between frame and border band)
+    tileFill(grid,guardMotif,outerFrame,outerFrame,W-outerFrame*2,guard1W,false,'set');
+    tileFill(grid,guardMotif,outerFrame,H-outerFrame-guard1W,W-outerFrame*2,guard1W,false,'set');
+    tileFill(grid,guardMotif,outerFrame,outerFrame+guard1W,guard1W,H-outerFrame*2-guard1W*2,false,'set');
+    tileFill(grid,guardMotif,W-outerFrame-guard1W,outerFrame+guard1W,guard1W,H-outerFrame*2-guard1W*2,false,'set');
+    // Inner guard (between border band and field)
+    var ig=bbStart+borderBandW;
+    tileFill(grid,guardMotif,ig,ig,W-ig*2,guard2W,false,'set');
+    tileFill(grid,guardMotif,ig,H-ig-guard2W,W-ig*2,guard2W,false,'set');
+    tileFill(grid,guardMotif,ig,ig+guard2W,guard2W,H-ig*2-guard2W*2,false,'set');
+    tileFill(grid,guardMotif,W-ig-guard2W,ig+guard2W,guard2W,H-ig*2-guard2W*2,false,'set');
+  }
+
+  // 6. OUTER FRAME — solid
+  for(y=0;y<H;y++)for(var x=0;x<W;x++){
+    if(y<outerFrame||y>=H-outerFrame||x<outerFrame||x>=W-outerFrame) grid[y][x]=1;
+  }
+
+  // 7. VERTICAL MIRROR — left half → right half
   for(y=0;y<H;y++){
     for(var x=0;x<cx;x++){
       grid[y][W-1-x]=grid[y][x];
     }
   }
 
-  // ══════════════════════════════════════════════════════════
-  // NAME LABEL — small text near top center
-  // ══════════════════════════════════════════════════════════
-  var labelSize2=Math.max(10,Math.floor(H*0.03));
+  // 8. NAME LABEL — small text near top center
+  var labelSize2=Math.max(8,Math.floor(H*0.025));
   var labelBmp2=renderLabelBitmap(solitreoStr,labelSize2);
   if(labelBmp2){
     var lw3=labelBmp2[0].length,lh3=labelBmp2.length;
     var lx3=Math.floor((W-lw3)/2);
-    var ly3=Math.floor(H*0.08);
-    var clr=3;
+    var ly3=Math.floor(H*0.06);
+    var clr=2;
     for(y=ly3-clr;y<ly3+lh3+clr&&y<H;y++){
       for(var x=lx3-clr;x<lx3+lw3+clr&&x<W;x++){
         if(y>=0&&x>=0&&grid[y]) grid[y][x]=0;
       }
     }
     stampOR(grid,labelBmp2,lx3,ly3);
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // BORDER HIERARCHY (drawn AFTER mirror so it's on both sides)
-  // outer frame → guard stripe → decorated band → inner guard
-  // ══════════════════════════════════════════════════════════
-
-  // 1. Solid outer frame
-  for(y=0;y<H;y++)for(var x=0;x<W;x++){
-    if(y<borderOuter||y>=H-borderOuter||x<borderOuter||x>=W-borderOuter) grid[y][x]=1;
-  }
-
-  // 2. Outer guard stripe (thin solid line)
-  var g1=borderOuter+guardW;
-  for(y=borderOuter;y<H-borderOuter;y++)for(var x=borderOuter;x<W-borderOuter;x++){
-    if(y<g1||y>=H-g1||x<g1||x>=W-g1) grid[y][x]=1;
-  }
-
-  // 3. Decorated border band — small letter motifs tiled along all 4 edges
-  var bandStart=g1;
-  var bandEnd=bandStart+borderBand;
-  var borderMotifCh=uniqueChars[0];
-  var borderMotifSize=Math.max(5,Math.floor(borderBand*0.75));
-  var borderMotifBmp=renderLetterLarge(borderMotifCh,borderMotifSize);
-  if(borderMotifBmp){
-    var bTile=makeMirrorTile(borderMotifBmp);
-    // Top band
-    tileFill(grid,bTile,bandStart,bandStart,W-bandStart*2,borderBand,false,'set');
-    // Bottom band
-    tileFill(grid,bTile,bandStart,H-bandEnd,W-bandStart*2,borderBand,false,'set');
-    // Left band
-    tileFill(grid,bTile,bandStart,bandEnd,borderBand,H-bandEnd*2,false,'set');
-    // Right band
-    tileFill(grid,bTile,W-bandEnd,bandEnd,borderBand,H-bandEnd*2,false,'set');
-  }
-
-  // 4. Inner guard stripe
-  var g2=bandEnd;
-  var g2e=g2+guardW;
-  for(y=g2;y<H-g2;y++)for(var x=g2;x<W-g2;x++){
-    if(y<g2e||y>=H-g2e||x<g2e||x>=W-g2e) grid[y][x]=1;
-  }
-
-  // 5. Corner motifs — pinwheel of second letter in the border band corners
-  if(uniqueChars.length>1){
-    var cornerCh=uniqueChars[1%uniqueChars.length];
-    var cornerSize=Math.max(5,Math.floor(borderBand*0.8));
-    var cornerBmp=renderLetterLarge(cornerCh,cornerSize);
-    if(cornerBmp){
-      var cTile=makePinwheel(cornerBmp);
-      var ctw=cTile[0].length,cth=cTile.length;
-      // 4 corners — overwrite the border band corners
-      stampOR(grid,cTile,bandStart,bandStart);
-      stampOR(grid,cTile,W-bandStart-ctw,bandStart);
-      stampOR(grid,cTile,bandStart,H-bandStart-cth);
-      stampOR(grid,cTile,W-bandStart-ctw,H-bandStart-cth);
-    }
   }
 
   if(rugSketch)rugSketch.refresh();
@@ -1337,18 +1244,23 @@ function generatePattern(){
   var density=((filled2/(W*H))*100).toFixed(1);
 
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+totalPlaced+' letters \u00b7 seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 seed: '+seed;
 
   var body=document.getElementById('taalimBody');
-  var html='<div class="taalim-section"><h3>Composition</h3>';
-  html+='<p style="font-size:14px;color:var(--text);">\u201c'+name+'\u201d ('+solitreoStr+') \u2014 ';
-  html+='collision-aware packing: '+totalPlaced+' letters placed largest-first, no overlapping, consistent spacing.</p>';
-  html+='<p style="font-size:14px;color:var(--text-3);margin-top:4px;">'+density+'% density \u00b7 '+W+'\u00d7'+H+' grid</p>';
-  html+='</div>';
+  var html='<div class="taalim-section"><h3>Rug Composition</h3>';
+  html+='<p style="font-size:14px;color:var(--text);">\u201c'+name+'\u201d \u2192 '+uc.length+' unique shapes \u2192 motifs \u2192 rug</p>';
+  html+='<ul style="font-size:14px;color:var(--text);list-style:none;padding:0;margin-top:8px;">';
+  html+='<li><strong>Border</strong> \u2014 '+borderCh+' \u2192 mirror tile</li>';
+  html+='<li><strong>Field</strong> \u2014 '+fieldCh+' \u2192 pinwheel'+(fieldMotif?' ('+fieldMotif[0].length+'px tile)':'')+'</li>';
+  html+='<li><strong>Medallion</strong> \u2014 '+medCh+(uc.length>3?' + '+uc[uc.length-1]:'')+' \u2192 diamond</li>';
+  html+='<li><strong>Corners</strong> \u2014 '+cornerCh+' \u2192 pinwheel</li>';
+  html+='<li><strong>Guards</strong> \u2014 '+guardCh+' \u2192 band stripe</li>';
+  html+='</ul></div>';
   body.innerHTML=html;
 
   saveToLibrary(name);
 }
+
 
 // ─── EXPORTS ────────────────────────────────────────────────────
 function downloadFile(n,c,t){var b=new Blob([c],{type:t}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;a.click();URL.revokeObjectURL(u);}
