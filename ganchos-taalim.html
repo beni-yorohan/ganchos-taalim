@@ -1185,7 +1185,7 @@ function generatePattern(){
       var box={x:px-gap,y:py-gap,w:bw2+gap*2,h:bh2+gap*2};
       var collides2=false;
       for(var bi3=0;bi3<placedBoxes.length;bi3++){
-        var pb=placedBoxes[bi];
+        var pb=placedBoxes[bi3];
         if(box.x<pb.x+pb.w&&box.x+box.w>pb.x&&box.y<pb.y+pb.h&&box.y+box.h>pb.y){
           collides2=true;break;
         }
@@ -1196,11 +1196,9 @@ function generatePattern(){
       stampOR(grid,bmp2,px,py);
       placedBoxes.push(box);
       totalPlaced++;
-      candIdx+=ti+1;// advance past used candidates
       placed=true;
       break;
     }
-    if(!placed) candIdx++;// skip forward
   }
 
   // ══════════════════════════════════════════════════════════
