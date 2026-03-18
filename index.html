@@ -1044,80 +1044,105 @@ function generatePattern(){
   var cx=Math.floor(W/2);
 
   // ══════════════════════════════════════════════════════════
-  // CALLIGRAPHIC PACKING: Fill the rug surface with overlapping
-  // outlined letterforms at multiple scales until dense
-  // Like the sketch: letters everywhere, flowing into each other
+  // COLLISION-AWARE ORGANIC PACKING
+  // Place letters one at a time, largest first.
+  // Each letter finds a spot where it DOESN'T overlap anything.
+  // Like tiger stripes: organic, dense, no crossing, breathing room.
+  // Work on LEFT HALF only, mirror at end.
   // ══════════════════════════════════════════════════════════
 
-  // Scale levels — many more placements, pack the surface
-  var scales=[0.50,0.38,0.28,0.20,0.14,0.09,0.05];
-  var placementsPerScale=[3,4,5,7,10,14,20];// pack it dense
-
-  // All work on LEFT HALF only, mirror at end
+  var margin=Math.max(3,Math.floor(Math.min(W,H)*0.02));
+  var gap=Math.max(2,Math.floor(Math.min(W,H)*0.012));// breathing room between letters
   var halfW=cx;
 
-  for(var si=0;si<scales.length;si++){
-    var fs=Math.max(10,Math.floor(H*scales[si]));
-    var count=placementsPerScale[si];
-    for(var ci=0;ci<count;ci++){
-      var ch=chars[(si*3+ci)%chars.length];
+  // Build an occupancy map: tracks which pixels are "claimed" (including gaps)
+  var occupied=[];
+  for(y=0;y<H;y++) occupied[y]=new Uint8Array(W);
 
-      var bmp=renderLetterLarge(ch,fs);
-      if(!bmp)continue;
+  // Mark margins as occupied
+  for(y=0;y<H;y++)for(var x=0;x<W;x++){
+    if(y<margin||y>=H-margin||x<margin||x>=halfW) occupied[y][x]=1;
+  }
 
-      // Transform: rotate, mirror based on seed
-      var tRoll=rng();
-      if(tRoll<0.25) bmp=mirrorH(bmp);
-      else if(tRoll<0.5) bmp=mirrorV(bmp);
-      else if(tRoll<0.7) bmp=rotateBmp90(bmp);
-      else if(tRoll<0.85){bmp=rotateBmp90(bmp);bmp=rotateBmp90(bmp);}
-
-      var bw=bmp[0].length,bh=bmp.length;
-
-      var maxX=halfW+Math.floor(bw*0.3);
-      var px=Math.floor(rng()*(maxX-bw*0.3));
-      var py=Math.floor(rng()*(H-bh*0.5))-Math.floor(bh*0.2);
-      px=Math.max(-Math.floor(bw*0.2),px);
-      py=Math.max(-Math.floor(bh*0.1),Math.min(py,H-Math.floor(bh*0.3)));
-
-      // Solid overlap — letters layer on top, never cancel
-      stampOR(grid,bmp,px,py);
+  // Generate a list of letters to place: big first, then progressively smaller
+  var letterQueue=[];
+  // Start with large sizes, add more at each smaller scale
+  var sizeLevels=[
+    {frac:0.40,count:2},
+    {frac:0.30,count:3},
+    {frac:0.22,count:4},
+    {frac:0.16,count:5},
+    {frac:0.11,count:6},
+    {frac:0.07,count:8},
+    {frac:0.04,count:10}
+  ];
+  for(var si=0;si<sizeLevels.length;si++){
+    for(var ci2=0;ci2<sizeLevels[si].count;ci2++){
+      letterQueue.push({ch:chars[(si*3+ci2)%chars.length],frac:sizeLevels[si].frac});
     }
   }
 
-  // ══════════════════════════════════════════════════════════
-  // GAP FILLING: Keep adding small letters until density >30%
-  // ══════════════════════════════════════════════════════════
-  var fillRound=0;
-  var maxFillRounds=80;
-  while(fillRound<maxFillRounds){
-    // Check current density of left half
-    var filled=0,total=0;
-    for(y=0;y<H;y++)for(var x=0;x<halfW;x++){if(grid[y]&&grid[y][x])filled++;total++;}
-    if(total>0&&filled/total>0.42)break;// target 42% density
+  var totalPlaced=0;
 
-    var fch=chars[Math.floor(rng()*chars.length)];
-    var ffs=Math.max(8,Math.floor(H*(0.05+rng()*0.15)));
-    var fbmp=renderLetterLarge(fch,ffs);
-    if(!fbmp){fillRound++;continue;}
-    if(rng()>0.5)fbmp=mirrorH(fbmp);
-    if(rng()>0.5)fbmp=mirrorV(fbmp);
+  for(var qi=0;qi<letterQueue.length;qi++){
+    var q=letterQueue[qi];
+    var fs2=Math.max(8,Math.floor(H*q.frac));
+    var bmp2=renderLetterLarge(q.ch,fs2);
+    if(!bmp2)continue;
 
-    var fx=Math.floor(rng()*halfW);
-    var fy=Math.floor(rng()*H);
+    // Transform
+    var tRoll=rng();
+    if(tRoll<0.2) bmp2=mirrorH(bmp2);
+    else if(tRoll<0.4) bmp2=mirrorV(bmp2);
+    else if(tRoll<0.55) bmp2=rotateBmp90(bmp2);
+    else if(tRoll<0.65){bmp2=rotateBmp90(bmp2);bmp2=rotateBmp90(bmp2);}
 
-    // Check if THIS spot is sparse
-    var bw3=fbmp[0].length,bh3=fbmp.length;
-    var f3=0,t3=0;
-    for(var sy=Math.max(0,fy);sy<fy+bh3&&sy<H;sy++){
-      for(var sx=Math.max(0,fx);sx<fx+bw3&&sx<halfW;sx++){
-        if(grid[sy]&&grid[sy][sx])f3++;t3++;
+    var bw2=bmp2[0].length,bh2=bmp2.length;
+
+    // Try random positions to find one that doesn't collide
+    var placed=false;
+    var maxTries=60;
+    for(var tri=0;tri<maxTries;tri++){
+      var px=margin+Math.floor(rng()*(halfW-margin-bw2));
+      var py=margin+Math.floor(rng()*(H-margin*2-bh2));
+      if(px<margin||py<margin)continue;
+      if(px+bw2>halfW||py+bh2>H-margin)continue;
+
+      // Check if this position collides with any occupied pixel (including gap buffer)
+      var collides=false;
+      for(var cy=0;cy<bh2&&!collides;cy++){
+        for(var cx2=0;cx2<bw2&&!collides;cx2++){
+          if(!bmp2[cy][cx2])continue;// only check filled pixels of the letter
+          // Check the pixel AND surrounding gap zone
+          for(var dy=-gap;dy<=gap&&!collides;dy++){
+            for(var dx=-gap;dx<=gap&&!collides;dx++){
+              var gy=py+cy+dy,gx=px+cx2+dx;
+              if(gy>=0&&gy<H&&gx>=0&&gx<W&&occupied[gy][gx]) collides=true;
+            }
+          }
+        }
+      }
+
+      if(!collides){
+        // Place the letter
+        stampOR(grid,bmp2,px,py);
+        // Mark occupied (the letter pixels + gap buffer)
+        for(var cy2=0;cy2<bh2;cy2++){
+          for(var cx3=0;cx3<bw2;cx3++){
+            if(!bmp2[cy2][cx3])continue;
+            for(var dy2=-gap;dy2<=gap;dy2++){
+              for(var dx2=-gap;dx2<=gap;dx2++){
+                var gy2=py+cy2+dy2,gx2=px+cx3+dx2;
+                if(gy2>=0&&gy2<H&&gx2>=0&&gx2<W) occupied[gy2][gx2]=1;
+              }
+            }
+          }
+        }
+        totalPlaced++;
+        placed=true;
+        break;
       }
     }
-    if(t3>0&&f3/t3<0.2){
-      stampOR(grid,fbmp,fx,fy);
-    }
-    fillRound++;
   }
 
   // ══════════════════════════════════════════════════════════
@@ -1130,36 +1155,21 @@ function generatePattern(){
   }
 
   // ══════════════════════════════════════════════════════════
-  // NAME LABEL — small "BENI" in Solitreo, center-top area
-  // Cleared zone so it's readable amid the pattern
+  // NAME LABEL — small text near top center
   // ══════════════════════════════════════════════════════════
   var labelSize2=Math.max(10,Math.floor(H*0.03));
   var labelBmp2=renderLabelBitmap(solitreoStr,labelSize2);
   if(labelBmp2){
-    var lw2=labelBmp2[0].length,lh2=labelBmp2.length;
-    var lx2=Math.floor((W-lw2)/2);
-    var ly2=Math.floor(H*0.12);
-    // Clear zone
-    var clr=4;
-    for(y=ly2-clr;y<ly2+lh2+clr&&y<H;y++){
-      for(var x=lx2-clr;x<lx2+lw2+clr&&x<W;x++){
+    var lw3=labelBmp2[0].length,lh3=labelBmp2.length;
+    var lx3=Math.floor((W-lw3)/2);
+    var ly3=Math.floor(H*0.08);
+    var clr=3;
+    for(y=ly3-clr;y<ly3+lh3+clr&&y<H;y++){
+      for(var x=lx3-clr;x<lx3+lw3+clr&&x<W;x++){
         if(y>=0&&x>=0&&grid[y]) grid[y][x]=0;
       }
     }
-    stampOR(grid,labelBmp2,lx2,ly2);
-  }
-
-  // ══════════════════════════════════════════════════════════
-  // CORNER ACCENTS — simple cross-hatch like the sketch
-  // ══════════════════════════════════════════════════════════
-  var cornerS=Math.max(8,Math.floor(Math.min(W,H)*0.06));
-  for(y=0;y<cornerS;y++){
-    for(var x=0;x<cornerS;x++){
-      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[y][x]=1;
-      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[y][W-1-x]=1;
-      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[H-1-y][x]=1;
-      if((x+y)%3===0||(x-y+cornerS)%3===0) grid[H-1-y][W-1-x]=1;
-    }
+    stampOR(grid,labelBmp2,lx3,ly3);
   }
 
   // Thin outer frame
@@ -1173,12 +1183,12 @@ function generatePattern(){
   var density=((filled2/(W*H))*100).toFixed(1);
 
   document.getElementById('patternStats').textContent=
-    W+'\u00d7'+H+' \u00b7 '+density+'% density \u00b7 '+chars.length+' letters \u00b7 seed: '+seed;
+    W+'\u00d7'+H+' \u00b7 '+density+'% \u00b7 '+totalPlaced+' letters \u00b7 seed: '+seed;
 
   var body=document.getElementById('taalimBody');
   var html='<div class="taalim-section"><h3>Composition</h3>';
   html+='<p style="font-size:14px;color:var(--text);">\u201c'+name+'\u201d ('+solitreoStr+') \u2014 ';
-  html+='solid letterforms packed at 5 scale levels, mirrored on center axis.</p>';
+  html+='collision-aware packing: '+totalPlaced+' letters placed largest-first, no overlapping, consistent spacing.</p>';
   html+='<p style="font-size:14px;color:var(--text-3);margin-top:4px;">'+density+'% density \u00b7 '+W+'\u00d7'+H+' grid</p>';
   html+='</div>';
   body.innerHTML=html;
